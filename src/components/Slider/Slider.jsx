@@ -40,7 +40,7 @@ export default function StyleOne() {
 
   if (isLoading) {
     return (
-      <div className="w-full h-[150px] sm:h-[200px] md:h-[400px] lg:h-[500px] p-2 sm:p-4">
+      <div className="w-full min-h-[150px] sm:min-h-[200px] md:min-h-[400px] lg:min-h-[500px] p-2 sm:p-4">
         <Skeleton className="w-full h-full rounded-xl" />
       </div>
     );
@@ -110,7 +110,7 @@ export default function StyleOne() {
                 <img
                   src={item.image}
                   alt={item.title || `Slide ${index + 1}`}
-                  className="w-full h-[150px] sm:h-[200px] md:h-[400px] lg:h-[500px] object-cover"
+                  className="w-full min-h-[150px] max-h-[400px] sm:min-h-[200px] sm:max-h-[400px] md:min-h-[400px] md:max-h-[400px] lg:min-h-[500px] lg:max-h-[500px] object-cover"
                   loading={index === 0 ? "eager" : "lazy"}
                 />
                 {/* Overlay for better text readability if needed */}

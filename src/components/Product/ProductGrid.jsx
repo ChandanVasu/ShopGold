@@ -164,13 +164,14 @@ export default function StyleOne() {
               <Link href={`/product/${product._id}`}>
                 <div className="relative">
                   <img src={product.images?.[0] || "https://placehold.co/400x500?text=No+Image"} alt={product.title} className="w-full aspect-[4/5] object-cover" />
-                  <ProductLabel label={product.productLabel} />
 
                   {/* Rating Badge at bottom */}
                   {product.rating && (
                     <div className="absolute bottom-1 sm:bottom-2 left-1 sm:left-2 bg-white/90 backdrop-blur-sm px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-md flex items-center gap-1">
+                      <span className="text-xs text-gray-700 font-medium">
+                        {product.rating}.{Math.floor(Math.random() * 10) + 1}
+                      </span>
                       <span className="text-xs text-green-600 font-semibold">★</span>
-                      <span className="text-xs text-gray-700 font-medium">{product.rating}/5</span>
                     </div>
                   )}
 
@@ -189,10 +190,10 @@ export default function StyleOne() {
               <div className="p-2 sm:p-4 bg-white">
                 <Link href={`/product/${product._id}`}>
                   {/* Product Name */}
-                  <h2 className="text-xs sm:text-sm font-medium text-gray-800 leading-tight line-clamp-2 mb-1 sm:mb-2 ">{product.title}</h2>
+                  <h2 className="text-xs md:text-sm font-medium text-gray-800 leading-tight line-clamp-1 mb-1 sm:mb-2 ">{product.title}</h2>
 
                   {/* Price */}
-                  <div className="flex items-center justify-between gap-1 sm:gap-2 mb-2 sm:mb-3">
+                  <div className="flex items-center justify-between gap-1 sm:gap-2 mb">
                     <div className="flex items-center gap-1 sm:gap-2">
                       {product.salePrice ? (
                         <>
@@ -214,14 +215,13 @@ export default function StyleOne() {
                     </div>
 
                     {/* Discount Badge */}
-                    {discount > 0 && <div className="bg-red-500 text-white px-1.5 sm:px-2 py-0.5 rounded text-xs font-medium">{discount}% OFF</div>}
+                    {discount > 0 && <div className="bg-green-500 text-white px-1 sm:px-2 py-0.5 rounded text-[10px] font-medium">{discount}% OFF</div>}
                   </div>
 
                   {/* Limited Time Deal Badge */}
                   {hasLimitedDeal && (
-                    <div className="flex items-center justify-center bg-blue-50 border border-blue-200 rounded-lg px-2 py-1 mb-2 sm:mb-3">
-                      <Clock className="w-3 h-3 text-blue-600 mr-1" />
-                      <span className="text-xs text-blue-700 font-medium">Limited Time Deal</span>
+                    <div className=" mb-1">
+                      <span className="text-xs text-green-700 font-normal">Limited Time Deal</span>
                     </div>
                   )}
                 </Link>
