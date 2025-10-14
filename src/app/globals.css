@@ -1,0 +1,90 @@
+@import "tailwindcss";
+@plugin './hero.ts';
+@source '../../node_modules/@heroui/theme/dist/**/*.{js,ts,jsx,tsx}';
+
+:root {
+  --font-family-base: var(--font-rubik);
+}
+
+*{
+  box-sizing: border-box;
+}
+
+::-webkit-scrollbar {
+    display: none;
+}
+
+body {
+  font-family: var(--font-family-base), sans-serif;
+  background-color: #f9fafb;
+}
+
+@keyframes marquee-infinite {
+  0% {
+    transform: translateX(0%);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+.marquee-wrapper {
+  white-space: nowrap;
+  display: flex;
+  gap: 40px;
+  animation: marquee-infinite 50s linear infinite;
+}
+
+.hide-swiper-dots .swiper-pagination {
+  display: none;
+}
+
+.swiper-pagination-bullet {
+  width: 24px;
+  height: 4px;
+  border-radius: 2px;
+  background-color: #d1d5db; /* Tailwind gray-300 */
+  opacity: 0.6;
+  margin: 0 4px !important;
+  transition: all 0.3s ease;
+}
+
+.swiper-pagination-bullet-active {
+  background-color: #facc15; /* Tailwind yellow-400 */
+  opacity: 1;
+  width: 32px;
+}
+
+.sha-one {
+  box-shadow: rgba(0, 0, 0, 0.1) 0px 1px 2px 0px;
+}
+
+/* styles/globals.css or your component CSS */
+.sun-editor {
+  border-radius: 8px;
+  border-bottom: none !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  min-height: 500px;
+}
+
+.sun-editor .se-toolbar {
+  background-color: #f9fafb; /* light gray */
+  border-bottom: none !important;
+  border-radius: 8px 8px 0 0;
+}
+
+.sun-editor .se-wrapper {
+  border-radius: 0 0 8px 8px;
+  min-height: 150px;
+}
+
+.se-resizing-bar {
+  display: none !important;
+}
+.hide-scrollbar {
+  -ms-overflow-style: none; /* IE and Edge */
+  scrollbar-width: none; /* Firefox */
+}
+.hide-scrollbar::-webkit-scrollbar {
+  display: none; /* Chrome, Safari, Opera */
+}
