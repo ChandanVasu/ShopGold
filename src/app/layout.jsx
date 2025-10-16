@@ -6,6 +6,7 @@ import MainFooterWrapper from "@/components/template/MainFooterWrapper";
 import MainHeaderWrapper from "@/components/template/MainHeaderWrapper";
 import ScriptInjector from "@/components/ScriptInjector";
 import { getStoreSettings } from "@/lib/getStoreSettings";
+import CurrencyProvider from "@/components/CurrencyProvider";
 
 // Load the Rubik font with CSS variable support
 const rubik = Rubik({
@@ -31,13 +32,16 @@ export default function RootLayout({ children }) {
   return (
     <html lang="en" className={rubik.variable}>
       <head>
-        <ScriptInjector />
+        {/* Meta tags and other head elements will be handled by Next.js */}
       </head>
       <body className="antialiased">
         <Providers>
-          <MainHeaderWrapper />
-          {children}
-          <MainFooterWrapper />
+          <CurrencyProvider>
+            <ScriptInjector />
+            <MainHeaderWrapper />
+            {children}
+            <MainFooterWrapper />
+          </CurrencyProvider>
         </Providers>
       </body>
     </html>

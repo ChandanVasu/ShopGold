@@ -1,8 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Input, Textarea, Spinner } from "@heroui/react";
-import { Code, Trash2, Plus, BarChart3, Share2 } from "lucide-react";
+import { Badge, Spinner, Switch, Input, Textarea } from "@heroui/react";
+import { CheckCircle, XCircle, Settings, Globe, Code, Trash2, Plus, BarChart3, Share2 } from "lucide-react";
 import CustomButton from "@/components/block/CustomButton";
 
 export default function AppIntegrationsPage() {
@@ -10,12 +10,50 @@ export default function AppIntegrationsPage() {
   const [fetching, setFetching] = useState(true);
 
   const [integrations, setIntegrations] = useState({
-    googleAnalytics: [],
-    metaPixel: [],
-    googleTagManager: [],
-    googleAds: [],
-    customCode: [],
+    googleAnalytics: { enabled: false, trackingIds: [] },
+    metaPixel: { enabled: false, pixelIds: [] },
+    googleTagManager: { enabled: false, containerIds: [] },
+    googleAds: { enabled: false, conversionIds: [] },
+    customCode: { enabled: false, scripts: [] },
   });
+
+  const integrationConfig = {
+    googleAnalytics: {
+      name: "Google Analytics",
+      description: "Track website traffic and user behavior",
+      status: "active",
+      icon: BarChart3,
+      color: "blue",
+    },
+    metaPixel: {
+      name: "Meta Pixel",
+      description: "Facebook advertising and conversion tracking",
+      status: "active",
+      icon: Share2,
+      color: "indigo",
+    },
+    googleTagManager: {
+      name: "Google Tag Manager",
+      description: "Manage all your website tags in one place",
+      status: "active",
+      icon: Code,
+      color: "green",
+    },
+    googleAds: {
+      name: "Google Ads",
+      description: "Track conversions and optimize ad campaigns",
+      status: "active",
+      icon: BarChart3,
+      color: "yellow",
+    },
+    customCode: {
+      name: "Custom Code",
+      description: "Add custom scripts and tracking codes",
+      status: "active",
+      icon: Code,
+      color: "purple",
+    },
+  };
 
   useEffect(() => {
     fetchSettings();
@@ -26,12 +64,28 @@ export default function AppIntegrationsPage() {
       const res = await fetch("/api/setting?type=integrations");
       const data = await res.json();
       if (data && Object.keys(data).length > 0) {
+        // Ensure proper data structure with fallbacks
         setIntegrations({
-          googleAnalytics: data.googleAnalytics || [],
-          metaPixel: data.metaPixel || [],
-          googleTagManager: data.googleTagManager || [],
-          googleAds: data.googleAds || [],
-          customCode: data.customCode || [],
+          googleAnalytics: {
+            enabled: data.googleAnalytics?.enabled || false,
+            trackingIds: Array.isArray(data.googleAnalytics?.trackingIds) ? data.googleAnalytics.trackingIds : []
+          },
+          metaPixel: {
+            enabled: data.metaPixel?.enabled || false,
+            pixelIds: Array.isArray(data.metaPixel?.pixelIds) ? data.metaPixel.pixelIds : []
+          },
+          googleTagManager: {
+            enabled: data.googleTagManager?.enabled || false,
+            containerIds: Array.isArray(data.googleTagManager?.containerIds) ? data.googleTagManager.containerIds : []
+          },
+          googleAds: {
+            enabled: data.googleAds?.enabled || false,
+            conversionIds: Array.isArray(data.googleAds?.conversionIds) ? data.googleAds.conversionIds : []
+          },
+          customCode: {
+            enabled: data.customCode?.enabled || false,
+            scripts: Array.isArray(data.customCode?.scripts) ? data.customCode.scripts : []
+          },
         });
       }
     } catch (err) {
@@ -49,382 +103,298 @@ export default function AppIntegrationsPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(integrations),
       });
-
-      if (res.ok) {
-        alert("Integration settings saved successfully!");
-      } else {
-        alert("Failed to save settings");
-      }
+      if (res.ok) alert("Integration settings saved successfully!");
+      else alert("Failed to save settings");
     } catch (err) {
-      console.error("Save error:", err);
+      console.error(err);
       alert("Error saving settings");
     } finally {
       setLoading(false);
     }
   };
 
-  // Helper functions for array management
-  const addItem = (type) => {
+  const updateIntegration = (key, field, value) => {
     setIntegrations({
       ...integrations,
-      [type]: [
-        ...integrations[type],
-        type === "customCode"
-          ? { name: "", code: "" }
-          : { id: "", name: "" },
-      ],
+      [key]: { ...integrations[key], [field]: value },
     });
   };
 
-  const removeItem = (type, index) => {
-    setIntegrations({
-      ...integrations,
-      [type]: integrations[type].filter((_, i) => i !== index),
-    });
+  const addItem = (type, field) => {
+    const current = integrations[type][field] || [];
+    const newItem = field === "scripts" 
+      ? { name: "", code: "" }
+      : { id: "", name: "" };
+    
+    updateIntegration(type, field, [...current, newItem]);
   };
 
-  const updateItem = (type, index, field, value) => {
-    const updated = [...integrations[type]];
-    updated[index][field] = value;
-    setIntegrations({
-      ...integrations,
-      [type]: updated,
-    });
+  const removeItem = (type, field, index) => {
+    const current = integrations[type][field] || [];
+    updateIntegration(type, field, current.filter((_, i) => i !== index));
+  };
+
+  const updateItem = (type, field, index, itemField, value) => {
+    const current = [...(integrations[type][field] || [])];
+    current[index][itemField] = value;
+    updateIntegration(type, field, current);
   };
 
   if (fetching) {
     return (
-      <div className="flex justify-center items-center h-[calc(100vh-80px)]">
-        <Spinner color="secondary" variant="gradient" size="md" />
+      <div className="flex justify-center items-center h-[60vh]">
+        <Spinner color="secondary" variant="gradient" size="lg" />
       </div>
     );
   }
 
   return (
-    <div className="p-4 md:p-6 space-y-6">
+    <div className="p-4 md:p-8 space-y-6 md:space-y-8">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className="flex flex-col lg:flex-row items-center justify-between gap-4 lg:gap-6">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">App Integrations</h1>
-          <p className="text-gray-600 text-sm mt-1">
-            Manage analytics, tracking pixels, and custom scripts
-          </p>
+          <h1 className="text-2xl lg:text-3xl font-bold text-gray-900">App Integrations</h1>
+          <p className="text-gray-600 mt-1 text-sm lg:text-base">Manage analytics, tracking pixels, and custom scripts for your store</p>
         </div>
-        <CustomButton intent="primary" size="md" onPress={handleSave} isLoading={loading}>
-          Save Settings
+        <CustomButton intent="primary" size="md" isLoading={loading} onPress={handleSave} className="px-4 lg:px-6">
+          <Settings className="w-4 h-4 mr-2" /> Save Changes
         </CustomButton>
       </div>
 
-      <div className="space-y-6">
-        {/* Google Analytics */}
-        <div className="bg-white rounded-xl p-6 space-y-4">
-          <div className="flex items-center justify-between pb-4 border-b border-gray-200">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-blue-50 rounded-lg">
-                <BarChart3 className="w-5 h-5 text-blue-600" />
-              </div>
-              <div>
-                <h2 className="text-lg font-semibold text-gray-900">Google Analytics</h2>
-                <p className="text-sm text-gray-500">Add multiple GA4 measurement IDs</p>
-              </div>
-            </div>
-            <CustomButton
-              intent="ghost"
-              size="sm"
-              onPress={() => addItem("googleAnalytics")}
-              startContent={<Plus className="w-4 h-4" />}
-            >
-              Add GA4
-            </CustomButton>
-          </div>
+      {/* Integration Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 lg:gap-6">
+        {Object.entries(integrationConfig).map(([key, config]) => {
+          const integration = integrations[key];
+          const isActive = integration.enabled;
+          const IconComponent = config.icon;
 
-          {integrations.googleAnalytics.length === 0 ? (
-            <div className="text-center py-8 text-gray-500">
-              <BarChart3 className="w-12 h-12 mx-auto mb-2 text-gray-300" />
-              <p className="text-sm">No Google Analytics configured</p>
-            </div>
-          ) : (
-            <div className="space-y-3">
-              {integrations.googleAnalytics.map((item, index) => (
-                <div key={index} className="flex gap-3 items-start">
-                  <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-3">
-                    <Input
-                      placeholder="Account Name (e.g., Main Account)"
-                      value={item.name}
-                      onChange={(e) =>
-                        updateItem("googleAnalytics", index, "name", e.target.value)
-                      }
-                      size="sm"
-                    />
-                    <Input
-                      placeholder="G-XXXXXXXXXX"
-                      value={item.id}
-                      onChange={(e) =>
-                        updateItem("googleAnalytics", index, "id", e.target.value)
-                      }
-                      size="sm"
-                    />
+          return (
+            <div key={key} className="bg-white rounded-lg p-4 lg:p-6 h-min">
+              <div className="flex flex-col gap-4 lg:gap-6">
+                <div className="flex justify-between items-start">
+                  <div className="flex items-center gap-3">
+                    <div className={`p-2 bg-${config.color}-50 rounded-lg`}>
+                      <IconComponent className={`w-4 h-4 lg:w-5 lg:h-5 text-${config.color}-600`} />
+                    </div>
                   </div>
-                  <button
-                    onClick={() => removeItem("googleAnalytics", index)}
-                    className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors mt-1"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
+                  {config.status === "coming" && (
+                    <span className="text-xs font-semibold bg-orange-100 text-orange-600 px-2 py-1 rounded-md">
+                      Coming Soon
+                    </span>
+                  )}
                 </div>
-              ))}
-            </div>
-          )}
-        </div>
 
-        {/* Meta Pixel */}
-        <div className="bg-white rounded-xl p-6 space-y-4">
-          <div className="flex items-center justify-between pb-4 border-b border-gray-200">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-indigo-50 rounded-lg">
-                <Share2 className="w-5 h-5 text-indigo-600" />
-              </div>
-              <div>
-                <h2 className="text-lg font-semibold text-gray-900">Meta Pixel (Facebook)</h2>
-                <p className="text-sm text-gray-500">Add multiple Facebook Pixel IDs</p>
-              </div>
-            </div>
-            <CustomButton
-              intent="ghost"
-              size="sm"
-              onPress={() => addItem("metaPixel")}
-              startContent={<Plus className="w-4 h-4" />}
-            >
-              Add Pixel
-            </CustomButton>
-          </div>
+                <p className="text-xs lg:text-sm text-gray-600">{config.description}</p>
 
-          {integrations.metaPixel.length === 0 ? (
-            <div className="text-center py-8 text-gray-500">
-              <Share2 className="w-12 h-12 mx-auto mb-2 text-gray-300" />
-              <p className="text-sm">No Meta Pixel configured</p>
-            </div>
-          ) : (
-            <div className="space-y-3">
-              {integrations.metaPixel.map((item, index) => (
-                <div key={index} className="flex gap-3 items-start">
-                  <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-3">
-                    <Input
-                      placeholder="Ad Account Name"
-                      value={item.name}
-                      onChange={(e) =>
-                        updateItem("metaPixel", index, "name", e.target.value)
-                      }
-                      size="sm"
-                    />
-                    <Input
-                      placeholder="Pixel ID (numbers only)"
-                      value={item.id}
-                      onChange={(e) =>
-                        updateItem("metaPixel", index, "id", e.target.value)
-                      }
-                      size="sm"
-                    />
-                  </div>
-                  <button
-                    onClick={() => removeItem("metaPixel", index)}
-                    className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors mt-1"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-
-        {/* Google Tag Manager */}
-        <div className="bg-white rounded-xl p-6 space-y-4">
-          <div className="flex items-center justify-between pb-4 border-b border-gray-200">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-green-50 rounded-lg">
-                <Code className="w-5 h-5 text-green-600" />
-              </div>
-              <div>
-                <h2 className="text-lg font-semibold text-gray-900">Google Tag Manager</h2>
-                <p className="text-sm text-gray-500">Add multiple GTM container IDs</p>
-              </div>
-            </div>
-            <CustomButton
-              intent="ghost"
-              size="sm"
-              onPress={() => addItem("googleTagManager")}
-              startContent={<Plus className="w-4 h-4" />}
-            >
-              Add GTM
-            </CustomButton>
-          </div>
-
-          {integrations.googleTagManager.length === 0 ? (
-            <div className="text-center py-8 text-gray-500">
-              <Code className="w-12 h-12 mx-auto mb-2 text-gray-300" />
-              <p className="text-sm">No Google Tag Manager configured</p>
-            </div>
-          ) : (
-            <div className="space-y-3">
-              {integrations.googleTagManager.map((item, index) => (
-                <div key={index} className="flex gap-3 items-start">
-                  <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-3">
-                    <Input
-                      placeholder="Container Name"
-                      value={item.name}
-                      onChange={(e) =>
-                        updateItem("googleTagManager", index, "name", e.target.value)
-                      }
-                      size="sm"
-                    />
-                    <Input
-                      placeholder="GTM-XXXXXXX"
-                      value={item.id}
-                      onChange={(e) =>
-                        updateItem("googleTagManager", index, "id", e.target.value)
-                      }
-                      size="sm"
-                    />
-                  </div>
-                  <button
-                    onClick={() => removeItem("googleTagManager", index)}
-                    className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors mt-1"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-
-        {/* Google Ads */}
-        <div className="bg-white rounded-xl p-6 space-y-4">
-          <div className="flex items-center justify-between pb-4 border-b border-gray-200">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-yellow-50 rounded-lg">
-                <BarChart3 className="w-5 h-5 text-yellow-600" />
-              </div>
-              <div>
-                <h2 className="text-lg font-semibold text-gray-900">Google Ads</h2>
-                <p className="text-sm text-gray-500">Add Google Ads conversion tracking</p>
-              </div>
-            </div>
-            <CustomButton
-              intent="ghost"
-              size="sm"
-              onPress={() => addItem("googleAds")}
-              startContent={<Plus className="w-4 h-4" />}
-            >
-              Add Google Ads
-            </CustomButton>
-          </div>
-
-          {integrations.googleAds.length === 0 ? (
-            <div className="text-center py-8 text-gray-500">
-              <BarChart3 className="w-12 h-12 mx-auto mb-2 text-gray-300" />
-              <p className="text-sm">No Google Ads configured</p>
-            </div>
-          ) : (
-            <div className="space-y-3">
-              {integrations.googleAds.map((item, index) => (
-                <div key={index} className="flex gap-3 items-start">
-                  <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-3">
-                    <Input
-                      placeholder="Campaign Name"
-                      value={item.name}
-                      onChange={(e) =>
-                        updateItem("googleAds", index, "name", e.target.value)
-                      }
-                      size="sm"
-                    />
-                    <Input
-                      placeholder="AW-XXXXXXXXXX"
-                      value={item.id}
-                      onChange={(e) =>
-                        updateItem("googleAds", index, "id", e.target.value)
-                      }
-                      size="sm"
-                    />
-                  </div>
-                  <button
-                    onClick={() => removeItem("googleAds", index)}
-                    className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors mt-1"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-
-        {/* Custom Code */}
-        <div className="bg-white rounded-xl p-6 space-y-4">
-          <div className="flex items-center justify-between pb-4 border-b border-gray-200">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-purple-50 rounded-lg">
-                <Code className="w-5 h-5 text-purple-600" />
-              </div>
-              <div>
-                <h2 className="text-lg font-semibold text-gray-900">Custom Code</h2>
-                <p className="text-sm text-gray-500">
-                  Add custom scripts to the header of all pages
-                </p>
-              </div>
-            </div>
-            <CustomButton
-              intent="ghost"
-              size="sm"
-              onPress={() => addItem("customCode")}
-              startContent={<Plus className="w-4 h-4" />}
-            >
-              Add Code
-            </CustomButton>
-          </div>
-
-          {integrations.customCode.length === 0 ? (
-            <div className="text-center py-8 text-gray-500">
-              <Code className="w-12 h-12 mx-auto mb-2 text-gray-300" />
-              <p className="text-sm">No custom code added</p>
-            </div>
-          ) : (
-            <div className="space-y-4">
-              {integrations.customCode.map((item, index) => (
-                <div key={index} className="border border-gray-200 rounded-lg p-4 space-y-3">
-                  <div className="flex items-center justify-between">
-                    <Input
-                      placeholder="Script Name/Description"
-                      value={item.name}
-                      onChange={(e) =>
-                        updateItem("customCode", index, "name", e.target.value)
-                      }
-                      size="sm"
-                      className="flex-1"
-                    />
-                    <button
-                      onClick={() => removeItem("customCode", index)}
-                      className="ml-3 p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                  </div>
-                  <Textarea
-                    placeholder="<script>&#10;  // Your custom code here&#10;</script>"
-                    value={item.code}
-                    onChange={(e) =>
-                      updateItem("customCode", index, "code", e.target.value)
-                    }
-                    minRows={6}
-                    className="font-mono text-sm"
+                <div className="flex items-center justify-between">
+                  <Switch 
+                    isSelected={isActive} 
+                    isDisabled={config.status === "coming"} 
+                    onValueChange={(v) => updateIntegration(key, "enabled", v)} 
+                    color="success" 
+                    size="md" 
                   />
+                  <div className="flex items-center gap-2">
+                    {isActive ? (
+                      <CheckCircle className="w-3 h-3 lg:w-4 lg:h-4 text-green-500" />
+                    ) : (
+                      <XCircle className="w-3 h-3 lg:w-4 lg:h-4 text-gray-400" />
+                    )}
+                    <span className={`text-xs font-medium ${isActive ? "text-green-600" : "text-gray-500"}`}>
+                      {isActive ? "Active" : "Inactive"}
+                    </span>
+                  </div>
                 </div>
-              ))}
+
+                {isActive && (
+                  <div className="space-y-3 lg:space-y-4 mt-4">
+                    {key === "googleAnalytics" && (
+                      <IntegrationFields
+                        type="googleAnalytics"
+                        field="trackingIds"
+                        items={integration.trackingIds || []}
+                        addItem={addItem}
+                        removeItem={removeItem}
+                        updateItem={updateItem}
+                        placeholder1="Account Name"
+                        placeholder2="G-XXXXXXXXXX"
+                        buttonText="Add GA4"
+                      />
+                    )}
+
+                    {key === "metaPixel" && (
+                      <IntegrationFields
+                        type="metaPixel"
+                        field="pixelIds"
+                        items={integration.pixelIds || []}
+                        addItem={addItem}
+                        removeItem={removeItem}
+                        updateItem={updateItem}
+                        placeholder1="Ad Account Name"
+                        placeholder2="Pixel ID (numbers only)"
+                        buttonText="Add Pixel"
+                      />
+                    )}
+
+                    {key === "googleTagManager" && (
+                      <IntegrationFields
+                        type="googleTagManager"
+                        field="containerIds"
+                        items={integration.containerIds || []}
+                        addItem={addItem}
+                        removeItem={removeItem}
+                        updateItem={updateItem}
+                        placeholder1="Container Name"
+                        placeholder2="GTM-XXXXXXX"
+                        buttonText="Add GTM"
+                      />
+                    )}
+
+                    {key === "googleAds" && (
+                      <IntegrationFields
+                        type="googleAds"
+                        field="conversionIds"
+                        items={integration.conversionIds || []}
+                        addItem={addItem}
+                        removeItem={removeItem}
+                        updateItem={updateItem}
+                        placeholder1="Campaign Name"
+                        placeholder2="AW-XXXXXXXXXX"
+                        buttonText="Add Google Ads"
+                      />
+                    )}
+
+                    {key === "customCode" && (
+                      <CustomCodeFields
+                        integration={integration}
+                        addItem={addItem}
+                        removeItem={removeItem}
+                        updateItem={updateItem}
+                      />
+                    )}
+                  </div>
+                )}
+              </div>
             </div>
-          )}
-        </div>
+          );
+        })}
       </div>
+    </div>
+  );
+}
+
+// Helper component for standard integration fields
+function IntegrationFields({ type, field, items, addItem, removeItem, updateItem, placeholder1, placeholder2, buttonText }) {
+  // Ensure items is always an array
+  const safeItems = Array.isArray(items) ? items : [];
+  
+  return (
+    <div className="space-y-2 lg:space-y-3">
+      <div className="flex justify-between items-center">
+        <span className="text-xs lg:text-sm font-medium text-gray-700">Configuration</span>
+        <CustomButton
+          intent="ghost"
+          size="sm"
+          onPress={() => addItem(type, field)}
+          startContent={<Plus className="w-3 h-3 lg:w-4 lg:h-4" />}
+        >
+          {buttonText}
+        </CustomButton>
+      </div>
+      
+      {safeItems.length === 0 ? (
+        <div className="text-center py-3 lg:py-4 text-gray-500 text-xs lg:text-sm">
+          No items configured
+        </div>
+      ) : (
+        <div className="space-y-2">
+          {safeItems.map((item, index) => (
+            <div key={index} className="flex gap-2 items-start">
+              <div className="flex-1 space-y-2">
+                <Input
+                  labelPlacement="outside"
+                  placeholder={placeholder1}
+                  value={item.name || ""}
+                  onChange={(e) => updateItem(type, field, index, "name", e.target.value)}
+                  size="sm"
+                />
+                <Input
+                  labelPlacement="outside"
+                  placeholder={placeholder2}
+                  value={item.id || ""}
+                  onChange={(e) => updateItem(type, field, index, "id", e.target.value)}
+                  size="sm"
+                />
+              </div>
+              <button
+                onClick={() => removeItem(type, field, index)}
+                className="p-1.5 lg:p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors mt-1"
+              >
+                <Trash2 className="w-3 h-3 lg:w-4 lg:h-4" />
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// Helper component for custom code fields
+function CustomCodeFields({ integration, addItem, removeItem, updateItem }) {
+  // Ensure scripts is always an array
+  const scripts = Array.isArray(integration?.scripts) ? integration.scripts : [];
+  
+  return (
+    <div className="space-y-2 lg:space-y-3">
+      <div className="flex justify-between items-center">
+        <span className="text-xs lg:text-sm font-medium text-gray-700">Custom Scripts</span>
+        <CustomButton
+          intent="ghost"
+          size="sm"
+          onPress={() => addItem("customCode", "scripts")}
+          startContent={<Plus className="w-3 h-3 lg:w-4 lg:h-4" />}
+        >
+          Add Script
+        </CustomButton>
+      </div>
+      
+      {scripts.length === 0 ? (
+        <div className="text-center py-3 lg:py-4 text-gray-500 text-xs lg:text-sm">
+          No custom scripts added
+        </div>
+      ) : (
+        <div className="space-y-3">
+          {scripts.map((script, index) => (
+            <div key={index} className="border border-gray-200 rounded-lg p-3 space-y-3">
+              <div className="flex items-center justify-between">
+                <Input
+                  labelPlacement="outside"
+                  placeholder="Script Name/Description"
+                  value={script.name || ""}
+                  onChange={(e) => updateItem("customCode", "scripts", index, "name", e.target.value)}
+                  size="sm"
+                  className="flex-1"
+                />
+                <button
+                  onClick={() => removeItem("customCode", "scripts", index)}
+                  className="ml-3 p-1.5 lg:p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                >
+                  <Trash2 className="w-3 h-3 lg:w-4 lg:h-4" />
+                </button>
+              </div>
+              <Textarea
+                labelPlacement="outside"
+                placeholder="<script>&#10;  // Your custom code here&#10;</script>"
+                value={script.code || ""}
+                onChange={(e) => updateItem("customCode", "scripts", index, "code", e.target.value)}
+                minRows={4}
+                className="font-mono text-xs lg:text-sm"
+              />
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

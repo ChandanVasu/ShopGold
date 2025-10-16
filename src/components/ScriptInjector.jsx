@@ -23,33 +23,30 @@ export default function ScriptInjector() {
   return (
     <>
       {/* Google Analytics */}
-      {integrations.googleAnalytics?.map((ga, index) => (
-        ga.id && (
-          <Script
-            key={`ga-${index}`}
-            strategy="afterInteractive"
-            src={`https://www.googletagmanager.com/gtag/js?id=${ga.id}`}
-          />
-        )
-      ))}
-      {integrations.googleAnalytics?.map((ga, index) => (
-        ga.id && (
-          <Script key={`ga-config-${index}`} id={`ga-config-${index}`} strategy="afterInteractive">
-            {`
+      {integrations.googleAnalytics?.enabled &&
+        integrations.googleAnalytics?.trackingIds?.map((ga, index) => ga.id && <Script key={`ga-${index}`} strategy="afterInteractive" src={`https://www.googletagmanager.com/gtag/js?id=${ga.id}`} />)}
+      {integrations.googleAnalytics?.enabled &&
+        integrations.googleAnalytics?.trackingIds?.map(
+          (ga, index) =>
+            ga.id && (
+              <Script key={`ga-config-${index}`} id={`ga-config-${index}`} strategy="afterInteractive">
+                {`
               window.dataLayer = window.dataLayer || [];
               function gtag(){dataLayer.push(arguments);}
               gtag('js', new Date());
               gtag('config', '${ga.id}');
             `}
-          </Script>
-        )
-      ))}
+              </Script>
+            )
+        )}
 
       {/* Meta Pixel (Facebook) */}
-      {integrations.metaPixel?.map((pixel, index) => (
-        pixel.id && (
-          <Script key={`pixel-${index}`} id={`pixel-${index}`} strategy="afterInteractive">
-            {`
+      {integrations.metaPixel?.enabled &&
+        integrations.metaPixel?.pixelIds?.map(
+          (pixel, index) =>
+            pixel.id && (
+              <Script key={`pixel-${index}`} id={`pixel-${index}`} strategy="afterInteractive">
+                {`
               !function(f,b,e,v,n,t,s)
               {if(f.fbq)return;n=f.fbq=function(){n.callMethod?
               n.callMethod.apply(n,arguments):n.queue.push(arguments)};
@@ -61,57 +58,55 @@ export default function ScriptInjector() {
               fbq('init', '${pixel.id}');
               fbq('track', 'PageView');
             `}
-          </Script>
-        )
-      ))}
+              </Script>
+            )
+        )}
 
       {/* Google Tag Manager */}
-      {integrations.googleTagManager?.map((gtm, index) => (
-        gtm.id && (
-          <Script key={`gtm-${index}`} id={`gtm-${index}`} strategy="afterInteractive">
-            {`
+      {integrations.googleTagManager?.enabled &&
+        integrations.googleTagManager?.containerIds?.map(
+          (gtm, index) =>
+            gtm.id && (
+              <Script key={`gtm-${index}`} id={`gtm-${index}`} strategy="afterInteractive">
+                {`
               (function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
               new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
               j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
               'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
               })(window,document,'script','dataLayer','${gtm.id}');
             `}
-          </Script>
-        )
-      ))}
+              </Script>
+            )
+        )}
 
       {/* Google Ads */}
-      {integrations.googleAds?.map((ad, index) => (
-        ad.id && (
-          <Script
-            key={`gads-${index}`}
-            strategy="afterInteractive"
-            src={`https://www.googletagmanager.com/gtag/js?id=${ad.id}`}
-          />
-        )
-      ))}
-      {integrations.googleAds?.map((ad, index) => (
-        ad.id && (
-          <Script key={`gads-config-${index}`} id={`gads-config-${index}`} strategy="afterInteractive">
-            {`
+      {integrations.googleAds?.enabled &&
+        integrations.googleAds?.conversionIds?.map((ad, index) => ad.id && <Script key={`gads-${index}`} strategy="afterInteractive" src={`https://www.googletagmanager.com/gtag/js?id=${ad.id}`} />)}
+      {integrations.googleAds?.enabled &&
+        integrations.googleAds?.conversionIds?.map(
+          (ad, index) =>
+            ad.id && (
+              <Script key={`gads-config-${index}`} id={`gads-config-${index}`} strategy="afterInteractive">
+                {`
               window.dataLayer = window.dataLayer || [];
               function gtag(){dataLayer.push(arguments);}
               gtag('js', new Date());
               gtag('config', '${ad.id}');
             `}
-          </Script>
-        )
-      ))}
+              </Script>
+            )
+        )}
 
       {/* Custom Code */}
-      {integrations.customCode?.map((custom, index) => (
-        custom.code && (
-          <div
-            key={`custom-${index}`}
-            dangerouslySetInnerHTML={{ __html: custom.code }}
-          />
-        )
-      ))}
+      {integrations.customCode?.enabled &&
+        integrations.customCode?.scripts?.map(
+          (script, index) =>
+            script.code && (
+              <Script key={`custom-${index}`} id={`custom-script-${index}`} strategy="afterInteractive">
+                {script.code}
+              </Script>
+            )
+        )}
     </>
   );
 }
