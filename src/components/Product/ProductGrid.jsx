@@ -7,18 +7,6 @@ import { ShoppingCart, Clock, Heart } from "lucide-react";
 import { Button } from "@heroui/react";
 import { useCart } from "@/hooks/useCart";
 
-// 🔄 Sample fallback products (in case API fails or is empty)
-const SAMPLE_PRODUCTS = Array.from({ length: 10 }).map((_, i) => ({
-  _id: `sample-${i}`,
-  title: `Sample Product ${i + 1}`,
-  shortDescription: "This is a sample product description.",
-  salePrice: i % 2 === 0 ? 19.99 : null,
-  regularPrice: 29.99,
-  productLabel: i % 2 === 0 ? "New" : "Sale",
-  images: [`https://placehold.co/400x500?text=Product+${i + 1}`],
-  rating: Math.floor(Math.random() * 2) + 4, // 4 or 5 stars
-}));
-
 export default function StyleOne() {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -35,12 +23,12 @@ export default function StyleOne() {
         if (Array.isArray(data) && data.length > 0) {
           setProducts(data);
         } else {
-          setProducts(SAMPLE_PRODUCTS); // 👉 Use sample fallback
+          setProducts([]);
         }
       } catch (err) {
         console.error("Failed to fetch products:", err);
         setError("Failed to load products");
-        setProducts(SAMPLE_PRODUCTS); // 👉 Fallback on error
+        setProducts([]);
       } finally {
         setLoading(false);
       }
@@ -133,45 +121,35 @@ export default function StyleOne() {
     );
   };
 
-  // 🦴 Skeleton loading
-  if (loading) {
-    return (
-      <div className="px-4 md:px-20 container mx-auto">
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 md:gap-6 gap-3">
-          {Array.from({ length: 10 }).map((_, idx) => (
-            <div key={idx} className="bg-white rounded-xl overflow-hidden">
-              <Skeleton className="w-full aspect-[4/5] rounded-none" />
-              <div className="p-2 sm:p-4 space-y-2">
-                <Skeleton className="h-3 sm:h-4 w-3/4" />
-                <Skeleton className="h-3 sm:h-4 w-1/2" />
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-    );
+  // Don't render if loading or no products
+  if (loading || products.length === 0) {
+    return null;
   }
+
+  // Get products to display (max 10 for home page)
+  const displayProducts = products.slice(0, 10);
+  const hasMoreProducts = products.length > 10;
 
   return (
     <div className="px-4 md:px-20 container mx-auto">
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 md:gap-6 gap-3">
-        {products.map((product) => {
+        {displayProducts.map((product) => {
           const discount = calculateDiscount(product.regularPrice, product.salePrice);
           const hasLimitedDeal = isLimitedTimeDeal(product.limitedTimeDeal);
 
-          return (
-            <div key={product._id} className="bg-gray-50 border border-gray-100 rounded-xl overflow-hidden">
-              <Link href={`/product/${product._id}`}>
-                <div className="relative">
+            return (
+              <div key={product._id} className="bg-gray-50 border border-gray-100 rounded-xl overflow-hidden">
+                <Link href={`/products/${product._id}`}>
+                  <div className="relative">
                   <img src={product.images?.[0] || "https://placehold.co/400x500?text=No+Image"} alt={product.title} className="w-full aspect-[4/5] object-cover" />
 
                   {/* Rating Badge at bottom */}
                   {product.rating && (
-                    <div className="absolute bottom-1 sm:bottom-2 left-1 sm:left-2 bg-white/90 backdrop-blur-sm px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-md flex items-center gap-1">
-                      <span className="text-xs text-gray-700 font-medium">
+                    <div className="absolute bottom-1 sm:bottom-2 left-1 sm:left-2 bg-green-600 backdrop-blur-sm px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-md flex items-center gap-1">
+                      <span className="text-xs text-white font-medium">
                         {product.rating}.{Math.floor(Math.random() * 10) + 1}
                       </span>
-                      <span className="text-xs text-green-600 font-semibold">★</span>
+                      <span className="text-xs text-white font-semibold">★</span>
                     </div>
                   )}
 
@@ -187,8 +165,8 @@ export default function StyleOne() {
                 </div>
               </Link>
 
-              <div className="p-2 sm:p-4 bg-white">
-                <Link href={`/product/${product._id}`}>
+                <div className="p-2 sm:p-4 bg-white">
+                <Link href={`/products/${product._id}`}>
                   {/* Product Name */}
                   <h2 className="text-xs md:text-sm font-medium text-gray-800 leading-tight line-clamp-1 mb-1 sm:mb-2 ">{product.title}</h2>
 
@@ -215,12 +193,12 @@ export default function StyleOne() {
                     </div>
 
                     {/* Discount Badge */}
-                    {discount > 0 && <div className="bg-green-500 text-white px-1 sm:px-2 py-0.5 rounded text-[10px] font-medium">{discount}% OFF</div>}
+                    {discount > 0 && <div className="bg-white text-green-500 px-1 sm:px-2 py-0.5 rounded text-[10px] font-medium">{discount}% OFF</div>}
                   </div>
 
                   {/* Limited Time Deal Badge */}
                   {hasLimitedDeal && (
-                    <div className=" mb-1">
+                    <div className="mb-1 text-center">
                       <span className="text-xs text-green-700 font-normal">Limited Time Deal</span>
                     </div>
                   )}
@@ -241,6 +219,17 @@ export default function StyleOne() {
           );
         })}
       </div>
+
+      {/* View More Button */}
+      {hasMoreProducts && (
+        <div className="flex justify-center mt-8">
+          <Link href="/products">
+            <Button size="lg" className="bg-gray-800 text-white font-medium rounded-lg px-8">
+              View More Products
+            </Button>
+          </Link>
+        </div>
+      )}
     </div>
   );
 }

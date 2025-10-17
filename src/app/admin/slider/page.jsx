@@ -148,6 +148,18 @@ export default function SliderImagePage() {
         {/* Form */}
         <div className="w-full md:w-1/3 bg-white p-4 rounded-lg h-min">
           <h2 className="text-lg font-semibold mb-3">{selectedId ? "Edit Image" : "Add New Image"}</h2>
+          
+          {/* Recommended Size Info */}
+          <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+            <p className="text-xs font-semibold text-blue-900 mb-1">📐 Recommended Banner Size:</p>
+            <ul className="text-xs text-blue-800 space-y-0.5">
+              <li>• Desktop: <strong>1920x500px</strong></li>
+              <li>• Mobile: <strong>800x300px</strong></li>
+              <li>• Aspect Ratio: <strong>16:9 or 21:9</strong></li>
+              <li className="text-blue-600 mt-1">Images auto-adjust to fit the slider</li>
+            </ul>
+          </div>
+
           <div className="flex flex-col gap-4">
             <Input
               label="Image Title"

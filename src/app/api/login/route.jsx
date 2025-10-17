@@ -1,9 +1,8 @@
 import { NextResponse } from "next/server";
 import { SignJWT } from "jose";
 
-// Default credentials (replace with environment-secured credentials in production)
-const DEFAULT_EMAIL = process.env.LOGIN_EMAIL || "login@example.com";
-const DEFAULT_PASSWORD = process.env.LOGIN_PASSWORD || "123456";
+// Default PIN (replace with environment-secured PIN in production)
+const DEFAULT_PIN = process.env.LOGIN_PIN || "123456";
 
 // Secret key for JWT (should be stored in .env)
 const secret = new TextEncoder().encode(process.env.JWT_SECRET || "shopead-secret");
@@ -15,10 +14,10 @@ async function generateJWT(payload) {
 
 // POST = Login
 export async function POST(request) {
-  const { email, password } = await request.json();
+  const { pin } = await request.json();
 
-  if (email === DEFAULT_EMAIL && password === DEFAULT_PASSWORD) {
-    const token = await generateJWT({ email });
+  if (pin === DEFAULT_PIN) {
+    const token = await generateJWT({ pin });
 
     const response = NextResponse.json({ message: "Login successful" });
 
@@ -32,7 +31,7 @@ export async function POST(request) {
     return response;
   }
 
-  return NextResponse.json({ error: "Invalid credentials" }, { status: 401 });
+  return NextResponse.json({ error: "Invalid PIN" }, { status: 401 });
 }
 
 // DELETE = Logout

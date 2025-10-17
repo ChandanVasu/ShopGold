@@ -203,7 +203,7 @@ export default function SliderProduct({ header, products = [], type = "product" 
 
             return (
               <SwiperSlide key={product._id}>
-                <Link href={`/product/${product._id}`}>
+                <Link href={`/products/${product._id}`}>
                   <div className="bg-gray-50 border border-gray-100 rounded-xl overflow-hidden">
                     <div className="relative">
                       <img 

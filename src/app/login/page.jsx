@@ -5,18 +5,17 @@ import { useRouter } from "next/navigation";
 import { Input, Button } from "@heroui/react";
 
 export default function LoginPage() {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+  const [pin, setPin] = useState("");
   const [formError, setFormError] = useState("");
   const [submitted, setSubmitted] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   const router = useRouter();
 
   useEffect(() => {
     if (process.env.NEXT_PUBLIC_IS_DEV == "true") {
       console.log("Development mode: Pre-filling login form");
-      setEmail("login@example.com");
-      setPassword("123456");
+      setPin("123456");
     }
   }, []);
 
@@ -25,26 +24,33 @@ export default function LoginPage() {
     setSubmitted(true);
     setFormError("");
 
-    // Don't submit if blank fields
-    if (!email || !password) return;
+    // Don't submit if blank PIN
+    if (!pin) return;
 
-    const res = await fetch("/api/login", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, password }),
-    });
+    setLoading(true);
 
-    const data = await res.json();
+    try {
+      const res = await fetch("/api/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ pin }),
+      });
 
-    if (res.ok) {
-      router.push("/admin");
-    } else {
-      setFormError(data.error || "Invalid email or password");
+      const data = await res.json();
+
+      if (res.ok) {
+        router.push("/admin");
+      } else {
+        setFormError(data.error || "Invalid PIN");
+      }
+    } catch (error) {
+      setFormError("An error occurred. Please try again.");
+    } finally {
+      setLoading(false);
     }
   };
 
-  const emailInvalid = submitted && !email;
-  const passwordInvalid = submitted && !password;
+  const pinInvalid = submitted && !pin;
 
   return (
     <div className="min-h-screen relative flex items-center justify-center overflow-hidden px-4">
@@ -93,46 +99,28 @@ export default function LoginPage() {
               <h1 className="text-3xl font-light mb-3 bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent">
                 Welcome back
               </h1>
-              <p className="text-gray-600 font-light">Sign in to continue to your account</p>
+              <p className="text-gray-600 font-light">Enter your PIN to access admin panel</p>
             </div>
 
             <form className="space-y-6" onSubmit={handleLogin}>
               <div className="space-y-10">
                 <div className="relative">
                   <Input
-                    type="email"
-                    label="Email address"
-                    labelPlacement="outside"
-                    variant="bordered"
-                    classNames={{
-                      inputWrapper: "border-gray-300/60 hover:border-gray-400/70 focus-within:border-blue-500/60 bg-white/60 backdrop-blur-sm transition-all duration-300",
-                      input: "text-gray-800 placeholder:text-gray-500",
-                      label: "text-gray-700 font-light text-sm mb-2",
-                    }}
-                    placeholder="Enter your email address"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    isInvalid={emailInvalid}
-                    errorMessage={emailInvalid ? "Email is required" : ""}
-                  />
-                </div>
-
-                <div className="relative">
-                  <Input
                     type="password"
-                    label="Password"
+                    label="PIN"
                     labelPlacement="outside"
                     variant="bordered"
                     classNames={{
                       inputWrapper: "border-gray-300/60 hover:border-gray-400/70 focus-within:border-blue-500/60 bg-white/60 backdrop-blur-sm transition-all duration-300",
-                      input: "text-gray-800 placeholder:text-gray-500",
+                      input: "text-gray-800 placeholder:text-gray-500 text-center text-2xl tracking-widest",
                       label: "text-gray-700 font-light text-sm mb-2",
                     }}
-                    placeholder="Enter your password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    isInvalid={passwordInvalid}
-                    errorMessage={passwordInvalid ? "Password is required" : ""}
+                    placeholder="Enter your PIN"
+                    value={pin}
+                    onChange={(e) => setPin(e.target.value)}
+                    isInvalid={pinInvalid}
+                    errorMessage={pinInvalid ? "PIN is required" : ""}
+                    maxLength={6}
                   />
                 </div>
               </div>
@@ -145,14 +133,27 @@ export default function LoginPage() {
 
               <Button
                 type="submit"
-                className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-medium py-7 rounded-2xl transition-all duration-300 shadow-lg shadow-blue-500/25 hover:shadow-blue-500/40 hover:scale-[1.02] active:scale-[0.98]"
+                className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-medium py-7 rounded-2xl transition-all duration-300 shadow-lg shadow-blue-500/25 hover:shadow-blue-500/40 hover:scale-[1.02] active:scale-[0.98] disabled:opacity-70 disabled:cursor-not-allowed"
                 size="lg"
+                disabled={loading}
               >
                 <span className="flex items-center justify-center gap-2">
-                  Sign in
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
-                  </svg>
+                  {loading ? (
+                    <>
+                      <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                      Signing in...
+                    </>
+                  ) : (
+                    <>
+                      Sign in
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
+                      </svg>
+                    </>
+                  )}
                 </span>
               </Button>
             </form>
@@ -166,10 +167,9 @@ export default function LoginPage() {
               {/* Development Mode Credentials Display */}
               {process.env.NEXT_PUBLIC_IS_DEV === "true" && (
                 <div className="mt-4 p-4 bg-yellow-50/80 border border-yellow-200/50 rounded-xl backdrop-blur-sm">
-                  <p className="text-yellow-800 text-xs font-medium mb-2">Demo Account</p>
+                  <p className="text-yellow-800 text-xs font-medium mb-2">Demo PIN</p>
                   <div className="text-xs text-yellow-700 space-y-1">
-                    <p><span className="font-medium">Email:</span> {email || "login@example.com"}</p>
-                    <p><span className="font-medium">Password:</span> {password || "123456"}</p>
+                    <p><span className="font-medium">PIN:</span> {pin || "123456"}</p>
                   </div>
                 </div>
               )}

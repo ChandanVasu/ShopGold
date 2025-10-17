@@ -10,9 +10,8 @@ import {
   Plus,
   LayoutGrid,
   CreditCard,
-  // FileText,
+  FileText,
   ShoppingCart,
-  // Users,
   Menu,
   Layers,
   Mail,
@@ -23,6 +22,8 @@ import {
   Video,
   Wallet,
   Code,
+  HelpCircle,
+  BookOpen,
 } from "lucide-react";
 
 const SideBar = ({ onItemClick }) => {
@@ -36,6 +37,8 @@ const SideBar = ({ onItemClick }) => {
     { href: "/admin/collection", icon: <LayoutGrid size={16} />, label: "Collections" },
     { href: "/admin/orders", icon: <ShoppingCart size={16} />, label: "Orders" },
     { href: "/admin/payment", icon: <CreditCard size={16} />, label: "Payments" },
+    { href: "/admin/contact", icon: <Mail size={16} />, label: "Contact" },
+    { href: "/admin/faqs", icon: <HelpCircle size={16} />, label: "FAQs" },
     { href: "/admin/analytics", icon: <BarChart2 size={16} />, label: "Analytics" },
     { href: "/admin/images", icon: <GalleryHorizontalEnd size={16} />, label: "Media" },
     { href: "/admin/slider", icon: <Layers size={16} />, label: "Sliders" },

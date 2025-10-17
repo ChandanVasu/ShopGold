@@ -47,60 +47,9 @@ export default function VideoReelsSlider() {
     fetchReels();
   }, []);
 
-  if (isLoading) {
-    return (
-      <div className="container mx-auto px-4 md:px-20">
-        <h2 className="text-lg md:text-2xl font-bold text-center mb-2">Customer Reels</h2>
-        <p className="text-center text-xs md:text-sm mb-5 md:mb-12">Real feedback from our happy customers</p>
-
-        <Swiper
-          spaceBetween={20}
-          slidesPerView={1.1}
-          breakpoints={{
-            640: { slidesPerView: 1.5 },
-            768: { slidesPerView: 2.5 },
-            1024: { slidesPerView: 5 },
-          }}
-          className="pb-8 hide-swiper-dots"
-        >
-          {Array.from({ length: 5 }).map((_, idx) => (
-            <SwiperSlide key={idx}>
-              <div className="rounded-xl overflow-hidden aspect-[9/16]">
-                <Skeleton className="w-full h-full rounded-xl" />
-              </div>
-            </SwiperSlide>
-          ))}
-        </Swiper>
-      </div>
-    );
-  }
-
-  if (!videoReels.length) {
-    return (
-      <div className="container mx-auto px-4 md:px-20 py-12">
-        <div className="flex flex-col justify-center items-center min-h-64 bg-gray-50 rounded-xl ">
-          <div className="text-center space-y-4">
-            {/* Icon */}
-            <div className="w-16 h-16 mx-auto bg-gray-200 rounded-full flex items-center justify-center">
-              <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"
-                />
-              </svg>
-            </div>
-
-            {/* Message */}
-            <div className="space-y-2">
-              <h3 className="text-sm sm:text-base font-medium text-gray-900">No Customer Reels Yet</h3>
-              <p className="text-xs sm:text-sm text-gray-500 max-w-md">We're working on collecting amazing customer video reviews. Check back soon to see what our customers are saying!</p>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
+  // Don't render if loading or no video reels
+  if (isLoading || !videoReels.length) {
+    return null;
   }
 
   return (

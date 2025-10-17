@@ -4,13 +4,13 @@ import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { RiMenu3Line } from "react-icons/ri";
 import { DynamicIcon } from "lucide-react/dynamic";
-import { IoBagHandle } from "react-icons/io5";
+import { ShoppingCart, Search } from "lucide-react";
 import Link from "next/link";
 
 // Fallback menu items
 const FALLBACK_MENU_ITEMS = [
   { _id: "fallback-1", title: "Home", url: "/", iconName: "home" },
-  { _id: "fallback-2", title: "Products", url: "/product", iconName: "shopping-bag" },
+  { _id: "fallback-2", title: "Products", url: "/products", iconName: "shopping-bag" },
   { _id: "fallback-3", title: "About", url: "/about", iconName: "info" },
   { _id: "fallback-4", title: "Contact", url: "/contact", iconName: "phone" },
 ];
@@ -78,10 +78,13 @@ export default function FullHeader() {
             ))}
           </nav>
 
-          {/* Cart + Hamburger */}
+          {/* Search + Cart + Hamburger */}
           <div className="flex gap-1 items-center justify-end">
-            <Link href="/cart" className="text-black text-xl p-2 cursor-pointer">
-              <IoBagHandle />
+            <Link href="/products" className="text-black p-2 cursor-pointer">
+              <Search className="w-5 h-5" />
+            </Link>
+            <Link href="/cart" className="text-black p-2 cursor-pointer">
+              <ShoppingCart className="w-5 h-5" />
             </Link>
             <button onClick={() => setMenuOpen(true)} className="text-black text-xl p-2 cursor-pointer md:hidden">
               <RiMenu3Line />

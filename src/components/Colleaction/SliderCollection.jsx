@@ -8,17 +8,6 @@ import "swiper/css/pagination";
 import Link from "next/link";
 import { Skeleton } from "@heroui/skeleton";
 
-const SAMPLE_COLLECTIONS = [
-  { id: "sample-1", title: "Sample 1", image: "https://placehold.co/100x100" },
-  { id: "sample-2", title: "Sample 2", image: "https://placehold.co/100x100" },
-  { id: "sample-3", title: "Sample 3", image: "https://placehold.co/100x100" },
-  { id: "sample-4", title: "Sample 4", image: "https://placehold.co/100x100" },
-  { id: "sample-5", title: "Sample 5", image: "https://placehold.co/100x100" },
-  { id: "sample-6", title: "Sample 6", image: "https://placehold.co/100x100" },
-  { id: "sample-7", title: "Sample 7", image: "https://placehold.co/100x100" },
-  { id: "sample-8", title: "Sample 8", image: "https://placehold.co/100x100" },
-];
-
 export default function SliderCollection({ isTitle = true }) {
   const [collections, setCollections] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -31,11 +20,11 @@ export default function SliderCollection({ isTitle = true }) {
         if (Array.isArray(data) && data.length > 0) {
           setCollections(data);
         } else {
-          setCollections(SAMPLE_COLLECTIONS); // use fallback
+          setCollections([]);
         }
       } catch (error) {
         console.error("Failed to load collections:", error);
-        setCollections(SAMPLE_COLLECTIONS); // fallback on error
+        setCollections([]);
       } finally {
         setLoading(false);
       }
@@ -43,6 +32,11 @@ export default function SliderCollection({ isTitle = true }) {
 
     fetchCollections();
   }, []);
+
+  // Don't render if loading or no collections
+  if (loading || collections.length === 0) {
+    return null;
+  }
 
   return (
     <section>
@@ -54,80 +48,37 @@ export default function SliderCollection({ isTitle = true }) {
           </div>
         )}
 
-        {loading ? (
-          <Swiper
-            modules={[Navigation, Pagination, Autoplay]}
-            spaceBetween={20}
-            loop
-            pagination={{ clickable: true }}
-            autoplay={{ delay: 2000, disableOnInteraction: false }}
-            className="collection-swiper hide-swiper-dots"
-            breakpoints={{
-              0: { slidesPerView: 3 },
-              640: { slidesPerView: 3 },
-              768: { slidesPerView: 4 },
-              1024: { slidesPerView: 7 },
-            }}
-          >
-            {loading
-              ? Array.from({ length: 8 }).map((_, idx) => (
-                  <SwiperSlide key={`skeleton-${idx}`}>
-                    <div className="flex flex-col items-center text-center">
-                      <Skeleton className="md:w-28 md:h-28 w-24 h-24 rounded-full" />
-                      <Skeleton className="mt-2 h-4 w-20 rounded" />
-                    </div>
-                  </SwiperSlide>
-                ))
-              : collections.map((collection) => (
-                  <SwiperSlide key={collection.id}>
-                    <Link href={`/product?collection=${collection.title}`}>
-                      <div className="flex flex-col items-center text-center">
-                        <div className="md:w-28 md:h-28 w-24 h-24 rounded-full border border-blue-300 p-1 flex items-center justify-center shadow-sm transition-all duration-300 hover:shadow-md">
-                          <img
-                            src={collection.image || "https://placehold.co/100x100"}
-                            alt={collection.title}
-                            className="w-full h-full rounded-full object-cover object-center"
-                          />
-                        </div>
-                        <p className="mt-2 text-sm font-medium text-gray-800 line-clamp-1">{collection.title}</p>
-                      </div>
-                    </Link>
-                  </SwiperSlide>
-                ))}
-          </Swiper>
-        ) : (
-          <Swiper
-            modules={[Navigation, Pagination, Autoplay]}
-            spaceBetween={20}
-            loop
-            pagination={{ clickable: true }}
-            autoplay={{ delay: 2000, disableOnInteraction: false }}
-            className="collection-swiper hide-swiper-dots"
-            breakpoints={{
-              0: { slidesPerView: 3 },
-              640: { slidesPerView: 3 },
-              768: { slidesPerView: 4 },
-              1024: { slidesPerView: 7 },
-            }}
-          >
-            {collections.map((collection) => (
-              <SwiperSlide key={collection.id}>
-                <Link href={`/product?collection=${collection.title}`}>
-                  <div className="flex flex-col items-center text-center">
-                    <div className="md:w-28 md:h-28 w-24 h-24 rounded-full border border-blue-300 p-1 flex items-center justify-center shadow-sm transition-all duration-300 hover:shadow-md">
-                      <img
-                        src={collection.image || "https://placehold.co/100x100"}
-                        alt={collection.title}
-                        className="w-full h-full rounded-full object-cover object-center"
-                      />
-                    </div>
-                    <p className="mt-2 md:text-sm text-xs font-medium text-gray-800 line-clamp-1">{collection.title}</p>
+        <Swiper
+          modules={[Navigation, Pagination, Autoplay]}
+          spaceBetween={20}
+          loop
+          pagination={{ clickable: true }}
+          autoplay={{ delay: 2000, disableOnInteraction: false }}
+          className="collection-swiper hide-swiper-dots"
+          breakpoints={{
+            0: { slidesPerView: 3 },
+            640: { slidesPerView: 3 },
+            768: { slidesPerView: 4 },
+            1024: { slidesPerView: 7 },
+          }}
+        >
+          {collections.map((collection) => (
+            <SwiperSlide key={collection.id}>
+              <Link href={`/products?collection=${collection.title}`}>
+                <div className="flex flex-col items-center text-center">
+                  <div className="md:w-28 md:h-28 w-24 h-24 rounded-full border border-blue-300 p-1 flex items-center justify-center shadow-sm transition-all duration-300 hover:shadow-md">
+                    <img
+                      src={collection.image || "https://placehold.co/100x100"}
+                      alt={collection.title}
+                      className="w-full h-full rounded-full object-cover object-center"
+                    />
                   </div>
-                </Link>
-              </SwiperSlide>
-            ))}
-          </Swiper>
-        )}
+                  <p className="mt-2 md:text-sm text-xs font-medium text-gray-800 line-clamp-1">{collection.title}</p>
+                </div>
+              </Link>
+            </SwiperSlide>
+          ))}
+        </Swiper>
       </div>
     </section>
   );

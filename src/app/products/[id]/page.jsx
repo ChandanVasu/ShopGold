@@ -16,9 +16,10 @@ function ProductNotFound() {
           <h1 className="text-lg sm:text-xl md:text-2xl font-semibold text-gray-900 mb-3 sm:mb-4">Product Not Found</h1>
           <p className="text-xs sm:text-sm text-gray-600 mb-6 sm:mb-8">Sorry, the product you're looking for doesn't exist or has been removed.</p>
           <div className="space-y-3 sm:space-y-4">
-            <a 
-              href="/product" 
-              className="inline-block bg-gray-800 text-white px-4 sm:px-6 py-2 sm:py-3 rounded-lg text-xs sm:text-sm font-medium hover:bg-gray-700 transition-colors duration-200"
+                          <a
+              className="text-xs text-gray-700"
+              href="/products" 
+              aria-label="All Products"
             >
               Browse All Products
             </a>

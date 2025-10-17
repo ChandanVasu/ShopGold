@@ -160,7 +160,7 @@ export default function CartPage() {
                     return (
                       <div key={`${item.productId}-${index}`} className="flex gap-4 p-4 bg-gray-50 rounded-2xl hover:bg-gray-100 transition-colors">
                         {/* Product Image */}
-                        <Link href={`/product/${item.productId}`} className="flex-shrink-0">
+                        <Link href={`/products/${item.productId}`} className="flex-shrink-0">
                           <div className="relative w-20 h-20 rounded-xl overflow-hidden bg-white">
                             <img 
                               src={imageUrl} 
@@ -177,7 +177,7 @@ export default function CartPage() {
 
                         {/* Product Details */}
                         <div className="flex-1 min-w-0">
-                          <Link href={`/product/${item.productId}`}>
+                          <Link href={`/products/${item.productId}`}>
                             <h4 className="text-sm font-medium text-gray-900 line-clamp-2 hover:text-gray-700 transition-colors">
                               {item.title}
                             </h4>

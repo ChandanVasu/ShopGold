@@ -93,7 +93,7 @@ export default function Footer() {
       });
   };
 
-  const column1Links = parseLinks(storeSettings?.footerColumn1Links || fallbackData.column1Links);
+  const column1Links = parseLinks(storeSettings?.footerColumn1Links || "");
 
   const socialLinks = [
     { 
@@ -167,37 +167,39 @@ export default function Footer() {
                 {storeSettings?.footerAbout || storeSettings?.websiteDescription || fallbackData.footerAbout}
               </p>
 
-              {/* Minimal Contact Info */}
-              <div className="space-y-2">
-                {(storeSettings?.footerEmail || fallbackData.footerEmail) && (
-                  <div className="flex items-center space-x-3 text-xs sm:text-sm text-gray-600">
-                    <FaEnvelope className="w-3 h-3 text-gray-400 flex-shrink-0" />
-                    <a 
-                      href={`mailto:${storeSettings?.footerEmail || fallbackData.footerEmail}`}
-                      className="hover:text-blue-600 transition-colors truncate"
-                    >
-                      {storeSettings?.footerEmail || fallbackData.footerEmail}
-                    </a>
-                  </div>
-                )}
-                {(storeSettings?.footerPhone || fallbackData.footerPhone) && (
-                  <div className="flex items-center space-x-3 text-xs sm:text-sm text-gray-600">
-                    <FaPhone className="w-3 h-3 text-gray-400 flex-shrink-0" />
-                    <a 
-                      href={`tel:${storeSettings?.footerPhone || fallbackData.footerPhone}`}
-                      className="hover:text-blue-600 transition-colors"
-                    >
-                      {storeSettings?.footerPhone || fallbackData.footerPhone}
-                    </a>
-                  </div>
-                )}
-                {(storeSettings?.footerAddress || fallbackData.footerAddress) && (
-                  <div className="flex items-start space-x-3 text-xs sm:text-sm text-gray-600">
-                    <FaMapMarkerAlt className="w-3 h-3 text-gray-400 mt-0.5 flex-shrink-0" />
-                    <span className="leading-relaxed">{storeSettings?.footerAddress || fallbackData.footerAddress}</span>
-                  </div>
-                )}
-              </div>
+              {/* Contact Info - Only show if at least one field has data */}
+              {(storeSettings?.footerEmail || storeSettings?.footerPhone || storeSettings?.footerAddress) && (
+                <div className="space-y-2">
+                  {storeSettings?.footerEmail && (
+                    <div className="flex items-center space-x-3 text-xs sm:text-sm text-gray-600">
+                      <FaEnvelope className="w-3 h-3 text-gray-400 flex-shrink-0" />
+                      <a 
+                        href={`mailto:${storeSettings.footerEmail}`}
+                        className="hover:text-blue-600 transition-colors truncate"
+                      >
+                        {storeSettings.footerEmail}
+                      </a>
+                    </div>
+                  )}
+                  {storeSettings?.footerPhone && (
+                    <div className="flex items-center space-x-3 text-xs sm:text-sm text-gray-600">
+                      <FaPhone className="w-3 h-3 text-gray-400 flex-shrink-0" />
+                      <a 
+                        href={`tel:${storeSettings.footerPhone}`}
+                        className="hover:text-blue-600 transition-colors"
+                      >
+                        {storeSettings.footerPhone}
+                      </a>
+                    </div>
+                  )}
+                  {storeSettings?.footerAddress && (
+                    <div className="flex items-start space-x-3 text-xs sm:text-sm text-gray-600">
+                      <FaMapMarkerAlt className="w-3 h-3 text-gray-400 mt-0.5 flex-shrink-0" />
+                      <span className="leading-relaxed">{storeSettings.footerAddress}</span>
+                    </div>
+                  )}
+                </div>
+              )}
 
               {/* Social Media */}
               {socialLinks.length > 0 && (
@@ -218,18 +220,18 @@ export default function Footer() {
               )}
             </div>
 
-            {/* Menu Column */}
+            {/* Company Pages - Dynamic 3 Column Grid */}
             {column1Links.length > 0 && (
-              <div className="lg:text-center lg:justify-self-center">
-                <h3 className="text-xs sm:text-sm font-semibold text-gray-900 mb-3 sm:mb-4">
-                  {storeSettings?.footerColumn1Title || fallbackData.column1Title}
+              <div className="lg:justify-self-center">
+                <h3 className="text-xs sm:text-sm font-semibold text-gray-900 mb-3 sm:mb-4 text-center lg:text-left">
+                  {storeSettings?.footerColumn1Title || "Company"}
                 </h3>
-                <ul className="grid grid-cols-2 sm:grid-cols-1 gap-x-4 gap-y-2 sm:gap-x-0 sm:gap-y-3">
+                <ul className="grid grid-cols-3 gap-x-4 gap-y-2 sm:gap-y-3">
                   {column1Links.map((link, index) => (
                     <li key={index}>
                       <Link 
                         href={link.url}
-                        className="text-xs sm:text-sm text-gray-600 hover:text-gray-900 transition-colors duration-200"
+                        className="text-xs sm:text-sm text-gray-600 hover:text-gray-900 transition-colors duration-200 block text-center lg:text-left"
                       >
                         {link.text}
                       </Link>
@@ -321,24 +323,10 @@ export default function Footer() {
       </div>      {/* Bottom Bar */}
       <div className="bg-gray-100 border-t border-gray-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 sm:py-4">
-          <div className="flex flex-col sm:flex-row justify-between items-center space-y-2 sm:space-y-0">
-            <p className="text-xs text-gray-500">
+            <div className="flex flex-col sm:flex-row justify-center items-center space-y-2 sm:space-y-0">
+            <p className="text-xs text-gray-500 text-center">
               {storeSettings?.copyrightText || `© ${new Date().getFullYear()} ${storeName}. All rights reserved.`}
             </p>
-            
-            <div className="flex items-center space-x-3 sm:space-x-4 text-xs text-gray-500">
-              <Link href="/privacy-policy" className="hover:text-gray-700 transition-colors">
-                Privacy
-              </Link>
-              <span>•</span>
-              <Link href="/terms" className="hover:text-gray-700 transition-colors">
-                Terms
-              </Link>
-              <span>•</span>
-              <Link href="/cookies" className="hover:text-gray-700 transition-colors">
-                Cookies
-              </Link>
-            </div>
           </div>
         </div>
       </div>
