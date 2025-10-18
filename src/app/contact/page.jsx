@@ -1,8 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Input, Textarea, Button } from "@heroui/react";
-import { Send } from "lucide-react";
+import { Send, Mail, Phone, MapPin } from "lucide-react";
 
 export default function ContactPage() {
   const [formData, setFormData] = useState({
@@ -14,6 +14,23 @@ export default function ContactPage() {
   });
   const [loading, setLoading] = useState(false);
   const [status, setStatus] = useState("");
+  const [storeSettings, setStoreSettings] = useState(null);
+
+  useEffect(() => {
+    const fetchSettings = async () => {
+      try {
+        const res = await fetch("/api/setting?type=store");
+        const data = await res.json();
+        if (data && Object.keys(data).length > 0) {
+          setStoreSettings(data);
+        }
+      } catch (err) {
+        console.error("Failed to load store settings:", err);
+      }
+    };
+
+    fetchSettings();
+  }, []);
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -74,9 +91,69 @@ export default function ContactPage() {
           </p>
         </div>
 
-        {/* Contact Form */}
-        <div className="max-w-3xl mx-auto">
-          <form onSubmit={handleSubmit} className="bg-white rounded-2xl p-8 shadow-sm">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 max-w-6xl mx-auto">
+          {/* Contact Information Cards */}
+          {(storeSettings?.footerEmail || storeSettings?.footerPhone || storeSettings?.footerAddress) && (
+            <div className="lg:col-span-1 space-y-6">
+              {storeSettings?.footerEmail && (
+                <div className="bg-white rounded-2xl p-6 shadow-sm hover:shadow-md transition-shadow">
+                  <div className="flex items-start gap-4">
+                    <div className="flex-shrink-0 w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center">
+                      <Mail className="w-6 h-6 text-blue-600" />
+                    </div>
+                    <div className="flex-1">
+                      <h3 className="font-semibold text-gray-900 mb-1">Email</h3>
+                      <a
+                        href={`mailto:${storeSettings.footerEmail}`}
+                        className="text-gray-600 hover:text-blue-600 transition-colors break-words"
+                      >
+                        {storeSettings.footerEmail}
+                      </a>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {storeSettings?.footerPhone && (
+                <div className="bg-white rounded-2xl p-6 shadow-sm hover:shadow-md transition-shadow">
+                  <div className="flex items-start gap-4">
+                    <div className="flex-shrink-0 w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center">
+                      <Phone className="w-6 h-6 text-green-600" />
+                    </div>
+                    <div className="flex-1">
+                      <h3 className="font-semibold text-gray-900 mb-1">Phone</h3>
+                      <a
+                        href={`tel:${storeSettings.footerPhone}`}
+                        className="text-gray-600 hover:text-green-600 transition-colors"
+                      >
+                        {storeSettings.footerPhone}
+                      </a>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {storeSettings?.footerAddress && (
+                <div className="bg-white rounded-2xl p-6 shadow-sm hover:shadow-md transition-shadow">
+                  <div className="flex items-start gap-4">
+                    <div className="flex-shrink-0 w-12 h-12 bg-purple-100 rounded-xl flex items-center justify-center">
+                      <MapPin className="w-6 h-6 text-purple-600" />
+                    </div>
+                    <div className="flex-1">
+                      <h3 className="font-semibold text-gray-900 mb-1">Office</h3>
+                      <p className="text-gray-600 leading-relaxed">
+                        {storeSettings.footerAddress}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Contact Form */}
+          <div className={`${(storeSettings?.footerEmail || storeSettings?.footerPhone || storeSettings?.footerAddress) ? 'lg:col-span-2' : 'lg:col-span-3 max-w-3xl mx-auto w-full'}`}>
+            <form onSubmit={handleSubmit} className="bg-white rounded-2xl p-8 shadow-sm">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
                 <Input
                   label="Name *"
@@ -150,7 +227,8 @@ export default function ContactPage() {
                   {status}
                 </p>
               )}
-          </form>
+            </form>
+          </div>
         </div>
       </div>
     </div>

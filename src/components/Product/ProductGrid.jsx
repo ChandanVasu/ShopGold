@@ -75,6 +75,9 @@ export default function StyleOne() {
 
     setWishlist(updatedWishlist);
     localStorage.setItem("wishlist", JSON.stringify(updatedWishlist));
+    
+    // Dispatch custom event to update header count
+    window.dispatchEvent(new Event("wishlistUpdated"));
   };
 
   const isInWishlist = (productId) => {
@@ -121,8 +124,28 @@ export default function StyleOne() {
     );
   };
 
-  // Don't render if loading or no products
-  if (loading || products.length === 0) {
+  // Show skeleton while loading
+  if (loading) {
+    return (
+      <div className="px-4 md:px-20 container mx-auto">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 md:gap-6 gap-3">
+          {[...Array(10)].map((_, index) => (
+            <div key={index} className="bg-gray-50 border border-gray-100 rounded-xl overflow-hidden">
+              <Skeleton className="w-full aspect-[4/5]" />
+              <div className="p-2 sm:p-4 bg-white">
+                <Skeleton className="w-full h-4 mb-2 rounded" />
+                <Skeleton className="w-24 h-4 mb-2 rounded" />
+                <Skeleton className="w-full h-8 rounded-lg" />
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  // Don't render if no products
+  if (products.length === 0) {
     return null;
   }
 
@@ -142,6 +165,9 @@ export default function StyleOne() {
                 <Link href={`/products/${product._id}`}>
                   <div className="relative">
                   <img src={product.images?.[0] || "https://placehold.co/400x500?text=No+Image"} alt={product.title} className="w-full aspect-[4/5] object-cover" />
+
+                  {/* Product Label */}
+                  {product.productLabel && <ProductLabel label={product.productLabel} />}
 
                   {/* Rating Badge at bottom */}
                   {product.rating && (
@@ -225,7 +251,7 @@ export default function StyleOne() {
         <div className="flex justify-center mt-8">
           <Link href="/products">
             <Button size="lg" className="bg-gray-800 text-white font-medium rounded-lg px-8">
-              View More Products
+              View More
             </Button>
           </Link>
         </div>

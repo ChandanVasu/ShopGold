@@ -101,6 +101,9 @@ function AllProductsPage() {
 
     setWishlist(updatedWishlist);
     localStorage.setItem("wishlist", JSON.stringify(updatedWishlist));
+    
+    // Dispatch custom event to update header count
+    window.dispatchEvent(new Event("wishlistUpdated"));
   };
 
   const isInWishlist = (productId) => {
@@ -182,6 +185,21 @@ function AllProductsPage() {
                 <Link href={`/products/${product._id}`}>
                   <div className="relative">
                     <img src={product.images?.[0] || "https://placehold.co/400x500?text=No+Image"} alt={product.title} className="w-full aspect-[4/5] object-cover" />
+
+                    {/* Product Label */}
+                    {product.productLabel && (
+                      <span className={`absolute top-1 sm:top-2 left-1 sm:left-2 px-1.5 sm:px-2 py-0.5 sm:py-1 text-xs font-medium rounded-lg backdrop-blur-sm ${
+                        product.productLabel === 'New' ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white' :
+                        product.productLabel === 'Hot' ? 'bg-gradient-to-r from-red-500 to-red-600 text-white' :
+                        product.productLabel === 'Sale' ? 'bg-gradient-to-r from-pink-500 to-pink-600 text-white' :
+                        product.productLabel === 'Best Seller' ? 'bg-gradient-to-r from-green-500 to-green-600 text-white' :
+                        product.productLabel === 'Trending' ? 'bg-gradient-to-r from-yellow-400 to-orange-400 text-black' :
+                        product.productLabel === 'Limited Edition' ? 'bg-gradient-to-r from-purple-500 to-purple-600 text-white' :
+                        'bg-gradient-to-r from-gray-700 to-gray-800 text-white'
+                      }`}>
+                        {product.productLabel}
+                      </span>
+                    )}
 
                     {/* Rating Badge at bottom */}
                     {product.rating && (

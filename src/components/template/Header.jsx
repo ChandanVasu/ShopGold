@@ -4,7 +4,7 @@ import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { RiMenu3Line } from "react-icons/ri";
 import { DynamicIcon } from "lucide-react/dynamic";
-import { ShoppingCart, Search } from "lucide-react";
+import { ShoppingCart, Search, Heart } from "lucide-react";
 import Link from "next/link";
 
 // Fallback menu items
@@ -19,6 +19,7 @@ export default function FullHeader() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [menuItems, setMenuItems] = useState([]);
   const [storeSettings, setStoreSettings] = useState(null);
+  const [wishlistCount, setWishlistCount] = useState(0);
 
   useEffect(() => {
     const fetchMenu = async () => {
@@ -49,6 +50,25 @@ export default function FullHeader() {
 
     fetchMenu();
     fetchSettings();
+
+    // Load wishlist count
+    const updateWishlistCount = () => {
+      const savedWishlist = JSON.parse(localStorage.getItem("wishlist") || "[]");
+      setWishlistCount(savedWishlist.length);
+    };
+
+    updateWishlistCount();
+
+    // Listen for storage changes
+    window.addEventListener("storage", updateWishlistCount);
+    
+    // Custom event for same-page wishlist updates
+    window.addEventListener("wishlistUpdated", updateWishlistCount);
+
+    return () => {
+      window.removeEventListener("storage", updateWishlistCount);
+      window.removeEventListener("wishlistUpdated", updateWishlistCount);
+    };
   }, []);
 
   const logoSrc = storeSettings?.logoImage || "/logonc.svg";
@@ -61,7 +81,16 @@ export default function FullHeader() {
     <>
       <header className="w-full text-sm bg-white shadow sticky top-0 z-40">
         <div className="container mx-auto flex items-center justify-between h-12 px-4 md:px-20">
-          <Link href={"/"} className="flex items-center">
+          {/* Mobile: Menu button on left - Only show if menu items exist */}
+          {menuItems.length > 0 && (
+            <div className="flex items-center gap-2 md:hidden">
+              <button onClick={() => setMenuOpen(true)} className="text-black text-xl p-2 cursor-pointer">
+                <RiMenu3Line />
+              </button>
+            </div>
+          )}
+
+          <Link href={"/"} className={`flex items-center ${menuItems.length > 0 ? 'absolute left-1/2 transform -translate-x-1/2 md:static md:transform-none' : ''}`}>
             {storeSettings?.logoImage ? (
               <img src={logoSrc} alt={storeName} className="h-8 w-auto" />
             ) : (
@@ -69,26 +98,33 @@ export default function FullHeader() {
             )}
           </Link>
 
-          {/* Desktop Menu */}
-          <nav className="hidden md:flex gap-4 items-center">
-            {displayMenuItems.map(({ _id, title, url }) => (
-              <a key={_id} href={url} className="flex items-center gap-1 text-sm capitalize">
-                <p className="capitalize">{title}</p>
-              </a>
-            ))}
-          </nav>
+          {/* Desktop Menu - Only show if menu items exist */}
+          {menuItems.length > 0 && (
+            <nav className="hidden md:flex gap-4 items-center">
+              {menuItems.map(({ _id, title, url }) => (
+                <a key={_id} href={url} className="flex items-center gap-1 text-sm capitalize">
+                  <p className="capitalize">{title}</p>
+                </a>
+              ))}
+            </nav>
+          )}
 
-          {/* Search + Cart + Hamburger */}
+          {/* Search + Wishlist + Cart */}
           <div className="flex gap-1 items-center justify-end">
             <Link href="/products" className="text-black p-2 cursor-pointer">
               <Search className="w-5 h-5" />
             </Link>
+            <Link href="/wishlist" className="text-black p-2 cursor-pointer relative">
+              <Heart className="w-5 h-5" />
+              {wishlistCount > 0 && (
+                <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] font-bold rounded-full w-4 h-4 flex items-center justify-center">
+                  {wishlistCount}
+                </span>
+              )}
+            </Link>
             <Link href="/cart" className="text-black p-2 cursor-pointer">
               <ShoppingCart className="w-5 h-5" />
             </Link>
-            <button onClick={() => setMenuOpen(true)} className="text-black text-xl p-2 cursor-pointer md:hidden">
-              <RiMenu3Line />
-            </button>
           </div>
         </div>
       </header>

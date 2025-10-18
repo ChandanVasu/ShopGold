@@ -38,44 +38,88 @@ export default function StyleOne() {
     fetchSliderImages();
   }, []);
 
-  // Don't render anything while loading or if no images
-  if (isLoading || images.length === 0) {
+  // Show skeleton while loading
+  if (isLoading) {
+    return (
+      <div className="w-full px-2 sm:px-4">
+        <Skeleton className="w-full h-[30vh] sm:h-[35vh] md:h-[50vh] lg:h-[60vh] rounded-xl" />
+      </div>
+    );
+  }
+
+  // Don't render if no images
+  if (images.length === 0) {
     return null;
   }
 
   return (
     <div className="w-full px-2 sm:px-4">
-      <Swiper
-        modules={[Autoplay, Pagination, Navigation]}
-        slidesPerView={1}
-        className="hide-swiper-dots rounded-xl overflow-hidden"
-        loop={true}
-        autoplay={{
-          delay: 4000,
-          disableOnInteraction: false,
-        }}
-        pagination={{
-          clickable: true,
-          bulletClass: "swiper-pagination-bullet opacity-60",
-          bulletActiveClass: "swiper-pagination-bullet-active opacity-100",
-        }}
-        navigation={{
-          nextEl: ".swiper-button-next",
-          prevEl: ".swiper-button-prev",
-        }}
-      >
-        {images.map((item, index) => (
-          <SwiperSlide key={item._id || index}>
-            <div className="relative group">
-              <a href={item.url || "#"} className="block">
-                <div className="w-full h-[150px] sm:h-[200px] md:h-[400px] lg:h-[500px] overflow-hidden">
-                  <img src={item.image} alt={item.title || `Slide ${index + 1}`} className="w-full h-full object-cover" loading={index === 0 ? "eager" : "lazy"} />
-                </div>
-              </a>
-            </div>
-          </SwiperSlide>
-        ))}
-      </Swiper>
+      <div className="relative">
+        <Swiper
+          modules={[Autoplay, Pagination, Navigation]}
+          slidesPerView={1}
+          className="rounded-xl overflow-hidden"
+          loop={images.length > 1}
+          autoplay={images.length > 1 ? {
+            delay: 4000,
+            disableOnInteraction: false,
+          } : false}
+          pagination={images.length > 1 ? {
+            clickable: true,
+            dynamicBullets: true,
+            dynamicMainBullets: 3,
+            el: '.slider-pagination',
+          } : false}
+          navigation={false}
+        >
+          {images.map((item, index) => (
+            <SwiperSlide key={item._id || index}>
+              <div className="relative group">
+                <a href={item.url || "#"} className="block">
+                  <div className="w-full h-[30vh] sm:h-[35vh] md:h-[50vh] lg:h-[60vh] overflow-hidden">
+                    <img src={item.image} alt={item.title || `Slide ${index + 1}`} className="w-full h-full object-cover" loading={index === 0 ? "eager" : "lazy"} />
+                  </div>
+                </a>
+              </div>
+            </SwiperSlide>
+          ))}
+        </Swiper>
+
+        {/* Pagination outside image */}
+        {images.length > 1 && (
+          <div className="slider-pagination flex justify-center mt-4"></div>
+        )}
+      </div>
+
+      <style jsx global>{`
+        .slider-pagination {
+          position: relative !important;
+          display: flex;
+          justify-content: center;
+          align-items: center;
+        }
+        .slider-pagination .swiper-pagination-bullet {
+          width: 8px;
+          height: 8px;
+          background: rgba(107, 114, 128, 0.5);
+          opacity: 0.5;
+          transition: all 0.3s ease;
+          margin: 0 4px !important;
+        }
+        .slider-pagination .swiper-pagination-bullet-active {
+          background: rgb(75, 85, 99);
+          opacity: 1;
+          width: 24px;
+          border-radius: 4px;
+        }
+        .slider-pagination .swiper-pagination-bullet-active-main {
+          opacity: 1;
+        }
+        .slider-pagination .swiper-pagination-bullet-active-prev,
+        .slider-pagination .swiper-pagination-bullet-active-next {
+          opacity: 0.7;
+        }
+      `}</style>
     </div>
   );
 }

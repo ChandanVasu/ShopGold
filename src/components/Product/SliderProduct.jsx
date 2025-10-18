@@ -211,13 +211,17 @@ export default function SliderProduct({ header, products = [], type = "product" 
                         alt={product.title} 
                         className="w-full aspect-[4/5] object-cover" 
                       />
+                      
+                      {/* Product Label */}
                       <ProductLabel label={product.productLabel} />
 
                       {/* Rating Badge at bottom */}
                       {product.rating && (
-                        <div className="absolute bottom-1 sm:bottom-2 left-1 sm:left-2 bg-white/90 backdrop-blur-sm px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-md flex items-center gap-1">
-                          <span className="text-xs text-green-600 font-semibold">★</span>
-                          <span className="text-xs text-gray-700 font-medium">{product.rating}/5</span>
+                        <div className="absolute bottom-1 sm:bottom-2 left-1 sm:left-2 bg-green-600 backdrop-blur-sm px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-md flex items-center gap-1">
+                          <span className="text-xs text-white font-medium">
+                            {product.rating}.{Math.floor(Math.random() * 10) + 1}
+                          </span>
+                          <span className="text-xs text-white font-semibold">★</span>
                         </div>
                       )}
 
