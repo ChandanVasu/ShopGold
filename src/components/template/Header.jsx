@@ -77,7 +77,7 @@ export default function FullHeader() {
   return (
     <>
       <header className="w-full text-sm bg-white shadow sticky top-0 z-40">
-        <div className="container mx-auto flex items-center h-12 px-1 md:px-20">
+        <div className="container mx-auto flex items-center h-12 px-2 md:px-20">
           {/* Mobile: Menu button on left - Always show */}
           <button onClick={() => setMenuOpen(true)} className="text-black text-xl p-2 cursor-pointer md:hidden">
             <RiMenu3Line />
