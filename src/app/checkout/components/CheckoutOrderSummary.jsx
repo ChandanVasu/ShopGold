@@ -4,7 +4,7 @@ import ProductData from "./Product";
 import StripeCardForm from "../paymentMethod/StripeCardForm";
 import PayPalButton from "../paymentMethod/PayPalButton";
 import orderCreate from "./orderCreate";
-import { usePaymentSettings } from "../layout";
+import { usePaymentSettings } from "../PaymentContext";
 import { Tabs, Tab } from "@heroui/react";
 
 export default function CheckoutOrderSummary({ billingDetails, setErrors }) {

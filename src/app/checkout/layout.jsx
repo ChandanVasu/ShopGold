@@ -1,14 +1,10 @@
 "use client";
-import { useEffect, useState, createContext, useContext } from "react";
+import { useEffect, useState } from "react";
 import { Elements } from "@stripe/react-stripe-js";
 import { loadStripe } from "@stripe/stripe-js";
 import { PayPalScriptProvider } from "@paypal/react-paypal-js";
 import { Spinner } from "@heroui/react";
-
-// Create context for payment settings
-const PaymentContext = createContext(null);
-
-export const usePaymentSettings = () => useContext(PaymentContext);
+import PaymentContext from "./PaymentContext";
 
 export default function CheckoutLayout({ children }) {
   const [stripePromise, setStripePromise] = useState(null);
