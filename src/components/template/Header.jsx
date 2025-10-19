@@ -69,7 +69,7 @@ export default function FullHeader() {
 
   // Memoize derived values
   const logoSrc = useMemo(() => storeSettings?.logoImage || "/logonc.svg", [storeSettings?.logoImage]);
-  const storeName = useMemo(() => storeSettings?.textLogo || storeSettings?.storeName || "Shop Gold", [storeSettings]);
+  const storeName = useMemo(() => storeSettings?.textLogo || storeSettings?.storeName || "", [storeSettings]);
   const displayMenuItems = useMemo(() => menuItems, [menuItems]);
 
   const closeMenu = useCallback(() => setMenuOpen(false), []);
@@ -101,14 +101,14 @@ export default function FullHeader() {
 
           {/* Search + Wishlist + Cart */}
           <div className="flex gap-1 items-center ml-auto">
-            <Link href="/products" className="text-black p-2 cursor-pointer hover:text-orange-500 transition-colors">
+            <Link href="/products" className="text-black p-2 cursor-pointer hover:text-orange-500 transition-colors" prefetch={true}>
               <Search className="w-5 h-5" />
             </Link>
-            <Link href="/wishlist" className="text-black p-2 cursor-pointer relative hover:text-orange-500 transition-colors">
+            <Link href="/wishlist" className="text-black p-2 cursor-pointer relative hover:text-orange-500 transition-colors" prefetch={true}>
               <Heart className="w-5 h-5" />
               {wishlistCount > 0 && <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] font-bold rounded-full w-4 h-4 flex items-center justify-center">{wishlistCount}</span>}
             </Link>
-            <Link href="/cart" className="text-black p-2 cursor-pointer hover:text-orange-500 transition-colors">
+            <Link href="/cart" className="text-black p-2 cursor-pointer hover:text-orange-500 transition-colors" prefetch={true}>
               <ShoppingCart className="w-5 h-5" />
             </Link>
           </div>

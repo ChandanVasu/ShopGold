@@ -47,14 +47,26 @@ export default function SliderCollection({ isTitle = true }) {
               <p className="text-center text-xs md:text-sm md:mb-8 mb-4">Discover a wide range of collections tailored to your interests</p>
             </div>
           )}
-          <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-7 gap-4">
+          <Swiper
+            modules={[Navigation, Pagination, Autoplay]}
+            spaceBetween={20}
+            className="collection-swiper hide-swiper-dots"
+            breakpoints={{
+              0: { slidesPerView: 3 },
+              640: { slidesPerView: 3 },
+              768: { slidesPerView: 4 },
+              1024: { slidesPerView: 7 },
+            }}
+          >
             {[...Array(7)].map((_, index) => (
-              <div key={index} className="flex flex-col items-center">
-                <Skeleton className="md:w-28 md:h-28 w-24 h-24 rounded-full" />
-                <Skeleton className="w-20 h-4 mt-2 rounded" />
-              </div>
+              <SwiperSlide key={index}>
+                <div className="flex flex-col items-center">
+                  <Skeleton className="md:w-28 md:h-28 w-24 h-24 rounded-full" />
+                  <Skeleton className="w-20 h-4 mt-2 rounded" />
+                </div>
+              </SwiperSlide>
             ))}
-          </div>
+          </Swiper>
         </div>
       </section>
     );

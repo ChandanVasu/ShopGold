@@ -17,10 +17,7 @@ export default function StyleOne() {
   useEffect(() => {
     async function fetchProducts() {
       try {
-        const res = await fetch("/api/product", {
-          cache: "force-cache",
-          next: { revalidate: 300 },
-        });
+        const res = await fetch("/api/product", );
         if (!res.ok) throw new Error("Network response was not ok");
         const data = await res.json();
         if (Array.isArray(data) && data.length > 0) {

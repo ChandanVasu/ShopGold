@@ -20,10 +20,7 @@ export default function WishlistPage() {
 
     const fetchProducts = async () => {
       try {
-        const res = await fetch("/api/product", {
-          cache: "force-cache",
-          next: { revalidate: 300 }
-        });
+        const res = await fetch("/api/product");
         if (!res.ok) throw new Error("Failed to fetch products");
 
         const allProducts = await res.json();

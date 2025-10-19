@@ -44,6 +44,7 @@ const SideBar = ({ onItemClick }) => {
     { href: "/admin/slider", icon: <Layers size={16} />, label: "Sliders" },
     { href: "/admin/reel", icon: <Video size={16} />, label: "Reels" },
     { href: "/admin/menu", icon: <Menu size={16} />, label: "Menus" },
+    { href: "/admin/support-benefits", icon: <FileText size={16} />, label: "Support Benefits" },
     { href: "/admin/news-latter", icon: <Mail size={16} />, label: "Newsletter" },
     { href: "/admin/settings", icon: <Settings size={16} />, label: "Store Settings" },
     { href: "/admin/payment-gateway", icon: <Wallet size={16} />, label: "Payment Gateway" },

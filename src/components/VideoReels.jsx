@@ -50,8 +50,36 @@ export default function VideoReelsSlider() {
     fetchReels();
   }, []);
 
-  // Don't render if loading or no video reels
-  if (isLoading || !videoReels.length) {
+  // Show skeleton while loading
+  if (isLoading) {
+    return (
+      <div className="container mx-auto px-4 md:px-20">
+        <h2 className="text-sm sm:text-lg md:text-xl font-bold text-center mb-2 sm:mb-3">Customer Reels</h2>
+        <p className="text-center text-xs sm:text-sm mb-8 sm:mb-12">Real feedback from our happy customers</p>
+        <Swiper
+          spaceBetween={20}
+          slidesPerView={1.1}
+          breakpoints={{
+            640: { slidesPerView: 1.5 },
+            768: { slidesPerView: 2.5 },
+            1024: { slidesPerView: 5 },
+          }}
+          className="pb-8"
+        >
+          {Array.from({ length: 5 }).map((_, idx) => (
+            <SwiperSlide key={idx}>
+              <div className="bg-gray-100 rounded-2xl overflow-hidden">
+                <Skeleton className="w-full aspect-[9/16] rounded-none" />
+              </div>
+            </SwiperSlide>
+          ))}
+        </Swiper>
+      </div>
+    );
+  }
+
+  // Don't render if no video reels
+  if (!videoReels.length) {
     return null;
   }
 

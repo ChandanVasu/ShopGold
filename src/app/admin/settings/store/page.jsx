@@ -204,8 +204,20 @@ export default function StoreSettingsPage() {
                 }}
               >
                 {settings.logoImage ? (
-                  <div className="p-3 lg:p-4">
+                  <div className="relative p-3 lg:p-4 group">
                     <img src={settings.logoImage} alt="Logo" className="max-h-24 lg:max-h-32 object-contain rounded-lg" />
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setSettings({ ...settings, logoImage: "" });
+                      }}
+                      className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1.5 opacity-0 group-hover:opacity-100 transition-opacity"
+                      title="Remove logo"
+                    >
+                      <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                    </button>
                   </div>
                 ) : (
                   <div className="text-center p-4 lg:p-6">
@@ -228,8 +240,20 @@ export default function StoreSettingsPage() {
                 }}
               >
                 {settings.faviconImage ? (
-                  <div className="p-3 lg:p-4">
+                  <div className="relative p-3 lg:p-4 group">
                     <img src={settings.faviconImage} alt="Favicon" className="h-16 w-16 lg:h-20 lg:w-20 object-contain rounded-lg mx-auto" />
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setSettings({ ...settings, faviconImage: "" });
+                      }}
+                      className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1.5 opacity-0 group-hover:opacity-100 transition-opacity"
+                      title="Remove favicon"
+                    >
+                      <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                    </button>
                   </div>
                 ) : (
                   <div className="text-center p-4 lg:p-6">

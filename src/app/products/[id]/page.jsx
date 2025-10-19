@@ -1,6 +1,9 @@
-import { notFound } from "next/navigation";
+"use client";
+
+import { useEffect, useState } from "react";
+import { useParams } from "next/navigation";
 import Product from "./product";
-import getDomainName from "@/lib/getServerDomainName";
+import { Spinner } from "@heroui/react";
 
 // Component for product not found
 function ProductNotFound() {
@@ -16,7 +19,7 @@ function ProductNotFound() {
           <h1 className="text-lg sm:text-xl md:text-2xl font-semibold text-gray-900 mb-3 sm:mb-4">Product Not Found</h1>
           <p className="text-xs sm:text-sm text-gray-600 mb-6 sm:mb-8">Sorry, the product you're looking for doesn't exist or has been removed.</p>
           <div className="space-y-3 sm:space-y-4">
-                          <a
+            <a
               className="text-xs text-gray-700"
               href="/products" 
               aria-label="All Products"
@@ -37,64 +40,56 @@ function ProductNotFound() {
   );
 }
 
-export default async function Page(props) {
-  const { params } = props;
-  const { id } = await params;
-
-  const domainName = await getDomainName();
-
-  const res = await fetch(`${domainName}/api/product/${id}`, {
-    cache: "no-store",
-  });
-
-  if (!res.ok) {
-    return <ProductNotFound />;
-  }
-
-  const data = await res.json();
-  
-  // Additional check to ensure product data exists
-  if (!data || Object.keys(data).length === 0) {
-    return <ProductNotFound />;
-  }
-  
-  return <Product data={data} />;
-}
-
-export async function generateMetadata(props) {
-  const params = await props.params;
+export default function Page() {
+  const params = useParams();
   const { id } = params;
+  const [product, setProduct] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
 
-  const domainName = await getDomainName();
+  useEffect(() => {
+    const fetchProduct = async () => {
+      try {
+        const res = await fetch(`/api/product/${id}`, {
+          cache: "force-cache",
+          next: { revalidate: 300 }
+        });
 
-  const res = await fetch(`${domainName}/api/product/${id}`, {
-    cache: "force-cache",
-  });
+        if (!res.ok) {
+          setError(true);
+          return;
+        }
 
-  if (!res.ok) {
-    return {
-      title: "Product Not Found",
-      description: "The product you're looking for doesn't exist.",
+        const data = await res.json();
+        
+        if (!data || Object.keys(data).length === 0) {
+          setError(true);
+          return;
+        }
+
+        setProduct(data);
+      } catch (err) {
+        console.error("Error fetching product:", err);
+        setError(true);
+      } finally {
+        setLoading(false);
+      }
     };
+
+    fetchProduct();
+  }, [id]);
+
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center min-h-screen">
+        <Spinner color="secondary" size="lg" />
+      </div>
+    );
   }
 
-  const product = await res.json();
-
-  // Additional check for empty or invalid product data
-  if (!product || !product.title || Object.keys(product).length === 0) {
-    return {
-      title: "Product Not Found",
-      description: "The product you're looking for doesn't exist.",
-    };
+  if (error || !product) {
+    return <ProductNotFound />;
   }
-
-  return {
-    title: product.title,
-    description: product.shortDescription || product.description?.substring(0, 160),
-    openGraph: {
-      title: product.title,
-      description: product.shortDescription || product.description,
-      images: product.images?.map((img) => img.url) || [],
-    },
-  };
+  
+  return <Product data={product} />;
 }
