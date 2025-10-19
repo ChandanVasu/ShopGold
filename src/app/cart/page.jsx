@@ -210,18 +210,19 @@ export default function CartPage() {
 
                               {/* Price */}
                               <div className="text-sm font-semibold text-gray-900">
-                                {item.currency}{(item.price * item.quantity).toFixed(2)}
+                                {getProductDetails(item.productId)?.currencySymbol || item.currency || "$"}
+                                {(item.price * item.quantity).toFixed(2)}
                               </div>
-                            </div>
 
-                            {/* Remove Button */}
-                            <button
-                              onClick={() => handleRemove(item.productId)}
-                              className="p-2 text-red-600 hover:bg-red-50 rounded-xl transition-colors"
-                              title="Remove item"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </button>
+                              {/* Remove Button */}
+                              <button
+                                onClick={() => handleRemove(item.productId)}
+                                className="p-2 text-red-600 hover:bg-red-50 rounded-xl transition-colors"
+                                title="Remove item"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
+                            </div>
                           </div>
                         </div>
                       </div>
@@ -239,7 +240,9 @@ export default function CartPage() {
                 <div className="space-y-4 mb-6">
                   <div className="flex justify-between text-sm">
                     <span className="text-gray-600">Subtotal ({getTotalItems()} items)</span>
-                    <span className="font-medium text-gray-900">${getTotalPrice()}</span>
+                    <span className="font-medium text-gray-900">
+                      {products[0]?.currencySymbol || "$"}{getTotalPrice()}
+                    </span>
                   </div>
                   <div className="flex justify-between text-sm">
                     <span className="text-gray-600">Shipping</span>
@@ -248,7 +251,9 @@ export default function CartPage() {
                   <div className="border-t border-gray-100 pt-4">
                     <div className="flex justify-between">
                       <span className="text-base font-medium text-gray-900">Total</span>
-                      <span className="text-lg font-semibold text-gray-900">${getTotalPrice()}</span>
+                      <span className="text-lg font-semibold text-gray-900">
+                        {products[0]?.currencySymbol || "$"}{getTotalPrice()}
+                      </span>
                     </div>
                   </div>
                 </div>

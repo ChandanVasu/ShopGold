@@ -41,21 +41,6 @@ export default function WishlistPage() {
     fetchProducts();
   }, []);
 
-      const getProductDetails = async (productId) => {
-      try {
-        const res = await fetch("/api/product", {
-          cache: "force-cache",
-          next: { revalidate: 300 }
-        });
-        if (!res.ok) throw new Error("Failed to fetch");
-        const products = await res.json();
-        return products.find((p) => p._id === productId);
-      } catch (error) {
-        console.error("Error fetching product:", error);
-        return null;
-      }
-    };
-
   const handleRemoveFromWishlist = (productId) => {
     const updatedWishlist = wishlist.filter((item) => item.productId !== productId);
     setWishlist(updatedWishlist);
@@ -66,13 +51,14 @@ export default function WishlistPage() {
   };
 
   const handleAddToCart = async (item) => {
+    const productDetails = products.find((p) => p._id === item.productId);
     const product = {
       _id: item.productId,
       title: item.title,
       images: [item.image],
       salePrice: item.salePrice,
       regularPrice: item.regularPrice,
-      currencySymbol: item.currency,
+      currencySymbol: productDetails?.currencySymbol || item.currency || "$",
     };
     await addToCart(product);
   };
@@ -154,9 +140,10 @@ export default function WishlistPage() {
                 <h3 className="text-lg font-medium text-gray-900 mb-6">Saved Items</h3>
                 <div className="space-y-4">
                   {wishlist.map((item) => {
-                    const product = getProductDetails(item.productId);
+                    const product = products.find((p) => p._id === item.productId);
                     const discount = calculateDiscount(item.regularPrice, item.salePrice);
                     const imageUrl = item.image || "https://placehold.co/400x500?text=No+Image";
+                    const currencySymbol = product?.currencySymbol || item.currency || "$";
 
                     return (
                       <div key={item.productId} className="flex gap-4 p-4 bg-gray-50 rounded-2xl hover:bg-gray-100 transition-colors">
@@ -183,13 +170,13 @@ export default function WishlistPage() {
                               {/* Price */}
                               <div className="flex items-center gap-2">
                                 <span className="text-sm font-semibold text-gray-900">
-                                  {item.currency}
+                                  {currencySymbol}
                                   {item.salePrice || item.regularPrice}
                                 </span>
                                 {item.salePrice && (
                                   <>
                                     <span className="text-xs line-through text-gray-400">
-                                      {item.currency}
+                                      {currencySymbol}
                                       {item.regularPrice}
                                     </span>
                                     {discount > 0 && <span className="text-xs bg-green-100 text-green-700 px-1.5 py-0.5 rounded font-medium">{discount}% OFF</span>}

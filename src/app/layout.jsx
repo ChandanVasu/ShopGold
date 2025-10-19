@@ -6,7 +6,6 @@ import MainFooterWrapper from "@/components/template/MainFooterWrapper";
 import MainHeaderWrapper from "@/components/template/MainHeaderWrapper";
 import ScriptInjector from "@/components/ScriptInjector";
 import { getStoreSettings } from "@/lib/getStoreSettings";
-import CurrencyProvider from "@/components/CurrencyProvider";
 
 // Load the Rubik font with CSS variable support
 const rubik = Rubik({
@@ -36,12 +35,10 @@ export default function RootLayout({ children }) {
       </head>
       <body className="antialiased">
         <Providers>
-          <CurrencyProvider>
-            <ScriptInjector />
-            <MainHeaderWrapper />
-            {children}
-            <MainFooterWrapper />
-          </CurrencyProvider>
+          <ScriptInjector />
+          <MainHeaderWrapper />
+          {children}
+          <MainFooterWrapper />
         </Providers>
       </body>
     </html>

@@ -36,19 +36,19 @@ export default function Product({ data }) {
   };
 
   const handleBuyNow = () => {
-    const buyNowData = {
+    const buyNowData = [{
       productId: data._id,
       title: data.title,
       quantity: quantity,
-      color: selectedColor,
-      size: selectedSize,
-      image: data.images[0]?.url,
-      price: data.salePrice || data.regularPrice,
-      currency: data.currencySymbol || "₹",
-    };
+      color: selectedColor || null,
+      size: selectedSize || null,
+      image: data.images?.[0] || "",
+      price: parseFloat(data.salePrice || data.regularPrice),
+      currency: data.currencySymbol || "$",
+    }];
 
-    localStorage.setItem("directPurchase", JSON.stringify(buyNowData));
-    window.location.href = "/checkout?direct=true";
+    localStorage.setItem("buyNow", JSON.stringify(buyNowData));
+    window.location.href = "/checkout";
   };
 
   const handleWishlist = () => {
