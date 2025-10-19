@@ -1,12 +1,7 @@
-import { v2 as cloudinary } from "cloudinary";
 import dbConnect from "@/lib/dbConnection";
 import mongoose from "mongoose";
-
-cloudinary.config({
-  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-  api_key: process.env.CLOUDINARY_API_KEY,
-  api_secret: process.env.CLOUDINARY_API_SECRET,
-});
+import { writeFile, unlink } from "fs/promises";
+import path from "path";
 
 // MongoDB Schema
 const ImageSchema = new mongoose.Schema(
@@ -38,32 +33,37 @@ export async function POST(req) {
       return Response.json({ error: "No file found" }, { status: 400 });
     }
 
-    const buffer = Buffer.from(await file.arrayBuffer());
-
     try {
-      const uploadResult = await new Promise((resolve, reject) => {
-        cloudinary.uploader
-          .upload_stream(
-            {
-              folder: process.env.CLOUDINARY_FOLDER,
-              resource_type: "image",
-            },
-            (error, result) => {
-              if (error) reject(error);
-              else resolve(result);
-            }
-          )
-          .end(buffer); // send buffer directly
-      });
+      const buffer = Buffer.from(await file.arrayBuffer());
+      
+      // Generate unique filename
+      const timestamp = Date.now();
+      const originalName = file.name.replace(/\s+/g, "-"); // Replace spaces with hyphens
+      const filename = `${timestamp}-${originalName}`;
+      
+      // Save to public/uploads folder
+      const uploadDir = path.join(process.cwd(), "public", "uploads");
+      const filepath = path.join(uploadDir, filename);
+      
+      // Create uploads directory if it doesn't exist
+      const fs = require("fs");
+      if (!fs.existsSync(uploadDir)) {
+        fs.mkdirSync(uploadDir, { recursive: true });
+      }
+      
+      await writeFile(filepath, buffer);
+      
+      // Store relative URL in database
+      const imageUrl = `/uploads/${filename}`;
 
       const savedImage = await Image.create({
         name: file.name,
-        url: uploadResult.secure_url,
+        url: imageUrl,
       });
 
       return Response.json(savedImage, { status: 201 });
     } catch (error) {
-      console.error("Cloudinary Upload Error:", error);
+      console.error("Upload Error:", error);
       return Response.json({ error: "Upload failed" }, { status: 500 });
     }
   }
@@ -108,15 +108,14 @@ export async function DELETE(req) {
     const deletedImage = await Image.findByIdAndDelete(_id);
     if (!deletedImage) return Response.json({ error: "Image not found" }, { status: 404 });
 
-    // Optional: Also delete from Cloudinary
-    const publicId = deletedImage.url.split("/").slice(-1)[0].split(".")[0]; // extract file name (no extension)
-    const folder = process.env.CLOUDINARY_FOLDER;
-    const cloudinaryId = `${folder}/${publicId}`;
-
-    try {
-      await cloudinary.uploader.destroy(cloudinaryId);
-    } catch (err) {
-      console.warn("Cloudinary delete failed:", err.message);
+    // Delete file from public folder
+    if (deletedImage.url.startsWith("/uploads/")) {
+      try {
+        const filepath = path.join(process.cwd(), "public", deletedImage.url);
+        await unlink(filepath);
+      } catch (err) {
+        console.warn("File deletion failed:", err.message);
+      }
     }
 
     return Response.json({ message: "Image deleted", _id });

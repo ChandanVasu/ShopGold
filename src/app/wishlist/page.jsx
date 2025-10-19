@@ -20,7 +20,10 @@ export default function WishlistPage() {
 
     const fetchProducts = async () => {
       try {
-        const res = await fetch("/api/product");
+        const res = await fetch("/api/product", {
+          cache: "force-cache",
+          next: { revalidate: 300 }
+        });
         if (!res.ok) throw new Error("Failed to fetch products");
 
         const allProducts = await res.json();
@@ -38,7 +41,20 @@ export default function WishlistPage() {
     fetchProducts();
   }, []);
 
-  const getProductDetails = (productId) => products.find((p) => p._id === productId);
+      const getProductDetails = async (productId) => {
+      try {
+        const res = await fetch("/api/product", {
+          cache: "force-cache",
+          next: { revalidate: 300 }
+        });
+        if (!res.ok) throw new Error("Failed to fetch");
+        const products = await res.json();
+        return products.find((p) => p._id === productId);
+      } catch (error) {
+        console.error("Error fetching product:", error);
+        return null;
+      }
+    };
 
   const handleRemoveFromWishlist = (productId) => {
     const updatedWishlist = wishlist.filter((item) => item.productId !== productId);

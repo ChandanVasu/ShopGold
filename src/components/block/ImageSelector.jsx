@@ -15,7 +15,10 @@ const ImageSelector = ({ isOpen, onClose, onSelectImages, selectType = "multiple
   const fetchImages = async () => {
     try {
       setLoading(true);
-      const res = await fetch("/api/image");
+      const res = await fetch("/api/image", {
+        cache: "force-cache",
+        next: { revalidate: 300 }
+      });
       const data = await res.json();
       setImages(data); // expects [{ _id, url, name }]
     } catch (err) {

@@ -1,102 +1,98 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { RiMenu3Line } from "react-icons/ri";
 import { DynamicIcon } from "lucide-react/dynamic";
 import { ShoppingCart, Search, Heart } from "lucide-react";
 import Link from "next/link";
 
-// Fallback menu items
-const FALLBACK_MENU_ITEMS = [
-  { _id: "fallback-1", title: "Home", url: "/", iconName: "home" },
-  { _id: "fallback-2", title: "Products", url: "/products", iconName: "shopping-bag" },
-  { _id: "fallback-3", title: "About", url: "/about", iconName: "info" },
-  { _id: "fallback-4", title: "Contact", url: "/contact", iconName: "phone" },
-];
-
 export default function FullHeader() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [menuItems, setMenuItems] = useState([]);
   const [storeSettings, setStoreSettings] = useState(null);
   const [wishlistCount, setWishlistCount] = useState(0);
+  const [isLoading, setIsLoading] = useState(true);
+
+  // Memoize wishlist update function
+  const updateWishlistCount = useCallback(() => {
+    const savedWishlist = JSON.parse(localStorage.getItem("wishlist") || "[]");
+    setWishlistCount(savedWishlist.length);
+  }, []);
 
   useEffect(() => {
-    const fetchMenu = async () => {
+    // Use Promise.all to fetch data in parallel
+    const fetchData = async () => {
       try {
-        const res = await fetch("/api/data?collection=menu-item");
-        const data = await res.json();
-        if (res.ok) {
-          // Sort & clean positions
-          const sorted = [...data].sort((a, b) => (a.position ?? 9999) - (b.position ?? 9999));
+        const [menuRes, settingsRes] = await Promise.all([
+          fetch("/api/data?collection=menu-item", {
+            cache: "force-cache",
+            next: { revalidate: 300 } // Cache for 5 minutes
+          }),
+          fetch("/api/setting?type=store", {
+            cache: "force-cache",
+            next: { revalidate: 300 } // Cache for 5 minutes
+          })
+        ]);
+
+        if (menuRes.ok) {
+          const menuData = await menuRes.json();
+          const sorted = [...menuData].sort((a, b) => (a.position ?? 9999) - (b.position ?? 9999));
           setMenuItems(sorted);
         }
-      } catch (err) {
-        console.error("Failed to load menu items:", err);
-      }
-    };
 
-    const fetchSettings = async () => {
-      try {
-        const res = await fetch("/api/setting?type=store");
-        const data = await res.json();
-        if (data && Object.keys(data).length > 0) {
-          setStoreSettings(data);
+        if (settingsRes.ok) {
+          const settingsData = await settingsRes.json();
+          if (settingsData && Object.keys(settingsData).length > 0) {
+            setStoreSettings(settingsData);
+          }
         }
       } catch (err) {
-        console.error("Failed to load store settings:", err);
+        console.error("Failed to load data:", err);
+      } finally {
+        setIsLoading(false);
       }
     };
 
-    fetchMenu();
-    fetchSettings();
-
-    // Load wishlist count
-    const updateWishlistCount = () => {
-      const savedWishlist = JSON.parse(localStorage.getItem("wishlist") || "[]");
-      setWishlistCount(savedWishlist.length);
-    };
-
+    fetchData();
     updateWishlistCount();
 
-    // Listen for storage changes
+    // Listen for wishlist updates
     window.addEventListener("storage", updateWishlistCount);
-
-    // Custom event for same-page wishlist updates
     window.addEventListener("wishlistUpdated", updateWishlistCount);
 
     return () => {
       window.removeEventListener("storage", updateWishlistCount);
       window.removeEventListener("wishlistUpdated", updateWishlistCount);
     };
-  }, []);
+  }, [updateWishlistCount]);
 
-  const logoSrc = storeSettings?.logoImage || "/logonc.svg";
-  const storeName = storeSettings?.textLogo || storeSettings?.storeName || "Shop Gold";
+  // Memoize derived values
+  const logoSrc = useMemo(() => storeSettings?.logoImage || "/logonc.svg", [storeSettings?.logoImage]);
+  const storeName = useMemo(() => storeSettings?.textLogo || storeSettings?.storeName || "Shop Gold", [storeSettings]);
+  const displayMenuItems = useMemo(() => menuItems, [menuItems]);
 
-  // Use fallback menu if no menu items are available
-  const displayMenuItems = menuItems.length > 0 ? menuItems : FALLBACK_MENU_ITEMS;
+  const closeMenu = useCallback(() => setMenuOpen(false), []);
 
   return (
     <>
       <header className="w-full text-sm bg-white shadow sticky top-0 z-40">
         <div className="container mx-auto flex items-center h-12 px-4 md:px-20">
-          {/* Mobile: Menu button on left - Only show if menu items exist */}
-          {menuItems.length > 0 && (
-            <button onClick={() => setMenuOpen(true)} className="text-black text-xl p-2 cursor-pointer md:hidden mr-2">
-              <RiMenu3Line />
-            </button>
-          )}
+          {/* Mobile: Menu button on left - Always show */}
+          <button onClick={() => setMenuOpen(true)} className="text-black text-xl p-2 cursor-pointer md:hidden">
+            <RiMenu3Line />
+          </button>
 
-          <Link href={"/"} className={`flex items-center ${menuItems.length > 0 ? "md:mr-auto" : "mr-auto"}`}>
+          {/* Logo - Centered on mobile, left on desktop */}
+          <Link href={"/"} className="flex items-center">
             {storeSettings?.logoImage ? <img src={logoSrc} alt={storeName} className="h-8 w-auto" /> : <span className="font-bold text-lg">{storeName}</span>}
           </Link>
 
-          {/* Desktop Menu - Only show if menu items exist */}
+          {/* Desktop Menu - Centered */}
           {menuItems.length > 0 && (
-            <nav className="hidden md:flex gap-4 items-center">
-              {menuItems.map(({ _id, title, url }) => (
-                <a key={_id} href={url} className="flex items-center gap-1 text-sm capitalize">
+            <nav className="hidden md:flex gap-4 items-center justify-center flex-1">
+              {displayMenuItems.map(({ _id, title, url }) => (
+                <a key={_id} href={url} className="flex items-center gap-1 text-sm capitalize hover:text-orange-500 transition-colors">
                   <p className="capitalize">{title}</p>
                 </a>
               ))}
@@ -104,15 +100,15 @@ export default function FullHeader() {
           )}
 
           {/* Search + Wishlist + Cart */}
-          <div className="flex gap-1 items-center justify-end">
-            <Link href="/products" className="text-black p-2 cursor-pointer">
+          <div className="flex gap-1 items-center ml-auto">
+            <Link href="/products" className="text-black p-2 cursor-pointer hover:text-orange-500 transition-colors">
               <Search className="w-5 h-5" />
             </Link>
-            <Link href="/wishlist" className="text-black p-2 cursor-pointer relative">
+            <Link href="/wishlist" className="text-black p-2 cursor-pointer relative hover:text-orange-500 transition-colors">
               <Heart className="w-5 h-5" />
               {wishlistCount > 0 && <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] font-bold rounded-full w-4 h-4 flex items-center justify-center">{wishlistCount}</span>}
             </Link>
-            <Link href="/cart" className="text-black p-2 cursor-pointer">
+            <Link href="/cart" className="text-black p-2 cursor-pointer hover:text-orange-500 transition-colors">
               <ShoppingCart className="w-5 h-5" />
             </Link>
           </div>
@@ -134,24 +130,34 @@ export default function FullHeader() {
             >
               {/* Banner */}
               <div className="relative w-full">
-                <button onClick={() => setMenuOpen(false)} className="absolute top-2 right-2 text-white text-xl cursor-pointer">
+                <button onClick={closeMenu} className="absolute top-2 right-2 text-gray-800 text-2xl cursor-pointer z-10">
                   ×
                 </button>
               </div>
 
               {/* Mobile Menu List */}
               <div className="flex flex-col px-4 py-4 gap-3">
-                {displayMenuItems.map(({ _id, title, url, iconName, badge }) => (
-                  <a href={url} key={_id} className="flex items-center justify-between py-3 border-b" onClick={() => setMenuOpen(false)}>
-                    <div className="flex items-center gap-3 text-gray-800 text-sm font-medium">
-                      <span className="text-lg text-gray-600">
-                        <DynamicIcon name={iconName || "help-circle"} size={18} />
-                      </span>
-                      {title}
+                {displayMenuItems.length > 0 ? (
+                  displayMenuItems.map(({ _id, title, url, iconName, badge }) => (
+                    <a href={url} key={_id} className="flex items-center justify-between py-3 border-b" onClick={closeMenu}>
+                      <div className="flex items-center gap-3 text-gray-800 text-sm font-medium">
+                        <span className="text-lg text-gray-600">
+                          <DynamicIcon name={iconName || "help-circle"} size={18} />
+                        </span>
+                        {title}
+                      </div>
+                      {badge && <span className="text-[10px] bg-green-100 text-green-700 px-2 py-0.5 rounded font-semibold">{badge}</span>}
+                    </a>
+                  ))
+                ) : (
+                  <div className="flex flex-col items-center justify-center py-12 text-center">
+                    <div className="text-gray-400 mb-3">
+                      <RiMenu3Line className="text-4xl" />
                     </div>
-                    {badge && <span className="text-[10px] bg-green-100 text-green-700 px-2 py-0.5 rounded font-semibold">{badge}</span>}
-                  </a>
-                ))}
+                    <p className="text-gray-500 text-sm">No menu items available</p>
+                    <p className="text-gray-400 text-xs mt-1">Add menu items from admin panel</p>
+                  </div>
+                )}
               </div>
             </motion.div>
           </>

@@ -19,7 +19,10 @@ export async function getStoreSettings() {
 // Client-side hook for fetching settings
 export async function fetchStoreSettings() {
   try {
-    const res = await fetch("/api/setting?type=store");
+    const res = await fetch("/api/setting?type=store", {
+      cache: "force-cache",
+      next: { revalidate: 300 }
+    });
     if (!res.ok) return null;
     
     const data = await res.json();

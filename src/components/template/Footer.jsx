@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import Link from "next/link";
 import { FaFacebookF, FaTwitter, FaInstagram, FaLinkedinIn, FaYoutube, FaWhatsapp, FaEnvelope, FaPhone, FaMapMarkerAlt, FaPaperPlane, FaHeart } from "react-icons/fa";
 
@@ -13,7 +13,10 @@ export default function Footer() {
   useEffect(() => {
     const fetchSettings = async () => {
       try {
-        const res = await fetch("/api/setting?type=store");
+        const res = await fetch("/api/setting?type=store", {
+          cache: "force-cache",
+          next: { revalidate: 300 } // Cache for 5 minutes
+        });
         const data = await res.json();
         if (data && Object.keys(data).length > 0) {
           setStoreSettings(data);
@@ -26,7 +29,7 @@ export default function Footer() {
     fetchSettings();
   }, []);
 
-  const handleSubscribe = async (e) => {
+  const handleSubscribe = useCallback(async (e) => {
     e.preventDefault();
     if (!email) return;
 
@@ -52,25 +55,10 @@ export default function Footer() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [email]);
 
-  // Fallback data
-  const fallbackData = {
-    storeName: "Shop Gold",
-    footerAbout: "Discover premium products with unmatched quality. Your satisfaction is our priority, and excellence is our standard.",
-    footerEmail: "hello@shopgold.com",
-    footerPhone: "+1 (555) 123-4567",
-    footerAddress: "123 Commerce Street, New York, NY 10001",
-    facebookUrl: "https://facebook.com",
-    twitterUrl: "https://twitter.com",
-    instagramUrl: "https://instagram.com",
-    linkedinUrl: "https://linkedin.com",
-    column1Title: "Company",
-    column1Links: "About Us|/about\nCareers|/careers\nPress|/press\nBlog|/blog\nContact|/contact",
-  };
-
-  // Parse footer links
-  const parseLinks = (linksString) => {
+  // Parse footer links - memoized
+  const parseLinks = useCallback((linksString) => {
     if (!linksString) return [];
     return linksString
       .split("\n")
@@ -79,11 +67,11 @@ export default function Footer() {
         const [text, url] = line.split("|").map((s) => s.trim());
         return { text, url };
       });
-  };
+  }, []);
 
-  const column1Links = parseLinks(storeSettings?.footerColumn1Links || "");
+  const column1Links = useMemo(() => parseLinks(storeSettings?.footerColumn1Links || ""), [storeSettings?.footerColumn1Links, parseLinks]);
 
-  const socialLinks = [
+  const socialLinks = useMemo(() => [
     {
       icon: <FaFacebookF />,
       url: storeSettings?.facebookUrl,
@@ -120,9 +108,9 @@ export default function Footer() {
       gradient: "from-green-500 to-green-600",
       name: "WhatsApp",
     },
-  ].filter((link) => link.url);
+  ].filter((link) => link.url), [storeSettings]);
 
-  const storeName = storeSettings?.footerTextLogo || storeSettings?.storeName || fallbackData.storeName;
+  const storeName = useMemo(() => storeSettings?.footerTextLogo || storeSettings?.storeName || "Shop Gold", [storeSettings]);
 
   return (
     <footer className="relative bg-gray-50">
@@ -144,7 +132,9 @@ export default function Footer() {
               </div>
 
               {/* About */}
-              <p className="text-gray-600 text-xs sm:text-sm leading-relaxed max-w-md">{storeSettings?.footerAbout || storeSettings?.websiteDescription || fallbackData.footerAbout}</p>
+              <p className="text-gray-600 text-xs sm:text-sm leading-relaxed max-w-md">
+                {storeSettings?.footerAbout || storeSettings?.websiteDescription || "Discover premium products with unmatched quality. Your satisfaction is our priority, and excellence is our standard."}
+              </p>
 
               {/* Contact Info - Only show if at least one field has data */}
               {(storeSettings?.footerEmail || storeSettings?.footerPhone || storeSettings?.footerAddress) && (

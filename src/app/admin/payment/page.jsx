@@ -10,13 +10,28 @@ export default function PaymentTablePage() {
   const [page, setPage] = useState(1);
   const [rowsPerPage] = useState(10);
   const [loading, setLoading] = useState(true);
+  const [storeSettings, setStoreSettings] = useState(null);
 
   const totalPages = Math.ceil(payments.length / rowsPerPage);
   const paginatedPayments = payments.slice((page - 1) * rowsPerPage, page * rowsPerPage);
 
   useEffect(() => {
     fetchPayments();
+    fetchSettings();
   }, []);
+
+  const fetchSettings = async () => {
+    try {
+      const res = await fetch("/api/setting?type=store", {
+        cache: "force-cache",
+        next: { revalidate: 300 }
+      });
+      const data = await res.json();
+      setStoreSettings(data);
+    } catch (err) {
+      console.error("Failed to fetch settings:", err);
+    }
+  };
 
   const fetchPayments = async () => {
     try {
@@ -30,6 +45,8 @@ export default function PaymentTablePage() {
       setLoading(false);
     }
   };
+
+  const currencySymbol = storeSettings?.currencySymbol || "$";
 
   const getStatusColor = (status) => {
     switch (status?.toLowerCase()) {
@@ -94,7 +111,7 @@ export default function PaymentTablePage() {
                   <TableCell className="text-gray-600">{order.email || "N/A"}</TableCell>
                   <TableCell className="font-semibold text-gray-900">
                     <span className="">
-                      {order.paymentDetails?.currencySymbol || process.env.NEXT_PUBLIC_CURRENCY_SYMBOL || "$"}
+                      {order.paymentDetails?.currencySymbol || currencySymbol}
                       {order.paymentDetails?.total?.toLocaleString() || "0"}
                     </span>
                   </TableCell>

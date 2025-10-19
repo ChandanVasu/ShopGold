@@ -15,7 +15,10 @@ export default function SliderCollection({ isTitle = true }) {
   useEffect(() => {
     async function fetchCollections() {
       try {
-        const res = await fetch("/api/collection");
+        const res = await fetch("/api/collection", {
+          cache: "force-cache",
+          next: { revalidate: 300 } // Cache for 5 minutes
+        });
         const data = await res.json();
         if (Array.isArray(data) && data.length > 0) {
           setCollections(data);

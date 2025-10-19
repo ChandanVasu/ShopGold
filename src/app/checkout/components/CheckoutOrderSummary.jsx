@@ -1,10 +1,47 @@
 "use client";
+import { useState, useEffect } from "react";
 import ProductData from "./Product";
 import StripeCardForm from "../paymentMethod/StripeCardForm";
+import PayPalButton from "../paymentMethod/PayPalButton";
 import orderCreate from "./orderCreate";
+import { usePaymentSettings } from "../layout";
+import { Tabs, Tab } from "@heroui/react";
 
 export default function CheckoutOrderSummary({ billingDetails, setErrors }) {
   const { items: products, loading } = ProductData();
+  const [storeSettings, setStoreSettings] = useState(null);
+  const [selectedPayment, setSelectedPayment] = useState("stripe");
+  const paymentSettings = usePaymentSettings();
+
+  useEffect(() => {
+    const fetchSettings = async () => {
+      try {
+        const res = await fetch("/api/setting?type=store", {
+          cache: "force-cache",
+          next: { revalidate: 300 }
+        });
+        const data = await res.json();
+        setStoreSettings(data);
+      } catch (err) {
+        console.error("Failed to fetch store settings:", err);
+      }
+    };
+    fetchSettings();
+  }, []);
+
+  // Set default payment method based on what's enabled
+  useEffect(() => {
+    if (paymentSettings) {
+      if (paymentSettings.stripe?.enabled) {
+        setSelectedPayment("stripe");
+      } else if (paymentSettings.paypal?.enabled) {
+        setSelectedPayment("paypal");
+      }
+    }
+  }, [paymentSettings]);
+
+  const currencySymbol = storeSettings?.currencySymbol || "$";
+  const storeCurrency = storeSettings?.storeCurrency || "USD";
 
   const costDetails = {
     subtotal: products.reduce((acc, p) => acc + Number(p.salePrice || p.regularPrice) * p.quantity, 0),
@@ -43,7 +80,7 @@ export default function CheckoutOrderSummary({ billingDetails, setErrors }) {
                 </div>
               </div>
               <div className="text-right font-medium text-gray-900">
-                {process.env.NEXT_PUBLIC_CURRENCY_SYMBOL || "$"}
+                {currencySymbol}
                 {(item.salePrice || item.regularPrice) * item.quantity}
               </div>
             </div>
@@ -56,58 +93,119 @@ export default function CheckoutOrderSummary({ billingDetails, setErrors }) {
         <div className="flex justify-between">
           <span>Subtotal</span>
           <span>
-            {process.env.NEXT_PUBLIC_CURRENCY_SYMBOL || "$"}
+            {currencySymbol}
             {costDetails.subtotal.toFixed(2)}
           </span>
         </div>
         <div className="flex justify-between">
           <span>Shipping</span>
           <span>
-            {process.env.NEXT_PUBLIC_CURRENCY_SYMBOL || "$"}
+            {currencySymbol}
             {costDetails.shipping.toFixed(2)}
           </span>
         </div>
         <div className="flex justify-between font-bold text-gray-900 text-base">
           <span>Total</span>
           <span>
-            {process.env.NEXT_PUBLIC_CURRENCY_SYMBOL || "$"}
+            {currencySymbol}
             {costDetails.total.toFixed(2)}
           </span>
         </div>
       </div>
 
       <div className="mt-5 space-y-4">
-        <h1 className="text-sm font-semibold">Payment</h1>
+        <h1 className="text-sm font-semibold">Payment Method</h1>
 
-        <StripeCardForm
-          billingDetails={billingDetails}
-          setErrors={setErrors}
-          amount={costDetails.total}
-          currency={process.env.NEXT_PUBLIC_STORE_CURRENCY || "USD"}
-          onSuccess={async (paymentIntent) => {
-            const orderId = await orderCreate({
-              products,
-              billingDetails,
-              paymentDetails: {
-                paymentMethod: "stripe",
-                total: costDetails.total,
-                status: "paid",
-                paymentIntentId: paymentIntent?.id,
-                paymentStatus: paymentIntent?.status,
-              },
-            });
+        {/* Payment Method Tabs */}
+        {paymentSettings && (
+          <Tabs 
+            selectedKey={selectedPayment} 
+            onSelectionChange={setSelectedPayment}
+            variant="bordered"
+            color="primary"
+          >
+            {paymentSettings.stripe?.enabled && (
+              <Tab key="stripe" title="Credit Card">
+                <div className="mt-4">
+                  <StripeCardForm
+                    billingDetails={billingDetails}
+                    setErrors={setErrors}
+                    amount={costDetails.total}
+                    currency={storeCurrency}
+                    currencySymbol={currencySymbol}
+                    onSuccess={async (paymentIntent) => {
+                      const orderId = await orderCreate({
+                        products,
+                        billingDetails,
+                        paymentDetails: {
+                          paymentMethod: "stripe",
+                          total: costDetails.total,
+                          currencySymbol: currencySymbol,
+                          status: "paid",
+                          paymentIntentId: paymentIntent?.id,
+                          paymentStatus: paymentIntent?.status,
+                        },
+                      });
 
-            if (orderId) {
-              window.location.href = `/checkout/success`;
-            } else {
-              setErrors("Failed to create order after payment.");
-              window.location.href = "/checkout/failure";
-            }
-          }}
-          onError={(msg) => {
-            setErrors(msg);
-          }}
-        />
+                      if (orderId) {
+                        window.location.href = `/checkout/success`;
+                      } else {
+                        setErrors("Failed to create order after payment.");
+                        window.location.href = "/checkout/failure";
+                      }
+                    }}
+                    onError={(msg) => {
+                      setErrors(msg);
+                    }}
+                  />
+                </div>
+              </Tab>
+            )}
+
+            {paymentSettings.paypal?.enabled && (
+              <Tab key="paypal" title="PayPal">
+                <div className="mt-4">
+                  <PayPalButton
+                    amount={costDetails.total}
+                    currency={storeCurrency}
+                    onSuccess={async (details) => {
+                      const orderId = await orderCreate({
+                        products,
+                        billingDetails,
+                        paymentDetails: {
+                          paymentMethod: "paypal",
+                          total: costDetails.total,
+                          currencySymbol: currencySymbol,
+                          status: "paid",
+                          paymentIntentId: details.id,
+                          paymentStatus: details.status,
+                        },
+                      });
+
+                      if (orderId) {
+                        window.location.href = `/checkout/success`;
+                      } else {
+                        setErrors("Failed to create order after payment.");
+                        window.location.href = "/checkout/failure";
+                      }
+                    }}
+                    onError={(msg) => {
+                      setErrors(msg);
+                    }}
+                  />
+                </div>
+              </Tab>
+            )}
+          </Tabs>
+        )}
+
+        {/* No payment gateway configured message */}
+        {!paymentSettings || (!paymentSettings.stripe?.enabled && !paymentSettings.paypal?.enabled) && (
+          <div className="text-center py-8 bg-gray-50 rounded-lg">
+            <p className="text-gray-600 text-sm">No payment methods available</p>
+            <p className="text-gray-500 text-xs mt-1">Please configure payment gateway in admin panel</p>
+          </div>
+        )}
       </div>
     </div>
   );

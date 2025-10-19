@@ -13,7 +13,10 @@ export default function FAQsPage() {
   useEffect(() => {
     async function fetchFAQs() {
       try {
-        const res = await fetch("/api/data?collection=faqs");
+        const res = await fetch("/api/data?collection=faqs", {
+          cache: "force-cache",
+          next: { revalidate: 300 }
+        });
         const data = await res.json();
         if (res.ok) {
           const sorted = data.sort((a, b) => (a.order || 0) - (b.order || 0));

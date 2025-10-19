@@ -19,7 +19,10 @@ export default function ContactPage() {
   useEffect(() => {
     const fetchSettings = async () => {
       try {
-        const res = await fetch("/api/setting?type=store");
+        const res = await fetch("/api/setting?type=store", {
+          cache: "force-cache",
+          next: { revalidate: 300 }
+        });
         const data = await res.json();
         if (data && Object.keys(data).length > 0) {
           setStoreSettings(data);

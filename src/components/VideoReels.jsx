@@ -28,7 +28,10 @@ export default function VideoReelsSlider() {
   const fetchReels = async () => {
     setIsLoading(true);
     try {
-      const res = await fetch("/api/data?collection=video-reels");
+      const res = await fetch("/api/data?collection=video-reels", {
+        cache: "force-cache",
+        next: { revalidate: 300 }
+      });
       const data = await res.json();
       if (res.ok) {
         const sorted = data.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));

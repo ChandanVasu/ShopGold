@@ -35,28 +35,30 @@ export default function SliderProduct({ header, products = [], type = "product" 
   const productsToShow = products?.length > 0 ? products : fetchedProducts?.length > 0 ? fetchedProducts : SAMPLE_PRODUCTS;
 
   useEffect(() => {
+    const savedWishlist = JSON.parse(localStorage.getItem("wishlist") || "[]");
+    setWishlist(savedWishlist);
+
     async function fetchProducts() {
       try {
-        const res = await fetch("/api/product");
+        const res = await fetch("/api/product", {
+          cache: "force-cache",
+          next: { revalidate: 300 }
+        });
         if (!res.ok) throw new Error("Network response was not ok");
         const data = await res.json();
         if (Array.isArray(data) && data.length > 0) {
           setFetchedProducts(data);
         } else {
-          setFetchedProducts(SAMPLE_PRODUCTS); // 👉 Use sample fallback
+          setFetchedProducts([]);
         }
       } catch (err) {
         console.error("Failed to fetch products:", err);
         setError("Failed to load products");
-        setFetchedProducts(SAMPLE_PRODUCTS); // 👉 Fallback on error
+        setFetchedProducts([]);
       } finally {
         setLoading(false);
       }
     }
-
-    // Load wishlist from localStorage
-    const savedWishlist = JSON.parse(localStorage.getItem("wishlist") || "[]");
-    setWishlist(savedWishlist);
 
     fetchProducts();
   }, []);

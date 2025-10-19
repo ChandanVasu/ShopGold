@@ -17,7 +17,10 @@ export default function StyleOne() {
   useEffect(() => {
     async function fetchProducts() {
       try {
-        const res = await fetch("/api/product");
+        const res = await fetch("/api/product", {
+          cache: "force-cache",
+          next: { revalidate: 300 },
+        });
         if (!res.ok) throw new Error("Network response was not ok");
         const data = await res.json();
         if (Array.isArray(data) && data.length > 0) {
@@ -75,7 +78,7 @@ export default function StyleOne() {
 
     setWishlist(updatedWishlist);
     localStorage.setItem("wishlist", JSON.stringify(updatedWishlist));
-    
+
     // Dispatch custom event to update header count
     window.dispatchEvent(new Event("wishlistUpdated"));
   };
@@ -160,10 +163,10 @@ export default function StyleOne() {
           const discount = calculateDiscount(product.regularPrice, product.salePrice);
           const hasLimitedDeal = isLimitedTimeDeal(product.limitedTimeDeal);
 
-            return (
-              <div key={product._id} className="bg-gray-50 border border-gray-100 rounded-xl overflow-hidden">
-                <Link href={`/products/${product._id}`}>
-                  <div className="relative">
+          return (
+            <div key={product._id} className="bg-gray-50 border border-gray-100 rounded-xl overflow-hidden">
+              <Link href={`/products/${product._id}`}>
+                <div className="relative">
                   <img src={product.images?.[0] || "https://placehold.co/400x500?text=No+Image"} alt={product.title} className="w-full aspect-[4/5] object-cover" />
 
                   {/* Product Label */}
@@ -191,7 +194,7 @@ export default function StyleOne() {
                 </div>
               </Link>
 
-                <div className="p-2 sm:p-4 bg-white">
+              <div className="p-2 sm:p-4 bg-white">
                 <Link href={`/products/${product._id}`}>
                   {/* Product Name */}
                   <h2 className="text-xs md:text-sm font-medium text-gray-800 leading-tight line-clamp-1 mb-1 sm:mb-2 ">{product.title}</h2>
@@ -250,7 +253,7 @@ export default function StyleOne() {
       {hasMoreProducts && (
         <div className="flex justify-center mt-8">
           <Link href="/products">
-            <Button size="lg" className="bg-gray-800 text-white font-medium rounded-lg px-8">
+            <Button size="sm" className="bg-blue-400 text-white font-medium rounded-lg px-8">
               View More
             </Button>
           </Link>

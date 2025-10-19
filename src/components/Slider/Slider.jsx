@@ -19,7 +19,10 @@ export default function StyleOne() {
     const fetchSliderImages = async () => {
       setIsLoading(true);
       try {
-        const res = await fetch(`/api/data?collection=${COLLECTION}`);
+        const res = await fetch(`/api/data?collection=${COLLECTION}`, {
+          cache: "force-cache",
+          next: { revalidate: 300 } // Cache for 5 minutes
+        });
         const data = await res.json();
         if (res.ok) {
           const sorted = data.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));

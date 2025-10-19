@@ -8,7 +8,10 @@ export default function ScriptInjector() {
 
   useEffect(() => {
     // Fetch integration settings
-    fetch("/api/setting?type=integrations")
+    fetch("/api/setting?type=integrations", {
+      cache: "force-cache",
+      next: { revalidate: 300 }
+    })
       .then((res) => res.json())
       .then((data) => {
         if (data && Object.keys(data).length > 0) {

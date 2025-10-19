@@ -18,7 +18,10 @@ export default function CartPage() {
 
     const fetchProducts = async () => {
       try {
-        const res = await fetch("/api/product");
+        const res = await fetch("/api/product", {
+          cache: "force-cache",
+          next: { revalidate: 300 }
+        });
         if (!res.ok) throw new Error("Failed to fetch products");
 
         const allProducts = await res.json();

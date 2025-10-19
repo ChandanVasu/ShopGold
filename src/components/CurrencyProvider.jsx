@@ -7,7 +7,10 @@ export default function CurrencyProvider({ children }) {
     // Cache currency and store settings
     const cacheStoreSettings = async () => {
       try {
-        const res = await fetch("/api/setting?type=store");
+        const res = await fetch("/api/setting?type=store", {
+          cache: "force-cache",
+          next: { revalidate: 300 }
+        });
         const data = await res.json();
         
         if (data) {

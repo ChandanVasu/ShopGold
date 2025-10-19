@@ -29,7 +29,10 @@ export async function getCurrencyInfo() {
 // Client-side hook
 export async function fetchCurrencyInfo() {
   try {
-    const res = await fetch("/api/setting?type=store");
+    const res = await fetch("/api/setting?type=store", {
+      cache: "force-cache",
+      next: { revalidate: 300 }
+    });
     if (res.ok) {
       const data = await res.json();
       if (data && data.currencySymbol) {
