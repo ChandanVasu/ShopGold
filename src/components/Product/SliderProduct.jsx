@@ -240,7 +240,7 @@ export default function SliderProduct({ header, products = [], type = "product" 
 
                     <div className="p-2 sm:p-4 bg-white">
                       {/* Product Name */}
-                      <h2 className="text-xs sm:text-sm font-medium text-gray-800 leading-tight line-clamp-2 mb-1 sm:mb-2">{product.title}</h2>
+                      <h2 className="text-xs sm:text-sm font-medium text-gray-800 leading-tight line-clamp-1 mb-1 sm:mb-2">{product.title}</h2>
 
                       {/* Price */}
                       <div className="flex items-center justify-between gap-1 sm:gap-2 mb-2 sm:mb-3">

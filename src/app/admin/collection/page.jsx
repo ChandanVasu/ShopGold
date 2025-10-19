@@ -22,6 +22,11 @@ export default function Page() {
   const [page, setPage] = useState(1);
   const rowsPerPage = 8;
 
+  // Section customization state
+  const [sectionTitle, setSectionTitle] = useState("Explore Our Collections");
+  const [sectionDescription, setSectionDescription] = useState("Discover a wide range of collections tailored to your interests");
+  const [sectionLoading, setSectionLoading] = useState(false);
+
   const fetchCollection = async () => {
     setIsFetching(true);
     try {
@@ -39,8 +44,25 @@ export default function Page() {
     }
   };
 
+  const fetchSectionSettings = async () => {
+    try {
+      const response = await fetch(`/api/data?collection=collection-section`, {
+        cache: "reload",
+      });
+      const data = await response.json();
+      if (response.ok && data.length > 0) {
+        const settings = data[0];
+        setSectionTitle(settings.title || "Explore Our Collections");
+        setSectionDescription(settings.description || "Discover a wide range of collections tailored to your interests");
+      }
+    } catch (error) {
+      console.error("Failed to fetch section settings:", error);
+    }
+  };
+
   useEffect(() => {
     fetchCollection();
+    fetchSectionSettings();
   }, []);
 
   const createCollection = async () => {
@@ -110,6 +132,34 @@ export default function Page() {
     }
   };
 
+  const updateSectionSettings = async () => {
+    setSectionLoading(true);
+    try {
+      const response = await fetch(`/api/data`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          collection: "collection-section",
+          data: {
+            _id: "collection-section",
+            title: sectionTitle,
+            description: sectionDescription,
+          },
+        }),
+      });
+
+      if (response.ok) {
+        console.log("Section settings updated successfully");
+      } else {
+        console.error("Failed to update section settings");
+      }
+    } catch (error) {
+      console.error("Error updating section settings:", error);
+    } finally {
+      setSectionLoading(false);
+    }
+  };
+
   const deleteCollection = async () => {
     if (!selectedCollectionId) return;
 
@@ -157,7 +207,42 @@ export default function Page() {
       <div className="flex justify-between items-center mb-6">
         <div>
           <h1 className="text-2xl font-bold">Collection</h1>
-          <p className="text-sm text-gray-600">Manage your collection of products.</p>
+          <p className="text-sm text-gray-600">Manage your collection of products and section settings.</p>
+        </div>
+      </div>
+
+      {/* Section Settings */}
+      <div className="bg-white p-4 rounded-lg mb-6">
+        <h2 className="text-lg font-semibold mb-3">Collection Section Settings</h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <Input
+            placeholder="Enter section title"
+            value={sectionTitle}
+            size="sm"
+            label="Section Title"
+            labelPlacement="outside"
+            description="This will be displayed as the main heading of the collection section."
+            onChange={(e) => setSectionTitle(e.target.value)}
+          />
+          <Input
+            placeholder="Enter section description"
+            value={sectionDescription}
+            size="sm"
+            label="Section Description"
+            labelPlacement="outside"
+            description="This will be displayed as the subtitle under the main heading."
+            onChange={(e) => setSectionDescription(e.target.value)}
+          />
+        </div>
+        <div className="mt-4">
+          <CustomButton 
+            size="sm" 
+            className="bg-blue-600 text-white" 
+            onPress={updateSectionSettings} 
+            isLoading={sectionLoading}
+          >
+            {sectionLoading ? "Updating..." : "Update Section Settings"}
+          </CustomButton>
         </div>
       </div>
 

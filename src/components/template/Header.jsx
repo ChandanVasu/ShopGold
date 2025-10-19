@@ -77,7 +77,7 @@ export default function FullHeader() {
   return (
     <>
       <header className="w-full text-sm bg-white shadow sticky top-0 z-40">
-        <div className="container mx-auto flex items-center h-12 px-4 md:px-20">
+        <div className="container mx-auto flex items-center h-12 px-1 md:px-20">
           {/* Mobile: Menu button on left - Always show */}
           <button onClick={() => setMenuOpen(true)} className="text-black text-xl p-2 cursor-pointer md:hidden">
             <RiMenu3Line />
@@ -128,37 +128,68 @@ export default function FullHeader() {
               exit={{ x: "-100%" }}
               transition={{ type: "tween", duration: 0.3 }}
             >
-              {/* Banner */}
-              <div className="relative w-full">
-                <button onClick={closeMenu} className="absolute top-2 right-2 text-gray-800 text-2xl cursor-pointer z-10">
+              {/* Header Section with Logo and Close Button */}
+              <div className="relative bg-gray-50 border-b border-gray-200 px-4 py-6 pt-8">
+                <button onClick={closeMenu} className="absolute top-4 right-4 text-gray-600 hover:text-gray-800 text-2xl cursor-pointer z-10 w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-200 transition-colors">
                   ×
                 </button>
+                
+                {/* Logo/Store Name */}
+                <div className="flex items-center gap-3 pr-12">
+                  {storeSettings?.logoImage ? (
+                    <img src={logoSrc} alt={storeName} className="h-8 w-auto" />
+                  ) : (
+                    <span className="font-bold text-lg text-gray-800">{storeName}</span>
+                  )}
+                </div>
+                
+                {/* Welcome text */}
+                <p className="text-xs text-gray-500 mt-2">Navigate through our store</p>
               </div>
 
               {/* Mobile Menu List */}
-              <div className="flex flex-col px-4 py-4 gap-3">
+              <div className="flex flex-col px-4 py-6 gap-1 flex-1">
                 {displayMenuItems.length > 0 ? (
                   displayMenuItems.map(({ _id, title, url, iconName, badge }) => (
-                    <a href={url} key={_id} className="flex items-center justify-between py-3 border-b" onClick={closeMenu}>
-                      <div className="flex items-center gap-3 text-gray-800 text-sm font-medium">
-                        <span className="text-lg text-gray-600">
-                          <DynamicIcon name={iconName || "help-circle"} size={18} />
+                    <a 
+                      href={url} 
+                      key={_id} 
+                      className="flex items-center justify-between py-4 px-3 rounded-lg hover:bg-gray-50 transition-colors group border-b border-gray-100 last:border-b-0" 
+                      onClick={closeMenu}
+                    >
+                      <div className="flex items-center gap-4 text-gray-700 text-sm font-medium group-hover:text-gray-900">
+                        <span className="text-gray-500 group-hover:text-blue-600 transition-colors">
+                          <DynamicIcon name={iconName || "help-circle"} size={20} />
                         </span>
-                        {title}
+                        <span className="capitalize">{title}</span>
                       </div>
-                      {badge && <span className="text-[10px] bg-green-100 text-green-700 px-2 py-0.5 rounded font-semibold">{badge}</span>}
+                      <div className="flex items-center gap-2">
+                        {badge && <span className="text-[10px] bg-green-100 text-green-700 px-2 py-1 rounded-full font-semibold">{badge}</span>}
+                        <span className="text-gray-400 group-hover:text-gray-600 transition-colors">
+                          <DynamicIcon name="chevron-right" size={16} />
+                        </span>
+                      </div>
                     </a>
                   ))
                 ) : (
-                  <div className="flex flex-col items-center justify-center py-12 text-center">
-                    <div className="text-gray-400 mb-3">
-                      <RiMenu3Line className="text-4xl" />
+                  <div className="flex flex-col items-center justify-center py-16 text-center">
+                    <div className="text-gray-300 mb-4">
+                      <RiMenu3Line className="text-5xl" />
                     </div>
-                    <p className="text-gray-500 text-sm">No menu items available</p>
-                    <p className="text-gray-400 text-xs mt-1">Add menu items from admin panel</p>
+                    <p className="text-gray-500 text-sm font-medium">No menu items available</p>
+                    <p className="text-gray-400 text-xs mt-2 max-w-48">Add menu items from the admin panel to display navigation options</p>
                   </div>
                 )}
               </div>
+
+              {/* Footer Section */}
+              {displayMenuItems.length > 0 && (
+                <div className="border-t border-gray-200 px-4 py-4 bg-gray-50">
+                  <div className="flex items-center justify-center gap-6 text-xs text-gray-500">
+                    <span>© {new Date().getFullYear()} {storeName}</span>
+                  </div>
+                </div>
+              )}
             </motion.div>
           </>
         )}

@@ -320,7 +320,7 @@ export default function Product({ data }) {
       </div>
 
       {/* Related Products Section */}
-      <div className="py-8 bg-white mt-4">
+      <div className="py-8 bg-white ">
         <div className="container mx-auto px-4 md:px-8 lg:px-16">
           <h2 className="text-xl md:text-2xl font-medium text-gray-900 mb-4">Related Products</h2>
           <SliderProduct />
@@ -328,17 +328,17 @@ export default function Product({ data }) {
       </div>
 
       {/* Collections */}
-      <div className="py-8 bg-white mt-4">
+      <div className="py-8 bg-white ">
         <SliderCollection isTitle={false} />
       </div>
 
       {/* Video Reels */}
-      <div className="py-8 bg-white mt-4">
+      <div className="py-8 bg-white ">
         <VideoReels />
       </div>
 
       {/* Support Benefits */}
-      <div className="bg-white mt-4">
+      <div className="bg-white ">
         <SupportBenefits />
       </div>
     </div>

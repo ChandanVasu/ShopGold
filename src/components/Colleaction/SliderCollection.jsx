@@ -11,6 +11,8 @@ import { Skeleton } from "@heroui/skeleton";
 export default function SliderCollection({ isTitle = true }) {
   const [collections, setCollections] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [sectionTitle, setSectionTitle] = useState("Explore Our Collections");
+  const [sectionDescription, setSectionDescription] = useState("Discover a wide range of collections tailored to your interests");
 
   useEffect(() => {
     async function fetchCollections() {
@@ -33,7 +35,25 @@ export default function SliderCollection({ isTitle = true }) {
       }
     }
 
+    async function fetchSectionSettings() {
+      try {
+        const res = await fetch("/api/data?collection=collection-section", {
+          cache: "force-cache",
+          next: { revalidate: 300 }
+        });
+        const data = await res.json();
+        if (data && data.length > 0) {
+          const settings = data[0];
+          setSectionTitle(settings.title || "Explore Our Collections");
+          setSectionDescription(settings.description || "Discover a wide range of collections tailored to your interests");
+        }
+      } catch (error) {
+        console.error("Failed to load section settings:", error);
+      }
+    }
+
     fetchCollections();
+    fetchSectionSettings();
   }, []);
 
   // Show skeleton while loading
@@ -43,8 +63,8 @@ export default function SliderCollection({ isTitle = true }) {
         <div className="container mx-auto px-4 md:px-20">
           {isTitle && (
             <div>
-              <h2 className="text-lg md:text-2xl font-semibold mb-2 text-center">Explore Our Collections</h2>
-              <p className="text-center text-xs md:text-sm md:mb-8 mb-4">Discover a wide range of collections tailored to your interests</p>
+              <h2 className="text-lg md:text-2xl font-semibold mb-2 text-center">{sectionTitle}</h2>
+              <p className="text-center text-xs md:text-sm md:mb-8 mb-4">{sectionDescription}</p>
             </div>
           )}
           <Swiper
@@ -79,15 +99,13 @@ export default function SliderCollection({ isTitle = true }) {
 
   return (
     <section>
-      <div className="container mx-auto px-4 md:px-20">
-        {isTitle && (
-          <div>
-            <h2 className="text-lg md:text-2xl font-semibold mb-2 text-center">Explore Our Collections</h2>
-            <p className="text-center text-xs md:text-sm md:mb-8 mb-4">Discover a wide range of collections tailored to your interests</p>
-          </div>
-        )}
-
-        <Swiper
+        <div className="container mx-auto px-4 md:px-20">
+          {isTitle && (
+            <div>
+              <h2 className="text-lg md:text-2xl font-semibold mb-2 text-center">{sectionTitle}</h2>
+              <p className="text-center text-xs md:text-sm md:mb-8 mb-4">{sectionDescription}</p>
+            </div>
+          )}        <Swiper
           modules={[Navigation, Pagination, Autoplay]}
           spaceBetween={20}
           loop
