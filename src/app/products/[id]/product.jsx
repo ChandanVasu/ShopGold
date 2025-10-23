@@ -6,9 +6,10 @@ import SliderProduct from "@/components/Product/SliderProduct";
 import SliderCollection from "@/components/Colleaction/SliderCollection";
 import VideoReels from "@/components/VideoReels";
 import SupportBenefits from "@/components/SupportBenefits";
-import { ShoppingBag, Heart, Star, Truck, Shield, RotateCcw, ChevronRight, Share2, Plus, Minus, Check } from "lucide-react";
+import { ShoppingBag, Heart, Star, Truck, Shield, RotateCcw, ChevronRight, Share2, Plus, Minus, Check, Gift, Tag, Percent } from "lucide-react";
 import { Button } from "@heroui/react";
 import { useCart } from "@/hooks/useCart";
+import { useCurrency } from "@/hooks/useCurrency";
 
 export default function Product({ data }) {
   const [quantity, setQuantity] = useState(1);
@@ -17,6 +18,7 @@ export default function Product({ data }) {
   const [wishlist, setWishlist] = useState([]);
   const [showMobileFooter, setShowMobileFooter] = useState(false);
   const { addToCart, isAddingToCart } = useCart();
+  const { symbol: currencySymbol } = useCurrency();
 
   useEffect(() => {
     // Load wishlist from localStorage
@@ -58,7 +60,7 @@ export default function Product({ data }) {
         size: selectedSize || null,
         image: data.images?.[0] || "",
         price: parseFloat(data.salePrice || data.regularPrice),
-        currency: data.currencySymbol || "$",
+        currency: data.currencySymbol || currencySymbol,
       },
     ];
 
@@ -137,30 +139,56 @@ export default function Product({ data }) {
               )}
 
               {/* Price */}
-              <div className="border-t border-b border-gray-200 py-4">
-                <div className="flex items-baseline gap-2 flex-wrap">
-                  {data.salePrice && discount > 0 && <span className="text-sm text-red-600 font-medium">-{discount}%</span>}
-                  <span className="text-2xl md:text-3xl font-normal text-gray-900">
-                    {data.currencySymbol}
+              <div className="bg-gradient-to-r from-orange-50 to-red-50 border border-orange-200 rounded-xl p-4">
+                <div className="flex items-center gap-3 mb-2">
+                  {data.salePrice && discount > 0 && (
+                    <div className="bg-red-500 text-white px-2 py-1 rounded-md text-xs font-bold flex items-center gap-1">
+                      <Percent className="w-3 h-3" />
+                      {discount}% OFF
+                    </div>
+                  )}
+                  <div className="bg-green-500 text-white px-2 py-1 rounded-md text-xs font-medium">
+                    Best Price
+                  </div>
+                </div>
+                
+                <div className="flex items-baseline gap-3 flex-wrap mb-2">
+                  <span className="text-3xl md:text-4xl font-bold text-gray-900">
+                    {data.currencySymbol || currencySymbol}
                     {data.salePrice || data.regularPrice}
                   </span>
+                  {data.salePrice && (
+                    <div className="flex items-center gap-2">
+                      <span className="text-lg text-gray-500 line-through">
+                        {data.currencySymbol || currencySymbol}
+                        {data.regularPrice}
+                      </span>
+                    </div>
+                  )}
                 </div>
-                {data.salePrice && (
-                  <div className="flex items-center gap-2 mt-1">
-                    <span className="text-xs text-gray-500">M.R.P.:</span>
-                    <span className="text-sm text-gray-500 line-through">
-                      {data.currencySymbol}
-                      {data.regularPrice}
-                    </span>
+
+                {data.salePrice && discount > 0 && (
+                  <div className="bg-green-100 border border-green-200 rounded-lg p-3 mb-2">
+                    <div className="flex items-center gap-2 text-green-800">
+                      <Gift className="w-4 h-4" />
+                      <span className="font-semibold text-sm">
+                        You Save: {data.currencySymbol || currencySymbol}
+                        {(+data.regularPrice - +data.salePrice).toFixed(0)} ({discount}% OFF)
+                      </span>
+                    </div>
                   </div>
                 )}
-                <p className="text-xs text-gray-600 mt-1">Inclusive of all taxes</p>
-                {data.salePrice && discount > 0 && (
-                  <p className="text-sm text-green-700 font-medium mt-2">
-                    You save {data.currencySymbol}
-                    {(+data.regularPrice - +data.salePrice).toFixed(2)} ({discount}%)
-                  </p>
-                )}
+
+                {/* Buy 2 Get 1 Free Offer */}
+                <div className="bg-blue-100 border border-blue-200 rounded-lg p-3 mb-2">
+                  <div className="flex items-center gap-2 text-blue-800">
+                    <Tag className="w-4 h-4" />
+                    <span className="font-semibold text-sm">Special Offer: Buy 2 Get 1 Free!</span>
+                  </div>
+                  <p className="text-xs text-blue-700 mt-1">Add 3 items to cart and get 1 absolutely free</p>
+                </div>
+
+                <p className="text-xs text-gray-600">Inclusive of all taxes • Free shipping on orders above ₹999</p>
               </div>
 
               {/* Stock Status */}
@@ -168,17 +196,25 @@ export default function Product({ data }) {
                 <p className="text-sm font-medium text-green-700">In Stock</p>
               </div>
 
-              {/* Offers */}
-              <div className="space-y-2">
-                <h3 className="text-sm font-semibold text-gray-900">Offers</h3>
-                <div className="space-y-2">
-                  <div className="flex items-start gap-2 text-sm">
-                    <Check className="w-4 h-4 text-green-600 mt-0.5 flex-shrink-0" />
-                    <span className="text-gray-700">Bank Offer: 5% Unlimited Cashback on Axis Bank Credit Card</span>
-                  </div>
-                  <div className="flex items-start gap-2 text-sm">
-                    <Check className="w-4 h-4 text-green-600 mt-0.5 flex-shrink-0" />
-                    <span className="text-gray-700">Partner Offers: Get GST invoice and save up to 28% on business purchases</span>
+              {/* Buy 2 Get 1 Free Offer */}
+              <div className="bg-gradient-to-r from-blue-50 to-cyan-50 border border-blue-200 rounded-xl p-4">
+                <div className="flex items-center gap-2 mb-3">
+                  <Gift className="w-5 h-5 text-blue-600" />
+                  <h3 className="text-base font-semibold text-blue-900">Special Offer</h3>
+                </div>
+                <div className="bg-white rounded-lg p-4 border border-blue-100">
+                  <div className="flex items-start gap-3">
+                    <div className="bg-blue-100 rounded-full p-2">
+                      <Gift className="w-5 h-5 text-blue-600" />
+                    </div>
+                    <div className="flex-1">
+                      <p className="text-lg font-bold text-gray-900 mb-1">Buy 2 Get 1 Free!</p>
+                      <p className="text-sm text-gray-600 mb-3">Add 3 or more items to your cart and get 1 item absolutely free. Discount applied automatically at checkout.</p>
+                      <div className="flex items-center gap-2">
+                        <span className="bg-blue-500 text-white px-3 py-1 rounded-full text-xs font-bold">LIMITED TIME</span>
+                        <span className="text-xs text-blue-600 font-medium">No code required</span>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -239,17 +275,17 @@ export default function Product({ data }) {
                 </div>
               </div>
 
-              {/* Action Buttons */}
-              <div className="space-y-3 pt-2">
+              {/* Action Buttons - Single Row */}
+              <div className="flex gap-3 pt-2">
                 <Button
                   size="lg"
                   isLoading={isAddingToCart(data._id)}
                   onPress={handleAddToCart}
-                  className="w-full bg-yellow-400 text-gray-900 font-medium hover:bg-yellow-500 h-12 text-sm rounded-full shadow-sm"
+                  className="flex-1 bg-yellow-400 text-gray-900 font-medium hover:bg-yellow-500 h-12 text-sm rounded-full shadow-sm"
                 >
                   {isAddingToCart(data._id) ? "Adding..." : "Add to Cart"}
                 </Button>
-                <Button size="lg" onPress={handleBuyNow} className="w-full bg-orange-500 text-white font-medium hover:bg-orange-600 h-12 text-sm rounded-full shadow-sm">
+                <Button size="lg" onPress={handleBuyNow} className="flex-1 bg-orange-500 text-white font-medium hover:bg-orange-600 h-12 text-sm rounded-full shadow-sm">
                   Buy Now
                 </Button>
               </div>
