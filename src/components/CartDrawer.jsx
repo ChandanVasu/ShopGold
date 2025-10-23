@@ -6,11 +6,13 @@ import { Button } from "@heroui/react";
 import { Drawer, DrawerContent, DrawerHeader, DrawerBody, DrawerFooter } from "@heroui/drawer";
 import ProductLabel from "@/components/ProductLabel";
 import { ShoppingBag, Trash2, Plus, Minus, ArrowRight } from "lucide-react";
+import { useCurrency } from "@/hooks/useCurrency";
 
 export default function CartDrawer({ isOpen, onClose }) {
   const [cartItems, setCartItems] = useState([]);
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
+  const { symbol: currencySymbol } = useCurrency();
 
   useEffect(() => {
     if (isOpen) {
@@ -112,7 +114,7 @@ export default function CartDrawer({ isOpen, onClose }) {
       size: item.size || null,
       image: item.image,
       price: item.price,
-      currency: item.currency || "₹",
+      currency: item.currency || currencySymbol,
     }));
 
     localStorage.setItem("buyNow", JSON.stringify(buyNowData));
@@ -205,8 +207,32 @@ export default function CartDrawer({ isOpen, onClose }) {
                       </Link>
 
                       <div className="flex items-center justify-between mt-2">
-                        <div className="text-sm font-semibold text-gray-900">
-                          ₹{(item.price * item.quantity).toFixed(0)}
+                        <div className="text-sm">
+                          {(() => {
+                            const itemMRP = product?.regularPrice || item.price || 0;
+                            const itemPrice = item.price || 0;
+                            const totalPrice = itemPrice * item.quantity;
+                            const totalMRP = itemMRP * item.quantity;
+                            const discount = totalMRP - totalPrice;
+
+                            return (
+                              <div className="space-y-1">
+                                {discount > 0 && (
+                                  <div className="flex items-center gap-2">
+                                    <span className="text-xs text-gray-500 line-through">
+                                      {currencySymbol}{totalMRP.toFixed(0)}
+                                    </span>
+                                    <span className="text-xs text-green-600 font-medium">
+                                      -{currencySymbol}{discount.toFixed(0)}
+                                    </span>
+                                  </div>
+                                )}
+                                <div className="font-semibold text-gray-900">
+                                  {currencySymbol}{totalPrice.toFixed(0)}
+                                </div>
+                              </div>
+                            );
+                          })()}
                         </div>
 
                         <div className="flex items-center gap-2">
@@ -259,24 +285,28 @@ export default function CartDrawer({ isOpen, onClose }) {
                 <div className="w-full text-sm text-gray-800 space-y-2">
                   <div className="flex justify-between">
                     <span>Total MRP</span>
-                    <span>₹{totalMRP.toFixed(0)}</span>
+                    <span>{currencySymbol}{totalMRP.toFixed(0)}</span>
                   </div>
-                  <div className="flex justify-between text-green-600">
-                    <span>Discount on MRP</span>
-                    <span>-₹{discountOnMRP.toFixed(0)}</span>
-                  </div>
+                  {discountOnMRP > 0 && (
+                    <div className="flex justify-between text-green-600">
+                      <span>Discount on MRP</span>
+                      <span>-{currencySymbol}{discountOnMRP.toFixed(0)}</span>
+                    </div>
+                  )}
                   <div className="flex justify-between font-medium">
                     <span>Total Price</span>
-                    <span>₹{(totalMRP - discountOnMRP).toFixed(0)}</span>
+                    <span>{currencySymbol}{(totalMRP - discountOnMRP).toFixed(0)}</span>
                   </div>
-                  <div className="flex justify-between text-blue-600">
-                    <span>Coupon Applied (Buy 2 Get 1 free)</span>
-                    <span>-₹{buy2Get1Discount.toFixed(0)}</span>
-                  </div>
+                  {buy2Get1Discount > 0 && (
+                    <div className="flex justify-between text-blue-600">
+                      <span>Coupon Applied (Buy 2 Get 1 free)</span>
+                      <span>-{currencySymbol}{buy2Get1Discount.toFixed(0)}</span>
+                    </div>
+                  )}
 
                   <div className="flex justify-between items-center border-t pt-2 mt-2 font-semibold text-gray-900">
                     <span>Total Amount</span>
-                    <span>₹{totalAmount.toFixed(0)}</span>
+                    <span>{currencySymbol}{totalAmount.toFixed(0)}</span>
                   </div>
 
                   <div className="text-xs text-gray-500">
