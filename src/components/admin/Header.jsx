@@ -135,10 +135,6 @@ const Header = ({ sidebarOpen, setSidebarOpen }) => {
                     <Globe size={14} />
                     Visit Store
                   </button>
-                  <Link href="/admin/help" className="flex items-center gap-2 w-full px-3 py-2 text-sm text-gray-700 hover:bg-gray-50">
-                    <HelpCircle size={14} />
-                    Help & Support
-                  </Link>
                 </div>
                 <div className="border-t border-gray-100 mt-1 pt-1">
                   <button onClick={handleLogout} className="flex items-center gap-2 w-full px-3 py-2 text-sm text-red-600 hover:bg-red-50">

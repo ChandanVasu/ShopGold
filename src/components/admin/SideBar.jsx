@@ -24,6 +24,7 @@ import {
   Code,
   HelpCircle,
   BookOpen,
+  Type,
 } from "lucide-react";
 
 const SideBar = ({ onItemClick }) => {
@@ -43,6 +44,7 @@ const SideBar = ({ onItemClick }) => {
     { href: "/admin/analytics", icon: <BarChart2 size={16} />, label: "Analytics" },
     { href: "/admin/images", icon: <GalleryHorizontalEnd size={16} />, label: "Media" },
     { href: "/admin/slider", icon: <Layers size={16} />, label: "Sliders" },
+    { href: "/admin/promo-text", icon: <Type size={16} />, label: "Promo Texts" },
     { href: "/admin/reel", icon: <Video size={16} />, label: "Reels" },
     { href: "/admin/menu", icon: <Menu size={16} />, label: "Menus" },
     { href: "/admin/support-benefits", icon: <FileText size={16} />, label: "Support Benefits" },

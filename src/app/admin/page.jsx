@@ -68,7 +68,7 @@ export default function DashboardPage() {
       {/* Stats Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard title="Total Orders" value={totalOrders} icon={<ShoppingBag size={20} />} color="blue" trend="+12%" />
-        <StatCard title="Revenue" value={`${currencySymbol}${totalRevenue.toLocaleString()}`} icon={<DollarSign size={20} />} color="green" trend="+8%" />
+        <StatCard title="Revenue" value={`${totalRevenue.toLocaleString()}`} icon={<DollarSign size={20} />} color="green" trend="+8%" />
         <StatCard title="Customers" value={uniqueCustomers} icon={<Users size={20} />} color="purple" trend="+23%" />
         <StatCard title="Products" value={products.length} icon={<Package size={20} />} color="orange" trend="+3%" />
       </div>
@@ -111,7 +111,7 @@ export default function DashboardPage() {
                   </div>
                   <div className="text-right">
                     <p className="font-semibold text-gray-900 text-sm">
-                      {process.env.NEXT_PUBLIC_STORE_CURRENCY_SYMBOL}
+                      {/* {process.env.NEXT_PUBLIC_STORE_CURRENCY_SYMBOL} */}
                       {product.salePrice || product.regularPrice}
                     </p>
                     <p className="text-xs text-gray-500">{formatDate(product.createdAt)}</p>
@@ -142,20 +142,51 @@ export default function DashboardPage() {
               </div>
             ) : (
               recentOrders.map((order) => (
-                <div key={order._id} className="flex items-center gap-4 p-3 rounded-xl hover:bg-gray-50 transition-colors">
-                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center text-white font-medium text-sm flex-shrink-0">
-                    {order.name?.charAt(0)?.toUpperCase()}
+                <div key={order._id} className="space-y-3">
+                  {/* Order Header */}
+                  <div className="flex items-center justify-between pb-2 border-b border-gray-100">
+                    <div className="flex items-center gap-2">
+                      <div className="w-6 h-6 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center text-white font-medium text-xs">
+                        {order.name?.charAt(0)?.toUpperCase()}
+                      </div>
+                      <span className="text-sm font-medium text-gray-700">Order #{order._id?.slice(-6)}</span>
+                    </div>
+                    <div className="text-right">
+                      <p className="font-semibold text-gray-900 text-sm">
+                        {/* {process.env.NEXT_PUBLIC_STORE_CURRENCY_SYMBOL} */}
+                        {order.paymentDetails?.total}
+                      </p>
+                      <p className="text-xs text-gray-500">{formatDate(order.createdAt)}</p>
+                    </div>
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <h3 className="font-medium text-gray-900 text-sm truncate">{order.name}</h3>
-                    <p className="text-xs text-gray-500 truncate">{order.email}</p>
-                  </div>
-                  <div className="text-right">
-                    <p className="font-semibold text-gray-900 text-sm">
-                      {process.env.NEXT_PUBLIC_STORE_CURRENCY_SYMBOL}
-                      {order.paymentDetails?.total}
-                    </p>
-                    <p className="text-xs text-gray-500">{formatDate(order.createdAt)}</p>
+                  
+                  {/* Products in Order */}
+                  <div className="space-y-2 pl-8">
+                    {order.products?.items?.map((item, index) => (
+                      <div key={index} className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-50 transition-colors">
+                        <div className="w-8 h-8 rounded-lg bg-gray-100 overflow-hidden flex-shrink-0">
+                          {item.images?.[0] ? (
+                            <img src={item.images[0]} alt={item.title} className="w-full h-full object-cover" />
+                          ) : (
+                            <div className="w-full h-full flex items-center justify-center">
+                              <Package size={12} className="text-gray-400" />
+                            </div>
+                          )}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <h4 className="font-medium text-gray-900 text-xs truncate">{item.title}</h4>
+                          <p className="text-xs text-gray-500">Qty: {item.quantity}</p>
+                        </div>
+                        <div className="text-right">
+                          <p className="font-medium text-gray-900 text-xs">
+                            {process.env.NEXT_PUBLIC_STORE_CURRENCY_SYMBOL}
+                            {item.sellingPrice}
+                          </p>
+                        </div>
+                      </div>
+                    )) || (
+                      <div className="text-xs text-gray-500 italic">No product details available</div>
+                    )}
                   </div>
                 </div>
               ))

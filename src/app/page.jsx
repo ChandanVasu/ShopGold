@@ -37,6 +37,8 @@ export default function Home() {
       <div className="mt-3">
         <Slider />
       </div>
+        
+
       <div className="md:mt-16 mt-8">
         <SliderCollection />
       </div>
