@@ -6,6 +6,7 @@ import { Eye, ShoppingBag, Package, X } from "lucide-react";
 import CustomButton from "@/components/block/CustomButton";
 import formatDate from "@/utils/formatDate";
 import Empty from "@/components/block/Empty";
+import { useCurrency } from "@/hooks/useCurrency";
 
 export default function OrderTablePage() {
   const [orders, setOrders] = useState([]);
@@ -14,6 +15,7 @@ export default function OrderTablePage() {
   const [loading, setLoading] = useState(true);
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [modalOpen, setModalOpen] = useState(false);
+  const { symbol: currencySymbol, currency } = useCurrency();
 
   const totalPages = Math.ceil(orders.length / rowsPerPage);
   const paginatedOrders = orders.slice((page - 1) * rowsPerPage, page * rowsPerPage);
@@ -95,7 +97,7 @@ export default function OrderTablePage() {
                         </div>
                         <div className="text-right">
                           <p className="font-semibold text-sm text-gray-900">
-                            {order.paymentDetails?.currencySymbol}
+                            {order.paymentDetails?.currencySymbol || currencySymbol}
                             {order.paymentDetails?.total}
                           </p>
                           <span
@@ -155,14 +157,14 @@ export default function OrderTablePage() {
                           name={<span className="font-medium text-gray-900">{order.name}</span>}
                           description={<span className="text-gray-600">{order.email}</span>}
                           avatarProps={{
-                            src: order.products.items?.[0]?.images?.[0] || "",
+                            src: order.products?.items?.[0]?.images?.[0] || "",
                             size: "md",
                             className: "rounded-lg",
                           }}
                         />
                       </TableCell>
                       <TableCell className="font-semibold text-gray-900">
-                        {process.env.NEXT_PUBLIC_STORE_CURRENCY_SYMBOL} {order.paymentDetails?.total}
+                        {order.paymentDetails?.currencySymbol || currencySymbol} {order.paymentDetails?.total}
                       </TableCell>
                       <TableCell>
                         <span
@@ -258,7 +260,7 @@ export default function OrderTablePage() {
                 <div className="bg-gradient-to-r from-green-50 to-blue-50 p-4 rounded-xl">
                   <p className="text-xs text-gray-600 mb-2">Total Amount</p>
                   <p className="font-bold text-2xl text-gray-900">
-                    {process.env.NEXT_PUBLIC_STORE_CURRENCY_SYMBOL}
+                    {selectedOrder.paymentDetails?.currencySymbol || currencySymbol}
                     {selectedOrder.paymentDetails?.total}
                   </p>
                 </div>
@@ -270,25 +272,32 @@ export default function OrderTablePage() {
                     <p className="text-sm font-medium text-gray-900">Ordered Products</p>
                   </div>
                   <div className="space-y-3">
-                    {selectedOrder.products.items.map((item, idx) => (
-                      <div key={idx} className="flex items-center gap-4 bg-white rounded-xl p-4 border border-gray-100">
-                        <img src={item.images?.[0] || "/placeholder-product.png"} alt={item.title} className="w-16 h-16 rounded-lg object-cover flex-shrink-0 border border-gray-200" />
-                        <div className="flex-1 space-y-1">
-                          <p className="font-semibold text-sm text-gray-900">{item.title}</p>
-                          <div className="flex items-center gap-4 text-xs text-gray-600">
-                            <span>Qty: {item.quantity}</span>
-                            <span>
-                              Price: {process.env.NEXT_PUBLIC_STORE_CURRENCY_SYMBOL}
-                              {item.sellingPrice}
-                            </span>
-                            <span className="font-medium">
-                              Total: {process.env.NEXT_PUBLIC_STORE_CURRENCY_SYMBOL}
-                              {(item.quantity * item.sellingPrice).toFixed(2)}
-                            </span>
+                    {selectedOrder.products?.items?.length > 0 ? (
+                      selectedOrder.products.items.map((item, idx) => (
+                        <div key={idx} className="flex items-center gap-4 bg-white rounded-xl p-4 border border-gray-100">
+                          <img src={item.images?.[0] || "/placeholder-product.png"} alt={item.title} className="w-16 h-16 rounded-lg object-cover flex-shrink-0 border border-gray-200" />
+                          <div className="flex-1 space-y-1">
+                            <p className="font-semibold text-sm text-gray-900">{item.title}</p>
+                            <div className="flex items-center gap-4 text-xs text-gray-600">
+                              <span>Qty: {item.quantity}</span>
+                              <span>
+                                Price: {currencySymbol}
+                                {item.sellingPrice}
+                              </span>
+                              <span className="font-medium">
+                                Total: {currencySymbol}
+                                {(item.quantity * item.sellingPrice).toFixed(2)}
+                              </span>
+                            </div>
                           </div>
                         </div>
+                      ))
+                    ) : (
+                      <div className="bg-gray-50 rounded-xl p-6 text-center">
+                        <Package className="w-8 h-8 text-gray-400 mx-auto mb-2" />
+                        <p className="text-gray-500 text-sm">No products found in this order</p>
                       </div>
-                    ))}
+                    )}
                   </div>
                 </div>
               </>

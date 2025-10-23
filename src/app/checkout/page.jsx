@@ -1,27 +1,22 @@
 "use client";
-import React, { useState } from "react";
-import CheckoutBillingDetails from "./components/CheckoutBillingDetails";
-import CheckoutOrderSummary from "./components/CheckoutOrderSummary";
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
 
 export default function CheckoutPage() {
-  const [billingDetails, setBillingDetails] = useState({
-    customer: { fullName: "", company: "", phone: "", email: "" },
-    address: { country: "", address1: "", address2: "", city: "", state: "", zip: "" },
-    notes: "",
-  });
+  const router = useRouter();
 
-  const [errors, setErrors] = useState({});
-
+  useEffect(() => {
+    // Redirect to address page for the new checkout flow
+    router.push("/checkout/address");
+  }, [router]);
 
   return (
     <div className="container mx-auto px-4 md:px-20 my-14">
-      <h1 className="text-2xl font-bold mb-4">Checkout</h1>
-      <p className="text-sm text-gray-600 mb-4">Please fill your details to place the order.</p>
-
-      <div className="flex flex-col md:flex-row gap-8">
-        <CheckoutBillingDetails billingDetails={billingDetails} setBillingDetails={setBillingDetails} errors={errors} />
-
-        <CheckoutOrderSummary billingDetails={billingDetails} setErrors={setErrors} />
+      <div className="flex justify-center items-center h-64">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Redirecting to checkout...</p>
+        </div>
       </div>
     </div>
   );

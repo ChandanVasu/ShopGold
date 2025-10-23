@@ -64,12 +64,48 @@ export default function CartPage() {
     setCartItems(updatedCart);
   };
 
-  const getTotalPrice = () => {
-    return cartItems.reduce((total, item) => total + (item.price * item.quantity), 0).toFixed(2);
+  const getTotalItems = () => {
+    if (!cartItems || cartItems.length === 0) return 0;
+    return cartItems.reduce((total, item) => {
+      const quantity = item?.quantity || 0;
+      return total + quantity;
+    }, 0);
   };
 
-  const getTotalItems = () => {
-    return cartItems.reduce((total, item) => total + item.quantity, 0);
+  const getTotalPrice = () => {
+    if (!cartItems || cartItems.length === 0) return 0;
+    return cartItems.reduce((total, item) => {
+      const price = item?.price || 0;
+      const quantity = item?.quantity || 0;
+      return total + (price * quantity);
+    }, 0);
+  };
+
+  const getDiscountDetails = () => {
+    let totalMRP = 0;
+    let discountOnMRP = 0;
+    
+    // Calculate MRP and discount using product data
+    cartItems.forEach(item => {
+      const product = getProductDetails(item.productId);
+      const itemMRP = product?.regularPrice || item.price || 0; // Use product's regular price as MRP
+      const itemPrice = item.price || 0; // Cart item's sale price
+      
+      totalMRP += itemMRP * item.quantity;
+      discountOnMRP += (itemMRP - itemPrice) * item.quantity;
+    });
+
+    // ✅ Buy 2 Get 1 Free logic - Calculate for each product separately
+    let buy2Get1Discount = 0;
+    cartItems.forEach(item => {
+      const freeItems = Math.floor(item.quantity / 3); // For every 3 items, 1 is free
+      const itemPrice = item.price || 0;
+      buy2Get1Discount += freeItems * itemPrice; // Discount = free items × price per item
+    });
+
+    const totalAmount = getTotalPrice() - buy2Get1Discount;
+
+    return { totalMRP, discountOnMRP, buy2Get1Discount, totalAmount };
   };
 
   const handleBuyNow = () => {
@@ -217,8 +253,7 @@ export default function CartPage() {
 
                               {/* Price */}
                               <div className="text-sm font-semibold text-gray-900">
-                                {getProductDetails(item.productId)?.currencySymbol || item.currency || "$"}
-                                {(item.price * item.quantity).toFixed(2)}
+                                ₹{(item.price * item.quantity).toFixed(0)}
                               </div>
 
                               {/* Remove Button */}
@@ -244,26 +279,44 @@ export default function CartPage() {
               <div className="bg-white rounded-2xl p-6 sticky top-6">
                 <h3 className="text-lg font-medium text-gray-900 mb-6">Order Summary</h3>
                 
-                <div className="space-y-4 mb-6">
-                  <div className="flex justify-between text-sm">
-                    <span className="text-gray-600">Subtotal ({getTotalItems()} items)</span>
-                    <span className="font-medium text-gray-900">
-                      {products[0]?.currencySymbol || "$"}{getTotalPrice()}
-                    </span>
-                  </div>
-                  <div className="flex justify-between text-sm">
-                    <span className="text-gray-600">Shipping</span>
-                    <span className="font-medium text-green-600">Free</span>
-                  </div>
-                  <div className="border-t border-gray-100 pt-4">
-                    <div className="flex justify-between">
-                      <span className="text-base font-medium text-gray-900">Total</span>
-                      <span className="text-lg font-semibold text-gray-900">
-                        {products[0]?.currencySymbol || "$"}{getTotalPrice()}
-                      </span>
+                {(() => {
+                  const { totalMRP, discountOnMRP, buy2Get1Discount, totalAmount } = getDiscountDetails();
+
+                  return (
+                    <div className="space-y-4 mb-6">
+                      <div className="flex justify-between text-sm">
+                        <span className="text-gray-600">Total MRP</span>
+                        <span className="font-medium text-gray-900">₹{totalMRP.toFixed(0)}</span>
+                      </div>
+                      {discountOnMRP > 0 && (
+                        <div className="flex justify-between text-sm">
+                          <span className="text-gray-600">Discount on MRP</span>
+                          <span className="font-medium text-green-600">-₹{discountOnMRP.toFixed(0)}</span>
+                        </div>
+                      )}
+                      <div className="flex justify-between text-sm">
+                        <span className="text-gray-600">Subtotal ({getTotalItems()} items)</span>
+                        <span className="font-medium text-gray-900">₹{(totalMRP - discountOnMRP).toFixed(0)}</span>
+                      </div>
+                      {buy2Get1Discount > 0 && (
+                        <div className="flex justify-between text-sm">
+                          <span className="text-gray-600">Coupon Applied (Buy 2 Get 1 free)</span>
+                          <span className="font-medium text-blue-600">-₹{buy2Get1Discount.toFixed(0)}</span>
+                        </div>
+                      )}
+                      <div className="flex justify-between text-sm">
+                        <span className="text-gray-600">Shipping</span>
+                        <span className="font-medium text-green-600">Free</span>
+                      </div>
+                      <div className="border-t border-gray-100 pt-4">
+                        <div className="flex justify-between">
+                          <span className="text-base font-medium text-gray-900">Total</span>
+                          <span className="text-lg font-semibold text-gray-900">₹{totalAmount.toFixed(0)}</span>
+                        </div>
+                      </div>
                     </div>
-                  </div>
-                </div>
+                  );
+                })()}
 
                 <Button
                   size="lg"

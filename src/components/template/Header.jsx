@@ -24,16 +24,7 @@ export default function FullHeader() {
     // Use Promise.all to fetch data in parallel
     const fetchData = async () => {
       try {
-        const [menuRes, settingsRes] = await Promise.all([
-          fetch("/api/data?collection=menu-item", {
-            cache: "force-cache",
-            next: { revalidate: 300 } // Cache for 5 minutes
-          }),
-          fetch("/api/setting?type=store", {
-            cache: "force-cache",
-            next: { revalidate: 300 } // Cache for 5 minutes
-          })
-        ]);
+        const [menuRes, settingsRes] = await Promise.all([fetch("/api/data?collection=menu-item", {}), fetch("/api/setting?type=store", {})]);
 
         if (menuRes.ok) {
           const menuData = await menuRes.json();
@@ -90,11 +81,8 @@ export default function FullHeader() {
 
           {/* Desktop Menu - Centered */}
           <nav className="hidden md:flex gap-4 items-center justify-center flex-1">
-            {/* Blog Link - Always show */}
-            <Link href="/blog" className="flex items-center gap-1 text-sm capitalize hover:text-orange-500 transition-colors">
-              <p className="capitalize">Blog</p>
-            </Link>
-            
+       
+
             {/* Dynamic Menu Items */}
             {displayMenuItems.map(({ _id, title, url }) => (
               <a key={_id} href={url} className="flex items-center gap-1 text-sm capitalize hover:text-orange-500 transition-colors">
@@ -134,19 +122,18 @@ export default function FullHeader() {
             >
               {/* Header Section with Logo and Close Button */}
               <div className="relative bg-gray-50 border-b border-gray-200 px-4 py-6 pt-8">
-                <button onClick={closeMenu} className="absolute top-4 right-4 text-gray-600 hover:text-gray-800 text-2xl cursor-pointer z-10 w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-200 transition-colors">
+                <button
+                  onClick={closeMenu}
+                  className="absolute top-4 right-4 text-gray-600 hover:text-gray-800 text-2xl cursor-pointer z-10 w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-200 transition-colors"
+                >
                   ×
                 </button>
-                
+
                 {/* Logo/Store Name */}
                 <div className="flex items-center gap-3 pr-12">
-                  {storeSettings?.logoImage ? (
-                    <img src={logoSrc} alt={storeName} className="h-8 w-auto" />
-                  ) : (
-                    <span className="font-bold text-lg text-gray-800">{storeName}</span>
-                  )}
+                  {storeSettings?.logoImage ? <img src={logoSrc} alt={storeName} className="h-8 w-auto" /> : <span className="font-bold text-lg text-gray-800">{storeName}</span>}
                 </div>
-                
+
                 {/* Welcome text */}
                 <p className="text-xs text-gray-500 mt-2">Navigate through our store</p>
               </div>
@@ -154,11 +141,7 @@ export default function FullHeader() {
               {/* Mobile Menu List */}
               <div className="flex flex-col px-4 py-6 gap-1 flex-1">
                 {/* Blog Link - Always show in mobile */}
-                <Link 
-                  href="/blog" 
-                  className="flex items-center justify-between py-4 px-3 rounded-lg hover:bg-gray-50 transition-colors group border-b border-gray-100" 
-                  onClick={closeMenu}
-                >
+                <Link href="/blog" className="flex items-center justify-between py-4 px-3 rounded-lg hover:bg-gray-50 transition-colors group border-b border-gray-100" onClick={closeMenu}>
                   <div className="flex items-center gap-4 text-gray-700 text-sm font-medium group-hover:text-gray-900">
                     <span className="text-gray-500 group-hover:text-blue-600 transition-colors">
                       <DynamicIcon name="book-open" size={20} />
@@ -172,10 +155,10 @@ export default function FullHeader() {
 
                 {displayMenuItems.length > 0 ? (
                   displayMenuItems.map(({ _id, title, url, iconName, badge }) => (
-                    <a 
-                      href={url} 
-                      key={_id} 
-                      className="flex items-center justify-between py-4 px-3 rounded-lg hover:bg-gray-50 transition-colors group border-b border-gray-100 last:border-b-0" 
+                    <a
+                      href={url}
+                      key={_id}
+                      className="flex items-center justify-between py-4 px-3 rounded-lg hover:bg-gray-50 transition-colors group border-b border-gray-100 last:border-b-0"
                       onClick={closeMenu}
                     >
                       <div className="flex items-center gap-4 text-gray-700 text-sm font-medium group-hover:text-gray-900">
@@ -207,7 +190,9 @@ export default function FullHeader() {
               {displayMenuItems.length > 0 && (
                 <div className="border-t border-gray-200 px-4 py-4 bg-gray-50">
                   <div className="flex items-center justify-center gap-6 text-xs text-gray-500">
-                    <span>© {new Date().getFullYear()} {storeName}</span>
+                    <span>
+                      © {new Date().getFullYear()} {storeName}
+                    </span>
                   </div>
                 </div>
               )}

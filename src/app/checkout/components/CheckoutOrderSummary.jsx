@@ -46,15 +46,44 @@ export default function CheckoutOrderSummary({ billingDetails, setErrors }) {
     }
   }, [paymentSettings, selectedPayment]);
 
-  const currencySymbol = storeSettings?.currencySymbol || "$";
-  const storeCurrency = storeSettings?.storeCurrency || "USD";
+  const currencySymbol = storeSettings?.currencySymbol || "₹";
+  const storeCurrency = storeSettings?.storeCurrency || "INR";
+
+  const getDiscountDetails = () => {
+    let totalMRP = 0;
+    let discountOnMRP = 0;
+    
+    // Calculate MRP and discount using product data
+    products.forEach(item => {
+      const itemMRP = item.regularPrice || item.salePrice || 0; // Use product's regular price as MRP
+      const itemPrice = item.salePrice || item.regularPrice || 0; // Sale price
+      
+      totalMRP += itemMRP * item.quantity;
+      discountOnMRP += (itemMRP - itemPrice) * item.quantity;
+    });
+
+    // ✅ Buy 2 Get 1 Free logic - Calculate for each product separately
+    let buy2Get1Discount = 0;
+    products.forEach(item => {
+      const freeItems = Math.floor(item.quantity / 3); // For every 3 items, 1 is free
+      const itemPrice = item.salePrice || item.regularPrice || 0;
+      buy2Get1Discount += freeItems * itemPrice; // Discount = free items × price per item
+    });
+
+    const subtotal = products.reduce((acc, p) => acc + Number(p.salePrice || p.regularPrice) * p.quantity, 0);
+    const totalAmount = subtotal - buy2Get1Discount;
+
+    return { totalMRP, discountOnMRP, buy2Get1Discount, subtotal, totalAmount };
+  };
+
+  const { totalMRP, discountOnMRP, buy2Get1Discount, subtotal, totalAmount } = getDiscountDetails();
 
   const costDetails = {
-    subtotal: products.reduce((acc, p) => acc + Number(p.salePrice || p.regularPrice) * p.quantity, 0),
+    subtotal: subtotal,
     shipping: 0,
     tax: 0,
     get total() {
-      return this.subtotal + this.shipping + this.tax;
+      return totalAmount + this.shipping + this.tax;
     },
   };
 
@@ -139,24 +168,49 @@ export default function CheckoutOrderSummary({ billingDetails, setErrors }) {
       {/* Cost Summary */}
       <div className="py-4 border-b text-sm text-gray-700 space-y-2">
         <div className="flex justify-between">
+          <span>Total MRP</span>
+          <span>
+            {currencySymbol}
+            {totalMRP.toFixed(0)}
+          </span>
+        </div>
+        {discountOnMRP > 0 && (
+          <div className="flex justify-between text-green-600">
+            <span>Discount on MRP</span>
+            <span>
+              -{currencySymbol}
+              {discountOnMRP.toFixed(0)}
+            </span>
+          </div>
+        )}
+        <div className="flex justify-between">
           <span>Subtotal</span>
           <span>
             {currencySymbol}
-            {costDetails.subtotal.toFixed(2)}
+            {(totalMRP - discountOnMRP).toFixed(0)}
           </span>
         </div>
+        {buy2Get1Discount > 0 && (
+          <div className="flex justify-between text-blue-600">
+            <span>Coupon Applied (Buy 2 Get 1 free)</span>
+            <span>
+              -{currencySymbol}
+              {buy2Get1Discount.toFixed(0)}
+            </span>
+          </div>
+        )}
         <div className="flex justify-between">
           <span>Shipping</span>
           <span>
             {currencySymbol}
-            {costDetails.shipping.toFixed(2)}
+            {costDetails.shipping.toFixed(0)}
           </span>
         </div>
         <div className="flex justify-between font-bold text-gray-900 text-base">
           <span>Total</span>
           <span>
             {currencySymbol}
-            {costDetails.total.toFixed(2)}
+            {costDetails.total.toFixed(0)}
           </span>
         </div>
       </div>

@@ -1,15 +1,51 @@
 "use client";
 import { useEffect, useState } from "react";
+import { usePathname } from "next/navigation";
 import { Elements } from "@stripe/react-stripe-js";
 import { loadStripe } from "@stripe/stripe-js";
 import { PayPalScriptProvider } from "@paypal/react-paypal-js";
 import { Spinner } from "@heroui/react";
+import { CheckCircle, MapPin, CreditCard } from "lucide-react";
 import PaymentContext from "./PaymentContext";
 
 export default function CheckoutLayout({ children }) {
+  const pathname = usePathname();
   const [stripePromise, setStripePromise] = useState(null);
   const [paymentSettings, setPaymentSettings] = useState(null);
   const [loading, setLoading] = useState(true);
+
+  const steps = [
+    {
+      id: "address",
+      name: "Address",
+      icon: MapPin,
+      path: "/checkout/address",
+      description: "Shipping information"
+    },
+    {
+      id: "payment",
+      name: "Payment", 
+      icon: CreditCard,
+      path: "/checkout/payment",
+      description: "Payment method"
+    },
+    {
+      id: "success",
+      name: "Complete",
+      icon: CheckCircle,
+      path: "/checkout/success",
+      description: "Order confirmation"
+    }
+  ];
+
+  const getCurrentStepIndex = () => {
+    if (pathname.includes("/address")) return 0;
+    if (pathname.includes("/payment")) return 1;
+    if (pathname.includes("/success")) return 2;
+    return 0;
+  };
+
+  const currentStepIndex = getCurrentStepIndex();
 
   useEffect(() => {
     const fetchPaymentSettings = async () => {
@@ -76,7 +112,14 @@ export default function CheckoutLayout({ children }) {
     <PaymentContext.Provider value={paymentSettings}>
       <PayPalScriptProvider options={paypalOptions}>
         <Elements stripe={stripePromise}>
-          {children}
+          <div className="min-h-screen bg-gray-50">
+          
+
+            {/* Page Content */}
+            <div className="flex-1">
+              {children}
+            </div>
+          </div>
         </Elements>
       </PayPalScriptProvider>
     </PaymentContext.Provider>

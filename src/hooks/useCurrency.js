@@ -4,8 +4,8 @@ import { useState, useEffect } from "react";
 
 export const useCurrency = () => {
   const [currency, setCurrency] = useState({
-    currency: "USD",
-    symbol: "$"
+    currency: "INR",
+    symbol: "₹"
   });
 
   useEffect(() => {
@@ -16,13 +16,13 @@ export const useCurrency = () => {
         if (cachedCurrency) {
           const parsed = JSON.parse(cachedCurrency);
           setCurrency({
-            currency: parsed.currency || "USD",
-            symbol: parsed.symbol || "$"
+            currency: parsed.currency || "INR",
+            symbol: parsed.symbol || "₹"
           });
         }
       } catch (error) {
         console.error("Failed to get cached currency:", error);
-        setCurrency({ currency: "USD", symbol: "$" });
+        setCurrency({ currency: "INR", symbol: "₹" });
       }
     };
 
