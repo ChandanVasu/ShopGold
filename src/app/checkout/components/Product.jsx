@@ -11,8 +11,7 @@ export default function useBuyNowProducts() {
     async function fetchData() {
       try {
         const productRes = await fetch("/api/product", {
-          cache: "force-cache",
-          next: { revalidate: 300 }
+      
         });
         const allProducts = await productRes.json();
 

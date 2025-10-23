@@ -23,10 +23,7 @@ export default function CheckoutOrderSummary({ billingDetails, setErrors }) {
   useEffect(() => {
     const fetchSettings = async () => {
       try {
-        const res = await fetch("/api/setting?type=store", {
-          cache: "force-cache",
-          next: { revalidate: 300 }
-        });
+        const res = await fetch("/api/setting?type=store", {});
         const data = await res.json();
         setStoreSettings(data);
       } catch (err) {
@@ -41,7 +38,7 @@ export default function CheckoutOrderSummary({ billingDetails, setErrors }) {
     if (paymentSettings) {
       const available = getAvailablePaymentGateways(paymentSettings);
       setAvailableGateways(available);
-      
+
       // Set default payment method to first available gateway
       if (available.length > 0 && !selectedPayment) {
         setSelectedPayment(available[0]);
@@ -169,13 +166,7 @@ export default function CheckoutOrderSummary({ billingDetails, setErrors }) {
 
         {/* Payment Method Tabs */}
         {availableGateways.length > 0 && (
-          <Tabs 
-            selectedKey={selectedPayment} 
-            onSelectionChange={setSelectedPayment}
-            variant="bordered"
-            color="primary"
-            className="w-full"
-          >
+          <Tabs selectedKey={selectedPayment} onSelectionChange={setSelectedPayment} variant="bordered" color="primary" className="w-full">
             {/* Stripe */}
             {availableGateways.includes("stripe") && (
               <Tab key="stripe" title={gatewayInfo.stripe.name}>
@@ -187,10 +178,13 @@ export default function CheckoutOrderSummary({ billingDetails, setErrors }) {
                     currency={storeCurrency}
                     currencySymbol={currencySymbol}
                     onSuccess={async (paymentIntent) => {
-                      await handlePaymentSuccess({
-                        paymentIntentId: paymentIntent?.id,
-                        paymentStatus: paymentIntent?.status,
-                      }, "stripe");
+                      await handlePaymentSuccess(
+                        {
+                          paymentIntentId: paymentIntent?.id,
+                          paymentStatus: paymentIntent?.status,
+                        },
+                        "stripe"
+                      );
                     }}
                     onError={handlePaymentError}
                   />
@@ -207,10 +201,13 @@ export default function CheckoutOrderSummary({ billingDetails, setErrors }) {
                     currency="INR"
                     orderData={orderDataForPayment}
                     onSuccess={async (order) => {
-                      await handlePaymentSuccess({
-                        razorpayOrderId: order.paymentDetails?.orderId,
-                        razorpayPaymentId: order.paymentDetails?.paymentId,
-                      }, "razorpay");
+                      await handlePaymentSuccess(
+                        {
+                          razorpayOrderId: order.paymentDetails?.orderId,
+                          razorpayPaymentId: order.paymentDetails?.paymentId,
+                        },
+                        "razorpay"
+                      );
                     }}
                     onError={handlePaymentError}
                   />
@@ -226,10 +223,13 @@ export default function CheckoutOrderSummary({ billingDetails, setErrors }) {
                     amount={costDetails.total}
                     currency={storeCurrency}
                     onSuccess={async (details) => {
-                      await handlePaymentSuccess({
-                        paypalOrderId: details.id,
-                        paypalStatus: details.status,
-                      }, "paypal");
+                      await handlePaymentSuccess(
+                        {
+                          paypalOrderId: details.id,
+                          paypalStatus: details.status,
+                        },
+                        "paypal"
+                      );
                     }}
                     onError={handlePaymentError}
                   />
@@ -246,10 +246,13 @@ export default function CheckoutOrderSummary({ billingDetails, setErrors }) {
                     currency="INR"
                     orderData={orderDataForPayment}
                     onSuccess={async (order) => {
-                      await handlePaymentSuccess({
-                        cashfreeOrderId: order.paymentDetails?.orderId,
-                        cashfreeTransactionId: order.paymentDetails?.cfTransactionId,
-                      }, "cashfree");
+                      await handlePaymentSuccess(
+                        {
+                          cashfreeOrderId: order.paymentDetails?.orderId,
+                          cashfreeTransactionId: order.paymentDetails?.cfTransactionId,
+                        },
+                        "cashfree"
+                      );
                     }}
                     onError={handlePaymentError}
                   />
@@ -266,10 +269,13 @@ export default function CheckoutOrderSummary({ billingDetails, setErrors }) {
                     currency="INR"
                     orderData={orderDataForPayment}
                     onSuccess={async (order) => {
-                      await handlePaymentSuccess({
-                        payuTxnId: order.paymentDetails?.txnId,
-                        payuMoneyId: order.paymentDetails?.payuMoneyId,
-                      }, "payu");
+                      await handlePaymentSuccess(
+                        {
+                          payuTxnId: order.paymentDetails?.txnId,
+                          payuMoneyId: order.paymentDetails?.payuMoneyId,
+                        },
+                        "payu"
+                      );
                     }}
                     onError={handlePaymentError}
                   />
@@ -286,10 +292,13 @@ export default function CheckoutOrderSummary({ billingDetails, setErrors }) {
                     currency="INR"
                     orderData={orderDataForPayment}
                     onSuccess={async (order) => {
-                      await handlePaymentSuccess({
-                        phonePeTransactionId: order.paymentDetails?.transactionId,
-                        phonePeStatus: order.paymentDetails?.paymentState,
-                      }, "phonepe");
+                      await handlePaymentSuccess(
+                        {
+                          phonePeTransactionId: order.paymentDetails?.transactionId,
+                          phonePeStatus: order.paymentDetails?.paymentState,
+                        },
+                        "phonepe"
+                      );
                     }}
                     onError={handlePaymentError}
                   />
@@ -306,10 +315,13 @@ export default function CheckoutOrderSummary({ billingDetails, setErrors }) {
                     currency="INR"
                     orderData={orderDataForPayment}
                     onSuccess={async (order) => {
-                      await handlePaymentSuccess({
-                        paytmOrderId: order.paymentDetails?.orderId,
-                        paytmTxnId: order.paymentDetails?.paytmTxnId,
-                      }, "paytm");
+                      await handlePaymentSuccess(
+                        {
+                          paytmOrderId: order.paymentDetails?.orderId,
+                          paytmTxnId: order.paymentDetails?.paytmTxnId,
+                        },
+                        "paytm"
+                      );
                     }}
                     onError={handlePaymentError}
                   />

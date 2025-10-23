@@ -29,6 +29,20 @@ function generateCashfreeSignature(postData, timestamp, appId, secretKey) {
   return crypto.createHmac("sha256", secretKey).update(signatureData).digest("base64");
 }
 
+// Generate a valid customer_id from email (alphanumeric with underscores/hyphens)
+function generateCustomerId(email) {
+  if (!email) {
+    return `customer_${Date.now()}`;
+  }
+  // Replace invalid characters with underscores and ensure it's alphanumeric
+  return email
+    .toLowerCase()
+    .replace(/[^a-z0-9]/g, '_')
+    .replace(/_+/g, '_')
+    .replace(/^_|_$/g, '')
+    .substring(0, 50); // Limit length to 50 characters
+}
+
 // POST: Create Cashfree order using Payment Gateway API
 export async function POST(req) {
   try {
@@ -65,9 +79,9 @@ export async function POST(req) {
       order_amount: amount,
       order_currency: currency || "INR",
       customer_details: {
-        customer_id: orderData.email || `customer_${Date.now()}`,
+        customer_id: orderData.customerId || generateCustomerId(orderData.email),
         customer_name: orderData.name,
-        customer_email: orderData.email,
+        customer_email: orderData.customerEmail || orderData.email,
         customer_phone: orderData.phone || "9999999999",
       },
       order_meta: {

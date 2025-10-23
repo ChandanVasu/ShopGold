@@ -7,19 +7,88 @@ import { CreditCard, Loader2 } from "lucide-react";
 export default function CashfreeButton({ amount, currency, orderData, onSuccess, onError }) {
   const [loading, setLoading] = useState(false);
 
+  // Generate a valid customer_id from email (alphanumeric with underscores/hyphens)
+  const generateCustomerId = (email) => {
+    if (!email) {
+      return `customer_${Date.now()}`;
+    }
+    // Replace invalid characters with underscores and ensure it's alphanumeric
+    return email
+      .toLowerCase()
+      .replace(/[^a-z0-9]/g, '_')
+      .replace(/_+/g, '_')
+      .replace(/^_|_$/g, '')
+      .substring(0, 50); // Limit length
+  };
+
   const loadCashfreeCheckout = () => {
-    return new Promise((resolve) => {
+    return new Promise((resolve, reject) => {
+      // Check if already loaded
       if (window.Cashfree) {
         resolve(true);
         return;
       }
 
-      const script = document.createElement("script");
-      // Use latest Cashfree Checkout.js
-      script.src = "https://sdk.cashfree.com/js/v3/checkout.js";
-      script.onload = () => resolve(true);
-      script.onerror = () => resolve(false);
-      document.head.appendChild(script);
+      // Remove any existing script to avoid conflicts
+      const existingScript = document.querySelector('script[src*="cashfree"]');
+      if (existingScript) {
+        existingScript.remove();
+      }
+
+      const loadScript = (src) => {
+        return new Promise((resolveScript, rejectScript) => {
+          const script = document.createElement("script");
+          script.src = src;
+          script.async = true;
+          script.defer = true;
+          
+          script.onload = () => {
+            // Wait a bit for the script to initialize
+            setTimeout(() => {
+              if (window.Cashfree) {
+                console.log("Cashfree SDK loaded successfully from:", src);
+                resolveScript(true);
+              } else {
+                console.error("Cashfree object not found after script load");
+                rejectScript(new Error("Cashfree SDK failed to initialize"));
+              }
+            }, 200);
+          };
+          
+          script.onerror = (error) => {
+            console.error("Failed to load Cashfree script from:", src, error);
+            rejectScript(new Error(`Failed to load script from ${src}`));
+          };
+          
+          document.head.appendChild(script);
+        });
+      };
+
+      // Try multiple script URLs
+      const scriptUrls = [
+        "https://sdk.cashfree.com/js/v3/cashfree.js",
+        "https://sdk.cashfree.com/js/ui/2.0.0/cashfree.sandbox.js",
+        "https://sdk.cashfree.com/js/v3/checkout.js"
+      ];
+
+      // Try loading scripts one by one
+      const tryNextScript = (index) => {
+        if (index >= scriptUrls.length) {
+          reject(new Error("Failed to load Cashfree checkout script from all sources"));
+          return;
+        }
+
+        loadScript(scriptUrls[index])
+          .then(() => {
+            resolve(true);
+          })
+          .catch((error) => {
+            console.warn(`Failed to load from ${scriptUrls[index]}, trying next...`);
+            tryNextScript(index + 1);
+          });
+      };
+
+      tryNextScript(0);
     });
   };
 
@@ -28,16 +97,22 @@ export default function CashfreeButton({ amount, currency, orderData, onSuccess,
 
     try {
       // Load Cashfree Checkout script
-      const scriptLoaded = await loadCashfreeCheckout();
-      if (!scriptLoaded) {
-        throw new Error("Failed to load Cashfree checkout script");
-      }
+      await loadCashfreeCheckout();
+
+      // Prepare order data with valid customer_id
+      const processedOrderData = {
+        ...orderData,
+        // Generate a valid customer_id if email is provided
+        customerId: generateCustomerId(orderData.email || orderData.customerId),
+        // Keep original email for other purposes
+        customerEmail: orderData.email
+      };
 
       // Create order on backend
       const orderResponse = await fetch("/api/payment/cashfree", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ amount, currency, orderData }),
+        body: JSON.stringify({ amount, currency, orderData: processedOrderData }),
       });
 
       const orderResult = await orderResponse.json();
@@ -46,8 +121,13 @@ export default function CashfreeButton({ amount, currency, orderData, onSuccess,
         throw new Error(orderResult.error || "Failed to create order");
       }
 
-      // Configure Cashfree Checkout
-      const cashfree = new window.Cashfree({
+      // Configure Cashfree Checkout with proper initialization
+      if (!window.Cashfree) {
+        throw new Error("Cashfree SDK not available");
+      }
+
+      // Initialize Cashfree
+      const cashfree = window.Cashfree({
         mode: "sandbox", // Change to "production" for live
       });
 
