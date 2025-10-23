@@ -99,6 +99,9 @@ export default function SliderProduct({ header, products = [], type = "product" 
 
     setWishlist(updatedWishlist);
     localStorage.setItem("wishlist", JSON.stringify(updatedWishlist));
+
+    // Dispatch custom event to update header count
+    window.dispatchEvent(new Event("wishlistUpdated"));
   };
 
   const isInWishlist = (productId) => {
@@ -205,8 +208,8 @@ export default function SliderProduct({ header, products = [], type = "product" 
 
             return (
               <SwiperSlide key={product._id}>
-                <Link href={`/products/${product._id}`}>
-                  <div className="bg-gray-50 border border-gray-100 rounded-xl overflow-hidden">
+                <div className="bg-gray-50 border border-gray-100 rounded-xl overflow-hidden">
+                  <Link href={`/products/${product._id}`}>
                     <div className="relative">
                       <img 
                         src={product.images?.[0] || "https://placehold.co/400x500?text=No+Image"} 
@@ -215,7 +218,7 @@ export default function SliderProduct({ header, products = [], type = "product" 
                       />
                       
                       {/* Product Label */}
-                      <ProductLabel label={product.productLabel} />
+                      {product.productLabel && <ProductLabel label={product.productLabel} />}
 
                       {/* Rating Badge at bottom */}
                       {product.rating && (
@@ -237,10 +240,12 @@ export default function SliderProduct({ header, products = [], type = "product" 
                         <Heart className={`w-3 h-3 sm:w-4 sm:h-4 ${isInWishlist(product._id) ? "fill-current" : ""}`} />
                       </button>
                     </div>
+                  </Link>
 
-                    <div className="p-2 sm:p-4 bg-white">
+                  <div className="p-2 sm:p-4 bg-white">
+                    <Link href={`/products/${product._id}`}>
                       {/* Product Name */}
-                      <h2 className="text-xs sm:text-sm font-medium text-gray-800 leading-tight line-clamp-1 mb-1 sm:mb-2">{product.title}</h2>
+                      <h2 className="text-xs md:text-sm font-medium text-gray-800 leading-tight line-clamp-1 mb-1 sm:mb-2">{product.title}</h2>
 
                       {/* Price */}
                       <div className="flex items-center justify-between gap-1 sm:gap-2 mb-2 sm:mb-3">
@@ -265,30 +270,29 @@ export default function SliderProduct({ header, products = [], type = "product" 
                         </div>
 
                         {/* Discount Badge */}
-                        {discount > 0 && <div className="bg-red-500 text-white px-1.5 sm:px-2 py-0.5 rounded text-xs font-medium">{discount}% OFF</div>}
+                        {discount > 0 && <div className="bg-white text-green-500 px-1 sm:px-2 py-0.5 rounded text-[10px] font-medium">{discount}% OFF</div>}
                       </div>
 
                       {/* Limited Time Deal Badge */}
                       {hasLimitedDeal && (
-                        <div className="flex items-center justify-center bg-blue-50 border border-blue-200 rounded-lg px-2 py-1 mb-2 sm:mb-3">
-                          <Clock className="w-3 h-3 text-blue-600 mr-1" />
-                          <span className="text-xs text-blue-700 font-medium">Limited Time Deal</span>
+                        <div className="mb-1 text-center">
+                          <span className="text-xs text-green-700 font-normal">Limited Time Deal</span>
                         </div>
                       )}
+                    </Link>
 
-                        {/* Add to Cart Button */}
-                        <Button
-                          size="sm"
-                          isLoading={isAddingToCart(product._id)}
-                          onPress={(e) => handleAddToCart(product, e)}
-                          className="w-full bg-gray-800 text-white font-medium rounded-lg text-xs py-1 sm:text-sm sm:py-2"
-                          startContent={!isAddingToCart(product._id) && <ShoppingCart className="w-3 h-3 sm:w-4 sm:h-4" />}
-                        >
-                          {isAddingToCart(product._id) ? "Adding..." : "Add to Cart"}
-                        </Button>
-                    </div>
+                    {/* Add to Cart Button - Outside Link */}
+                    <Button
+                      size="sm"
+                      isLoading={isAddingToCart(product._id)}
+                      onPress={(e) => handleAddToCart(product, e)}
+                      className="w-full bg-gray-800 text-white font-medium rounded-lg text-sm py-1 sm:text-sm sm:py-2"
+                      startContent={!isAddingToCart(product._id) && <ShoppingCart className="w-3 h-3 sm:w-4 sm:h-4" />}
+                    >
+                      {isAddingToCart(product._id) ? "Adding..." : "Add to Cart"}
+                    </Button>
                   </div>
-                </Link>
+                </div>
               </SwiperSlide>
             );
           })}

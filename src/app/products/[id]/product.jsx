@@ -15,12 +15,25 @@ export default function Product({ data }) {
   const [selectedSize, setSelectedSize] = useState(null);
   const [selectedColor, setSelectedColor] = useState(null);
   const [wishlist, setWishlist] = useState([]);
+  const [showMobileFooter, setShowMobileFooter] = useState(false);
   const { addToCart, isAddingToCart } = useCart();
 
   useEffect(() => {
     // Load wishlist from localStorage
     const savedWishlist = JSON.parse(localStorage.getItem("wishlist") || "[]");
     setWishlist(savedWishlist);
+
+    // Handle scroll to show/hide mobile footer
+    const handleScroll = () => {
+      const scrollPosition = window.scrollY;
+      const windowHeight = window.innerHeight;
+
+      // Show footer when user scrolls down more than 200px
+      setShowMobileFooter(scrollPosition > 200);
+    };
+
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
   const handleQuantityChange = (type) => {
@@ -36,16 +49,18 @@ export default function Product({ data }) {
   };
 
   const handleBuyNow = () => {
-    const buyNowData = [{
-      productId: data._id,
-      title: data.title,
-      quantity: quantity,
-      color: selectedColor || null,
-      size: selectedSize || null,
-      image: data.images?.[0] || "",
-      price: parseFloat(data.salePrice || data.regularPrice),
-      currency: data.currencySymbol || "$",
-    }];
+    const buyNowData = [
+      {
+        productId: data._id,
+        title: data.title,
+        quantity: quantity,
+        color: selectedColor || null,
+        size: selectedSize || null,
+        image: data.images?.[0] || "",
+        price: parseFloat(data.salePrice || data.regularPrice),
+        currency: data.currencySymbol || "$",
+      },
+    ];
 
     localStorage.setItem("buyNow", JSON.stringify(buyNowData));
     window.location.href = "/checkout";
@@ -76,7 +91,7 @@ export default function Product({ data }) {
 
     setWishlist(updatedWishlist);
     localStorage.setItem("wishlist", JSON.stringify(updatedWishlist));
-    
+
     // Dispatch event to update header
     window.dispatchEvent(new Event("wishlistUpdated"));
   };
@@ -124,9 +139,7 @@ export default function Product({ data }) {
               {/* Price */}
               <div className="border-t border-b border-gray-200 py-4">
                 <div className="flex items-baseline gap-2 flex-wrap">
-                  {data.salePrice && discount > 0 && (
-                    <span className="text-sm text-red-600 font-medium">-{discount}%</span>
-                  )}
+                  {data.salePrice && discount > 0 && <span className="text-sm text-red-600 font-medium">-{discount}%</span>}
                   <span className="text-2xl md:text-3xl font-normal text-gray-900">
                     {data.currencySymbol}
                     {data.salePrice || data.regularPrice}
@@ -180,9 +193,7 @@ export default function Product({ data }) {
                         key={size}
                         onClick={() => setSelectedSize(size)}
                         className={`px-4 py-2 border rounded text-sm font-medium transition-all ${
-                          selectedSize === size
-                            ? "border-orange-500 bg-orange-50 text-orange-600"
-                            : "border-gray-300 hover:border-gray-400 text-gray-700"
+                          selectedSize === size ? "border-orange-500 bg-orange-50 text-orange-600" : "border-gray-300 hover:border-gray-400 text-gray-700"
                         }`}
                       >
                         {size}
@@ -201,9 +212,7 @@ export default function Product({ data }) {
                       <button
                         key={color}
                         onClick={() => setSelectedColor(color)}
-                        className={`w-8 h-8 rounded-full border-2 transition-all ${
-                          selectedColor === color ? "border-orange-500 scale-110" : "border-gray-300"
-                        }`}
+                        className={`w-8 h-8 rounded-full border-2 transition-all ${selectedColor === color ? "border-orange-500 scale-110" : "border-gray-300"}`}
                         style={{ backgroundColor: color }}
                         title={color}
                       />
@@ -224,10 +233,7 @@ export default function Product({ data }) {
                     <Minus className="w-4 h-4" />
                   </button>
                   <span className="text-base font-medium min-w-[40px] text-center">{quantity}</span>
-                  <button
-                    onClick={() => handleQuantityChange("increment")}
-                    className="w-9 h-9 flex items-center justify-center border border-gray-300 rounded hover:bg-gray-100"
-                  >
+                  <button onClick={() => handleQuantityChange("increment")} className="w-9 h-9 flex items-center justify-center border border-gray-300 rounded hover:bg-gray-100">
                     <Plus className="w-4 h-4" />
                   </button>
                 </div>
@@ -243,11 +249,7 @@ export default function Product({ data }) {
                 >
                   {isAddingToCart(data._id) ? "Adding..." : "Add to Cart"}
                 </Button>
-                <Button
-                  size="lg"
-                  onPress={handleBuyNow}
-                  className="w-full bg-orange-500 text-white font-medium hover:bg-orange-600 h-12 text-sm rounded-full shadow-sm"
-                >
+                <Button size="lg" onPress={handleBuyNow} className="w-full bg-orange-500 text-white font-medium hover:bg-orange-600 h-12 text-sm rounded-full shadow-sm">
                   Buy Now
                 </Button>
               </div>
@@ -257,9 +259,7 @@ export default function Product({ data }) {
                 <button
                   onClick={handleWishlist}
                   className={`flex-1 flex items-center justify-center gap-2 py-2.5 px-4 border rounded-lg text-sm font-medium transition-colors ${
-                    isInWishlist()
-                      ? "border-red-500 text-red-600 bg-red-50"
-                      : "border-gray-300 text-gray-700 hover:bg-gray-50"
+                    isInWishlist() ? "border-red-500 text-red-600 bg-red-50" : "border-gray-300 text-gray-700 hover:bg-gray-50"
                   }`}
                 >
                   <Heart className={`w-4 h-4 ${isInWishlist() ? "fill-current" : ""}`} />
@@ -307,10 +307,7 @@ export default function Product({ data }) {
                       Product Details
                       <ChevronRight className="w-4 h-4 transition-transform group-open:rotate-90" />
                     </summary>
-                    <div 
-                      className="text-sm text-gray-700 leading-relaxed mt-2 prose prose-sm max-w-none"
-                      dangerouslySetInnerHTML={{ __html: data.description }}
-                    />
+                    <div className="text-sm text-gray-700 leading-relaxed mt-2 prose prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: data.description }} />
                   </details>
                 </div>
               )}
@@ -341,6 +338,47 @@ export default function Product({ data }) {
       <div className="bg-white ">
         <SupportBenefits />
       </div>
+
+      {/* Mobile Fixed Footer - Buy Now Button */}
+      <div
+        className={`fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-gray-200 shadow-lg transition-transform duration-300 md:hidden ${
+          showMobileFooter ? "translate-y-0" : "translate-y-full"
+        }`}
+      >
+        <div className="px-4 py-3">
+          <div className="flex items-center gap-3">
+            {/* Price Info */}
+            <div className="flex-1">
+              <div className="flex items-center gap-2">
+                <span className="text-lg font-semibold text-gray-900">
+                  {data.currencySymbol}
+                  {data.salePrice || data.regularPrice}
+                </span>
+                {data.salePrice && (
+                  <span className="text-sm text-gray-500 line-through">
+                    {data.currencySymbol}
+                    {data.regularPrice}
+                  </span>
+                )}
+              </div>
+              {discount > 0 && <span className="text-xs text-green-600 font-medium">Save {discount}%</span>}
+            </div>
+
+            {/* Action Buttons */}
+            <div className="flex gap-2">
+              <Button size="sm" isLoading={isAddingToCart(data._id)} onPress={handleAddToCart} className="bg-yellow-400 text-gray-900 font-medium hover:bg-yellow-500 px-4 py-2 text-sm rounded-lg">
+                {isAddingToCart(data._id) ? "Adding..." : "Add to Cart"}
+              </Button>
+              <Button size="sm" onPress={handleBuyNow} className="bg-orange-500 text-white font-medium hover:bg-orange-600 px-6 py-2 text-sm rounded-lg">
+                Buy Now
+              </Button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Add bottom padding to prevent content overlap with fixed footer */}
+      <div className="h-20 md:hidden"></div>
     </div>
   );
 }

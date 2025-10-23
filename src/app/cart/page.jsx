@@ -3,9 +3,16 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Button } from "@heroui/react";
+import {
+  Drawer,
+  DrawerContent,
+  DrawerHeader,
+  DrawerBody,
+  DrawerFooter
+} from "@heroui/drawer";
 import ProductLabel from "@/components/ProductLabel";
 import { Skeleton } from "@heroui/skeleton";
-import { ShoppingBag, Trash2, Plus, Minus, ArrowRight, Heart } from "lucide-react";
+import { ShoppingBag, Trash2, Plus, Minus, ArrowRight, Heart, X } from "lucide-react";
 
 export default function CartPage() {
   const [cartItems, setCartItems] = useState([]);

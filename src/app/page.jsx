@@ -14,10 +14,7 @@ export default function Home() {
   useEffect(() => {
     const fetchTopOfferBanner = async () => {
       try {
-        const res = await fetch("/api/data?collection=top-offer-banner", {
-          cache: "force-cache",
-          next: { revalidate: 300 },
-        });
+        const res = await fetch("/api/data?collection=top-offer-banner");
         const data = await res.json();
         if (res.ok && data.length > 0) {
           setTopOfferBanner(data[0]);

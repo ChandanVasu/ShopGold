@@ -3,14 +3,21 @@ import { useState, useEffect } from "react";
 import ProductData from "./Product";
 import StripeCardForm from "../paymentMethod/StripeCardForm";
 import PayPalButton from "../paymentMethod/PayPalButton";
+import RazorpayButton from "../paymentMethod/RazorpayButton";
+import CashfreeButton from "../paymentMethod/CashfreeButton";
+import PayUButton from "../paymentMethod/PayUButton";
+import PhonePeButton from "../paymentMethod/PhonePeButton";
+import PaytmButton from "../paymentMethod/PaytmButton";
 import orderCreate from "./orderCreate";
 import { usePaymentSettings } from "../PaymentContext";
 import { Tabs, Tab } from "@heroui/react";
+import { getAvailablePaymentGateways, gatewayInfo } from "@/utils/paymentValidation";
 
 export default function CheckoutOrderSummary({ billingDetails, setErrors }) {
   const { items: products, loading } = ProductData();
   const [storeSettings, setStoreSettings] = useState(null);
-  const [selectedPayment, setSelectedPayment] = useState("stripe");
+  const [selectedPayment, setSelectedPayment] = useState("");
+  const [availableGateways, setAvailableGateways] = useState([]);
   const paymentSettings = usePaymentSettings();
 
   useEffect(() => {
@@ -29,16 +36,18 @@ export default function CheckoutOrderSummary({ billingDetails, setErrors }) {
     fetchSettings();
   }, []);
 
-  // Set default payment method based on what's enabled
+  // Update available gateways when payment settings change
   useEffect(() => {
     if (paymentSettings) {
-      if (paymentSettings.stripe?.enabled) {
-        setSelectedPayment("stripe");
-      } else if (paymentSettings.paypal?.enabled) {
-        setSelectedPayment("paypal");
+      const available = getAvailablePaymentGateways(paymentSettings);
+      setAvailableGateways(available);
+      
+      // Set default payment method to first available gateway
+      if (available.length > 0 && !selectedPayment) {
+        setSelectedPayment(available[0]);
       }
     }
-  }, [paymentSettings]);
+  }, [paymentSettings, selectedPayment]);
 
   const currencySymbol = storeSettings?.currencySymbol || "$";
   const storeCurrency = storeSettings?.storeCurrency || "USD";
@@ -51,6 +60,48 @@ export default function CheckoutOrderSummary({ billingDetails, setErrors }) {
       return this.subtotal + this.shipping + this.tax;
     },
   };
+
+  // Common order data for all payment gateways
+  const orderDataForPayment = {
+    name: `${billingDetails.customer.fullName}`,
+    email: billingDetails.customer.email,
+    phone: billingDetails.customer.phone,
+    address: `${billingDetails.address.address1}, ${billingDetails.address.city}, ${billingDetails.address.state} ${billingDetails.address.zip}`,
+    company: billingDetails.customer.company,
+    country: billingDetails.address.country,
+    notes: billingDetails.notes,
+  };
+
+  // Common success handler for payment gateways
+  const handlePaymentSuccess = async (paymentDetails, paymentMethod) => {
+    const orderId = await orderCreate({
+      products,
+      billingDetails,
+      paymentDetails: {
+        paymentMethod: paymentMethod,
+        total: costDetails.total,
+        currencySymbol: currencySymbol,
+        status: "paid",
+        ...paymentDetails,
+      },
+    });
+
+    if (orderId) {
+      window.location.href = `/checkout/success`;
+    } else {
+      setErrors("Failed to create order after payment.");
+      window.location.href = "/checkout/failure";
+    }
+  };
+
+  // Common error handler
+  const handlePaymentError = (error) => {
+    console.error("Payment error:", error);
+    setErrors(error);
+  };
+
+  // Count enabled and properly configured payment methods
+  const enabledMethods = availableGateways.length;
 
   return (
     <div className="w-full md:w-2/5 rounded-2xl p-6 border border-indigo-100 h-min">
@@ -117,15 +168,17 @@ export default function CheckoutOrderSummary({ billingDetails, setErrors }) {
         <h1 className="text-sm font-semibold">Payment Method</h1>
 
         {/* Payment Method Tabs */}
-        {paymentSettings && (
+        {availableGateways.length > 0 && (
           <Tabs 
             selectedKey={selectedPayment} 
             onSelectionChange={setSelectedPayment}
             variant="bordered"
             color="primary"
+            className="w-full"
           >
-            {paymentSettings.stripe?.enabled && (
-              <Tab key="stripe" title="Credit Card">
+            {/* Stripe */}
+            {availableGateways.includes("stripe") && (
+              <Tab key="stripe" title={gatewayInfo.stripe.name}>
                 <div className="mt-4">
                   <StripeCardForm
                     billingDetails={billingDetails}
@@ -134,64 +187,131 @@ export default function CheckoutOrderSummary({ billingDetails, setErrors }) {
                     currency={storeCurrency}
                     currencySymbol={currencySymbol}
                     onSuccess={async (paymentIntent) => {
-                      const orderId = await orderCreate({
-                        products,
-                        billingDetails,
-                        paymentDetails: {
-                          paymentMethod: "stripe",
-                          total: costDetails.total,
-                          currencySymbol: currencySymbol,
-                          status: "paid",
-                          paymentIntentId: paymentIntent?.id,
-                          paymentStatus: paymentIntent?.status,
-                        },
-                      });
-
-                      if (orderId) {
-                        window.location.href = `/checkout/success`;
-                      } else {
-                        setErrors("Failed to create order after payment.");
-                        window.location.href = "/checkout/failure";
-                      }
+                      await handlePaymentSuccess({
+                        paymentIntentId: paymentIntent?.id,
+                        paymentStatus: paymentIntent?.status,
+                      }, "stripe");
                     }}
-                    onError={(msg) => {
-                      setErrors(msg);
-                    }}
+                    onError={handlePaymentError}
                   />
                 </div>
               </Tab>
             )}
 
-            {paymentSettings.paypal?.enabled && (
-              <Tab key="paypal" title="PayPal">
+            {/* Razorpay */}
+            {availableGateways.includes("razorpay") && (
+              <Tab key="razorpay" title={gatewayInfo.razorpay.name}>
+                <div className="mt-4">
+                  <RazorpayButton
+                    amount={costDetails.total}
+                    currency="INR"
+                    orderData={orderDataForPayment}
+                    onSuccess={async (order) => {
+                      await handlePaymentSuccess({
+                        razorpayOrderId: order.paymentDetails?.orderId,
+                        razorpayPaymentId: order.paymentDetails?.paymentId,
+                      }, "razorpay");
+                    }}
+                    onError={handlePaymentError}
+                  />
+                </div>
+              </Tab>
+            )}
+
+            {/* PayPal */}
+            {availableGateways.includes("paypal") && (
+              <Tab key="paypal" title={gatewayInfo.paypal.name}>
                 <div className="mt-4">
                   <PayPalButton
                     amount={costDetails.total}
                     currency={storeCurrency}
                     onSuccess={async (details) => {
-                      const orderId = await orderCreate({
-                        products,
-                        billingDetails,
-                        paymentDetails: {
-                          paymentMethod: "paypal",
-                          total: costDetails.total,
-                          currencySymbol: currencySymbol,
-                          status: "paid",
-                          paymentIntentId: details.id,
-                          paymentStatus: details.status,
-                        },
-                      });
+                      await handlePaymentSuccess({
+                        paypalOrderId: details.id,
+                        paypalStatus: details.status,
+                      }, "paypal");
+                    }}
+                    onError={handlePaymentError}
+                  />
+                </div>
+              </Tab>
+            )}
 
-                      if (orderId) {
-                        window.location.href = `/checkout/success`;
-                      } else {
-                        setErrors("Failed to create order after payment.");
-                        window.location.href = "/checkout/failure";
-                      }
+            {/* Cashfree */}
+            {availableGateways.includes("cashfree") && (
+              <Tab key="cashfree" title={gatewayInfo.cashfree.name}>
+                <div className="mt-4">
+                  <CashfreeButton
+                    amount={costDetails.total}
+                    currency="INR"
+                    orderData={orderDataForPayment}
+                    onSuccess={async (order) => {
+                      await handlePaymentSuccess({
+                        cashfreeOrderId: order.paymentDetails?.orderId,
+                        cashfreeTransactionId: order.paymentDetails?.cfTransactionId,
+                      }, "cashfree");
                     }}
-                    onError={(msg) => {
-                      setErrors(msg);
+                    onError={handlePaymentError}
+                  />
+                </div>
+              </Tab>
+            )}
+
+            {/* PayU */}
+            {availableGateways.includes("payu") && (
+              <Tab key="payu" title={gatewayInfo.payu.name}>
+                <div className="mt-4">
+                  <PayUButton
+                    amount={costDetails.total}
+                    currency="INR"
+                    orderData={orderDataForPayment}
+                    onSuccess={async (order) => {
+                      await handlePaymentSuccess({
+                        payuTxnId: order.paymentDetails?.txnId,
+                        payuMoneyId: order.paymentDetails?.payuMoneyId,
+                      }, "payu");
                     }}
+                    onError={handlePaymentError}
+                  />
+                </div>
+              </Tab>
+            )}
+
+            {/* PhonePe */}
+            {availableGateways.includes("phonepe") && (
+              <Tab key="phonepe" title={gatewayInfo.phonepe.name}>
+                <div className="mt-4">
+                  <PhonePeButton
+                    amount={costDetails.total}
+                    currency="INR"
+                    orderData={orderDataForPayment}
+                    onSuccess={async (order) => {
+                      await handlePaymentSuccess({
+                        phonePeTransactionId: order.paymentDetails?.transactionId,
+                        phonePeStatus: order.paymentDetails?.paymentState,
+                      }, "phonepe");
+                    }}
+                    onError={handlePaymentError}
+                  />
+                </div>
+              </Tab>
+            )}
+
+            {/* Paytm */}
+            {availableGateways.includes("paytm") && (
+              <Tab key="paytm" title={gatewayInfo.paytm.name}>
+                <div className="mt-4">
+                  <PaytmButton
+                    amount={costDetails.total}
+                    currency="INR"
+                    orderData={orderDataForPayment}
+                    onSuccess={async (order) => {
+                      await handlePaymentSuccess({
+                        paytmOrderId: order.paymentDetails?.orderId,
+                        paytmTxnId: order.paymentDetails?.paytmTxnId,
+                      }, "paytm");
+                    }}
+                    onError={handlePaymentError}
                   />
                 </div>
               </Tab>
@@ -200,10 +320,10 @@ export default function CheckoutOrderSummary({ billingDetails, setErrors }) {
         )}
 
         {/* No payment gateway configured message */}
-        {!paymentSettings || (!paymentSettings.stripe?.enabled && !paymentSettings.paypal?.enabled) && (
+        {availableGateways.length === 0 && (
           <div className="text-center py-8 bg-gray-50 rounded-lg">
             <p className="text-gray-600 text-sm">No payment methods available</p>
-            <p className="text-gray-500 text-xs mt-1">Please configure payment gateway in admin panel</p>
+            <p className="text-gray-500 text-xs mt-1">Please configure payment gateway credentials in admin panel</p>
           </div>
         )}
       </div>

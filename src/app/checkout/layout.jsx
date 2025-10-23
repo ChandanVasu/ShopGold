@@ -21,10 +21,28 @@ export default function CheckoutLayout({ children }) {
         const data = await res.json();
         setPaymentSettings(data);
         
+        // Load Stripe if enabled and configured
         if (data?.stripe?.enabled && data?.stripe?.publishableKey) {
           const stripe = loadStripe(data.stripe.publishableKey);
           setStripePromise(stripe);
         }
+
+        // Preload Razorpay script if enabled and properly configured
+        if (data?.razorpay?.enabled && data?.razorpay?.keyId && data?.razorpay?.keySecret) {
+          const script = document.createElement("script");
+          script.src = "https://checkout.razorpay.com/v1/checkout.js";
+          script.async = true;
+          document.body.appendChild(script);
+        }
+
+        // Preload Cashfree script if enabled and properly configured
+        if (data?.cashfree?.enabled && data?.cashfree?.appId && data?.cashfree?.secretKey) {
+          const script = document.createElement("script");
+          script.src = "https://sdk.cashfree.com/js/v3/checkout.js";
+          script.async = true;
+          document.head.appendChild(script);
+        }
+
       } catch (err) {
         console.error("Failed to load payment settings:", err);
       } finally {
@@ -38,7 +56,10 @@ export default function CheckoutLayout({ children }) {
   if (loading) {
     return (
       <div className="flex justify-center items-center h-screen">
-        <Spinner color="secondary" size="lg" />
+        <div className="text-center">
+          <Spinner color="secondary" size="lg" />
+          <p className="mt-4 text-gray-600">Loading payment methods...</p>
+        </div>
       </div>
     );
   }
@@ -48,9 +69,9 @@ export default function CheckoutLayout({ children }) {
     "client-id": paymentSettings?.paypal?.clientId || "test",
     currency: "USD",
     intent: "capture",
+    "disable-funding": "credit,card",
   };
 
-  // Wrap with PayPal provider first, then Stripe
   return (
     <PaymentContext.Provider value={paymentSettings}>
       <PayPalScriptProvider options={paypalOptions}>

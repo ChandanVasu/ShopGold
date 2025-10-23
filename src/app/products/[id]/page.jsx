@@ -170,10 +170,7 @@ export default function Page() {
   useEffect(() => {
     const fetchProduct = async () => {
       try {
-        const res = await fetch(`/api/product/${id}`, {
-          cache: "force-cache",
-          next: { revalidate: 300 },
-        });
+        const res = await fetch(`/api/product/${id}`, );
 
         if (!res.ok) {
           setError(true);

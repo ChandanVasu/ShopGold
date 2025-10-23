@@ -17,10 +17,7 @@ export default function StyleOne() {
   useEffect(() => {
     async function fetchProducts() {
       try {
-        const res = await fetch("/api/product", {
-          cache: "force-cache",
-          next: { revalidate: 300 },
-        });
+        const res = await fetch("/api/product", );
         if (!res.ok) throw new Error("Network response was not ok");
         const data = await res.json();
         if (Array.isArray(data) && data.length > 0) {
@@ -238,7 +235,7 @@ export default function StyleOne() {
                   size="sm"
                   isLoading={isAddingToCart(product._id)}
                   onPress={(e) => handleAddToCart(product, e)}
-                  className="w-full bg-gray-600 text-white font-medium rounded-lg text-xs py-1 sm:text-sm sm:py-2"
+                  className="w-full bg-gray-800 text-white font-medium rounded-lg text-sm py-1 sm:text-sm sm:py-2"
                   startContent={!isAddingToCart(product._id) && <ShoppingCart className="w-3 h-3 sm:w-4 sm:h-4" />}
                 >
                   {isAddingToCart(product._id) ? "Adding..." : "Add to Cart"}

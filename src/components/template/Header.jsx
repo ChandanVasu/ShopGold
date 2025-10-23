@@ -89,15 +89,19 @@ export default function FullHeader() {
           </Link>
 
           {/* Desktop Menu - Centered */}
-          {menuItems.length > 0 && (
-            <nav className="hidden md:flex gap-4 items-center justify-center flex-1">
-              {displayMenuItems.map(({ _id, title, url }) => (
-                <a key={_id} href={url} className="flex items-center gap-1 text-sm capitalize hover:text-orange-500 transition-colors">
-                  <p className="capitalize">{title}</p>
-                </a>
-              ))}
-            </nav>
-          )}
+          <nav className="hidden md:flex gap-4 items-center justify-center flex-1">
+            {/* Blog Link - Always show */}
+            <Link href="/blog" className="flex items-center gap-1 text-sm capitalize hover:text-orange-500 transition-colors">
+              <p className="capitalize">Blog</p>
+            </Link>
+            
+            {/* Dynamic Menu Items */}
+            {displayMenuItems.map(({ _id, title, url }) => (
+              <a key={_id} href={url} className="flex items-center gap-1 text-sm capitalize hover:text-orange-500 transition-colors">
+                <p className="capitalize">{title}</p>
+              </a>
+            ))}
+          </nav>
 
           {/* Search + Wishlist + Cart */}
           <div className="flex gap-1 items-center ml-auto">
@@ -149,6 +153,23 @@ export default function FullHeader() {
 
               {/* Mobile Menu List */}
               <div className="flex flex-col px-4 py-6 gap-1 flex-1">
+                {/* Blog Link - Always show in mobile */}
+                <Link 
+                  href="/blog" 
+                  className="flex items-center justify-between py-4 px-3 rounded-lg hover:bg-gray-50 transition-colors group border-b border-gray-100" 
+                  onClick={closeMenu}
+                >
+                  <div className="flex items-center gap-4 text-gray-700 text-sm font-medium group-hover:text-gray-900">
+                    <span className="text-gray-500 group-hover:text-blue-600 transition-colors">
+                      <DynamicIcon name="book-open" size={20} />
+                    </span>
+                    <span className="capitalize">Blog</span>
+                  </div>
+                  <span className="text-gray-400 group-hover:text-gray-600 transition-colors">
+                    <DynamicIcon name="chevron-right" size={16} />
+                  </span>
+                </Link>
+
                 {displayMenuItems.length > 0 ? (
                   displayMenuItems.map(({ _id, title, url, iconName, badge }) => (
                     <a 
