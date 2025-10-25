@@ -188,7 +188,7 @@ export default function Product({ data }) {
                   <p className="text-xs text-blue-700 mt-1">Add 3 items to cart and get 1 absolutely free</p>
                 </div>
 
-                <p className="text-xs text-gray-600">Inclusive of all taxes • Free shipping on orders above ₹999</p>
+                <p className="text-xs text-gray-600">Inclusive of all taxes • Free shipping on orders</p>
               </div>
 
               {/* Stock Status */}

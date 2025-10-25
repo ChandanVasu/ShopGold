@@ -115,14 +115,7 @@ export default function PageView() {
 
           {/* Content */}
           <div 
-            className="prose prose-lg max-w-none 
-              prose-headings:font-light prose-headings:text-gray-900 prose-headings:tracking-tight
-              prose-p:text-gray-700 prose-p:leading-relaxed 
-              prose-a:text-blue-600 prose-a:no-underline hover:prose-a:underline
-              prose-ul:text-gray-700 prose-ol:text-gray-700 prose-li:text-gray-700
-              prose-blockquote:border-l-blue-200 prose-blockquote:bg-gray-50 prose-blockquote:py-4 prose-blockquote:px-6 prose-blockquote:rounded-r-lg
-              prose-code:text-blue-600 prose-code:bg-blue-50 prose-code:px-2 prose-code:py-1 prose-code:rounded
-              prose-pre:bg-gray-900 prose-pre:border prose-pre:border-gray-200"
+            className="prose prose-lg max-w-none prose-headings:text-gray-900 prose-p:text-gray-700 prose-a:text-blue-600"
             dangerouslySetInnerHTML={{ __html: page.content }}
           />
         </article>

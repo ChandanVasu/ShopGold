@@ -22,10 +22,10 @@ export default function Page() {
   const [page, setPage] = useState(1);
   const rowsPerPage = 8;
 
-  // Section customization state
   const [sectionTitle, setSectionTitle] = useState("Explore Our Collections");
   const [sectionDescription, setSectionDescription] = useState("Discover a wide range of collections tailored to your interests");
   const [sectionLoading, setSectionLoading] = useState(false);
+  const [sectionId, setSectionId] = useState(null); // Track existing section ID
 
   const fetchCollection = async () => {
     setIsFetching(true);
@@ -51,9 +51,11 @@ export default function Page() {
       });
       const data = await response.json();
       if (response.ok && data.length > 0) {
-        const settings = data[0];
-        setSectionTitle(settings.title || "Explore Our Collections");
-        setSectionDescription(settings.description || "Discover a wide range of collections tailored to your interests");
+        // Get the most recent setting (last in array)
+        const settings = data[data.length - 1];
+        setSectionId(settings._id); // Store the actual database ID
+        setSectionTitle(settings.data?.title || "Explore Our Collections");
+        setSectionDescription(settings.data?.description || "Discover a wide range of collections tailored to your interests");
       }
     } catch (error) {
       console.error("Failed to fetch section settings:", error);
@@ -135,23 +137,53 @@ export default function Page() {
   const updateSectionSettings = async () => {
     setSectionLoading(true);
     try {
-      const response = await fetch(`/api/data`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          collection: "collection-section",
-          data: {
-            _id: "collection-section",
-            title: sectionTitle,
-            description: sectionDescription,
-          },
-        }),
-      });
+      if (sectionId) {
+        // Update existing record
+        const response = await fetch(`/api/data`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            _id: sectionId,
+            collection: "collection-section",
+            data: {
+              _id: "collection-section",
+              title: sectionTitle,
+              description: sectionDescription,
+            },
+          }),
+        });
 
-      if (response.ok) {
-        console.log("Section settings updated successfully");
+        if (response.ok) {
+          console.log("Section settings updated successfully");
+          // Dispatch custom event to notify other components
+          window.dispatchEvent(new Event("sectionSettingsUpdated"));
+        } else {
+          console.error("Failed to update section settings");
+        }
       } else {
-        console.error("Failed to update section settings");
+        // Create new record if none exists
+        const response = await fetch(`/api/data`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            collection: "collection-section",
+            data: {
+              _id: "collection-section",
+              title: sectionTitle,
+              description: sectionDescription,
+            },
+          }),
+        });
+
+        if (response.ok) {
+          const newData = await response.json();
+          setSectionId(newData._id); // Store the new ID for future updates
+          console.log("Section settings created successfully");
+          // Dispatch custom event to notify other components
+          window.dispatchEvent(new Event("sectionSettingsUpdated"));
+        } else {
+          console.error("Failed to create section settings");
+        }
       }
     } catch (error) {
       console.error("Error updating section settings:", error);
@@ -235,12 +267,7 @@ export default function Page() {
           />
         </div>
         <div className="mt-4">
-          <CustomButton 
-            size="sm" 
-            className="bg-blue-600 text-white" 
-            onPress={updateSectionSettings} 
-            isLoading={sectionLoading}
-          >
+          <CustomButton size="sm" className="bg-blue-600 text-white" onPress={updateSectionSettings} isLoading={sectionLoading}>
             {sectionLoading ? "Updating..." : "Update Section Settings"}
           </CustomButton>
         </div>

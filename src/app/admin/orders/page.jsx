@@ -28,7 +28,9 @@ export default function OrderTablePage() {
     try {
       const res = await fetch("/api/order");
       const data = await res.json();
-      setOrders(data || []);
+      // Sort orders by creation date (newest first)
+      const sortedOrders = (data || []).sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+      setOrders(sortedOrders);
     } catch (err) {
       console.error("Failed to fetch orders:", err);
     } finally {

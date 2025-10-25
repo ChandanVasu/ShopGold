@@ -144,7 +144,7 @@ export default function PaymentTablePage() {
                   </TableCell>
                   <TableCell>
                     <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(order.paymentDetails?.paymentStatus)}`}>
-                      {getSafeValue(order.paymentDetails?.paymentStatus, "Unknown")}
+                      {getSafeValue(order.paymentDetails?.paymentStatus, "Failed")}
                     </span>
                   </TableCell>
                   <TableCell className="text-gray-700">

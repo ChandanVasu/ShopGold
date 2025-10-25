@@ -17,10 +17,7 @@ export default function SliderCollection({ isTitle = true }) {
   useEffect(() => {
     async function fetchCollections() {
       try {
-        const res = await fetch("/api/collection", {
-          cache: "force-cache",
-          next: { revalidate: 300 } // Cache for 5 minutes
-        });
+        const res = await fetch("/api/collection", {});
         const data = await res.json();
         if (Array.isArray(data) && data.length > 0) {
           setCollections(data);
@@ -38,14 +35,14 @@ export default function SliderCollection({ isTitle = true }) {
     async function fetchSectionSettings() {
       try {
         const res = await fetch("/api/data?collection=collection-section", {
-          cache: "force-cache",
-          next: { revalidate: 300 }
+          cache: "no-store" // Prevent caching to get fresh data
         });
         const data = await res.json();
         if (data && data.length > 0) {
-          const settings = data[0];
-          setSectionTitle(settings.title || "Explore Our Collections");
-          setSectionDescription(settings.description || "Discover a wide range of collections tailored to your interests");
+          // Get the most recent setting (last in array)
+          const settings = data[data.length - 1];
+          setSectionTitle(settings.data?.title || "");
+          setSectionDescription(settings.data?.description || "");
         }
       } catch (error) {
         console.error("Failed to load section settings:", error);
@@ -54,6 +51,24 @@ export default function SliderCollection({ isTitle = true }) {
 
     fetchCollections();
     fetchSectionSettings();
+
+    // Listen for storage events to refresh when settings are updated
+    const handleStorageChange = () => {
+      fetchSectionSettings();
+    };
+
+    // Listen for custom events to refresh section settings
+    const handleSectionUpdate = () => {
+      fetchSectionSettings();
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+    window.addEventListener('sectionSettingsUpdated', handleSectionUpdate);
+
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      window.removeEventListener('sectionSettingsUpdated', handleSectionUpdate);
+    };
   }, []);
 
   // Show skeleton while loading
@@ -99,13 +114,14 @@ export default function SliderCollection({ isTitle = true }) {
 
   return (
     <section>
-        <div className="container mx-auto px-4 md:px-20">
-          {isTitle && (
-            <div>
-              <h2 className="text-lg md:text-2xl font-semibold mb-2 text-center">{sectionTitle}</h2>
-              <p className="text-center text-xs md:text-sm md:mb-8 mb-4">{sectionDescription}</p>
-            </div>
-          )}        <Swiper
+      <div className="container mx-auto px-4 md:px-20">
+        {isTitle && (
+          <div>
+            <h2 className="text-lg md:text-2xl font-semibold mb-2 text-center">{sectionTitle}</h2>
+            <p className="text-center text-xs md:text-sm md:mb-8 mb-4">{sectionDescription}</p>
+          </div>
+        )}{" "}
+        <Swiper
           modules={[Navigation, Pagination, Autoplay]}
           spaceBetween={20}
           loop
@@ -124,11 +140,7 @@ export default function SliderCollection({ isTitle = true }) {
               <Link href={`/products?collection=${collection.title}`}>
                 <div className="flex flex-col items-center text-center">
                   <div className="md:w-28 md:h-28 w-24 h-24 rounded-full border border-blue-300 p-1 flex items-center justify-center shadow-sm transition-all duration-300 hover:shadow-md">
-                    <img
-                      src={collection.image || "https://placehold.co/100x100"}
-                      alt={collection.title}
-                      className="w-full h-full rounded-full object-cover object-center"
-                    />
+                    <img src={collection.image || "https://placehold.co/100x100"} alt={collection.title} className="w-full h-full rounded-full object-cover object-center" />
                   </div>
                   <p className="mt-2 md:text-sm text-xs font-medium text-gray-800 line-clamp-1">{collection.title}</p>
                 </div>

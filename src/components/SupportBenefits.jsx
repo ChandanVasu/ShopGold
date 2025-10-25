@@ -59,7 +59,7 @@ export default function TrustBadges() {
 
   return (
     <div className="container px-4 md:px-20 py-12 mx-auto">
-      <div className="grid grid-cols-3 md:grid-cols-3 gap-4 md:gap-8 text-center">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-10 md:gap-8 text-center">
         {items.map((item, index) => (
           <div key={item._id || index}>
             <div className="flex justify-center text-black mb-2 md:mb-4">

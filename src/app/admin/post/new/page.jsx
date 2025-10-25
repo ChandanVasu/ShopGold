@@ -31,7 +31,7 @@ function PostForm() {
   const [isInvalid, setIsInvalid] = useState(false);
   const [isImageSelectorOpen, setIsImageSelectorOpen] = useState(false);
   const [selectedImages, setSelectedImages] = useState([]);
-  const [isSlugEdited, setIsSlugEdited] = useState(false); // Track if user manually changed slug
+  const [fetchError, setFetchError] = useState("");
 
   const [postData, setPostData] = useState({
     title: "",
@@ -49,14 +49,58 @@ function PostForm() {
   const statusOptions = ["Published", "Draft", "Archived"];
   const categories = ["Blog", "Page"];
 
+  // Reset form when postId changes
+  useEffect(() => {
+    if (postId) {
+      setPostData({
+        title: "",
+        content: "",
+        shortDescription: "",
+        tags: "",
+        author: "",
+        status: "Published",
+        slug: "",
+        seoTitle: "",
+        seoDescription: "",
+        category: "",
+      });
+      setSelectedImages([]);
+      setFetchError("");
+    }
+  }, [postId]);
+
   useEffect(() => {
     const fetchPostById = async () => {
       if (!isUpdate || !postId) return;
 
       try {
-        const res = await fetch(`/api/data?collection=Posts&id=${postId}`);
-        const dataRes = await res.json();
-        const data = dataRes?.[0] || {};
+        console.log("🔍 Fetching post with ID:", postId); // Debug log
+        
+        // Try different API approaches to ensure we get the right post
+        const res = await fetch(`/api/data?collection=Posts`);
+        
+        if (!res.ok) {
+          throw new Error(`Failed to fetch: ${res.status} ${res.statusText}`);
+        }
+        
+        const allPosts = await res.json();
+        console.log("📋 All posts fetched:", allPosts.length, "posts");
+        
+        // Find the specific post by ID
+        const data = allPosts.find(post => post._id === postId);
+        
+        console.log("📄 Found post data:", data); // Debug log
+        console.log("🎯 Requested ID:", postId, "Found ID:", data?._id); // ID comparison
+
+        if (!data) {
+          setFetchError(`Post with ID ${postId} not found in ${allPosts.length} posts`);
+          return;
+        }
+
+        if (data._id !== postId) {
+          setFetchError(`ID mismatch: Requested ${postId}, got ${data._id}`);
+          return;
+        }
 
         setPostData({
           title: data.title || "",
@@ -72,8 +116,10 @@ function PostForm() {
         });
 
         setSelectedImages(data.images || []);
+        setFetchError("");
       } catch (err) {
         console.error("❌ Failed to fetch post:", err);
+        setFetchError(`Error: ${err.message}`);
       }
     };
 
@@ -121,7 +167,19 @@ function PostForm() {
   return (
     <div className="p-6">
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold">{isUpdate ? "Update Post" : "Add New Post"}</h1>
+        <div>
+          <h1 className="text-2xl font-bold">{isUpdate ? "Update Post" : "Add New Post"}</h1>
+          {isUpdate && postId && (
+            <p className="text-sm text-gray-600 mt-1">
+              Editing Post ID: {postId} | Title: "{postData.title || 'Loading...'}"
+            </p>
+          )}
+          {fetchError && (
+            <p className="text-sm text-red-600 mt-1 bg-red-50 px-3 py-2 rounded-md">
+              ⚠️ {fetchError}
+            </p>
+          )}
+        </div>
         <CustomButton isLoading={addLoading} onPress={handlePostSave} className="bg-black text-white" size="sm">
           {isUpdate ? "Update Post" : "Publish Post"}
         </CustomButton>
@@ -143,7 +201,7 @@ function PostForm() {
               setPostData((prev) => ({
                 ...prev,
                 title: newTitle,
-                slug: isSlugEdited ? prev.slug : slugify(newTitle),
+                slug: slugify(newTitle),
               }));
             }}
           />
@@ -212,19 +270,6 @@ function PostForm() {
               <SelectItem key={cat}>{cat}</SelectItem>
             ))}
           </Select>
-
-          {/* Slug Field (auto or manual) */}
-          <Input
-            label="Slug"
-            labelPlacement="outside"
-            size="sm"
-            placeholder="post-title-slug"
-            value={postData.slug}
-            onChange={(e) => {
-              setIsSlugEdited(true);
-              setPostData({ ...postData, slug: e.target.value });
-            }}
-          />
 
           <Input
             label="Author"

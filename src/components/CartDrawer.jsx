@@ -85,24 +85,54 @@ export default function CartDrawer({ isOpen, onClose }) {
     // Calculate MRP and discount using product data
     cartItems.forEach(item => {
       const product = getProductDetails(item.productId);
-      const itemMRP = product?.regularPrice || item.price || 0; // Use product's regular price as MRP
-      const itemPrice = item.price || 0; // Cart item's sale price
+      const itemMRP = Number(product?.regularPrice) || Number(item.price) || 0; // Use product's regular price as MRP
+      const itemPrice = Number(item.price) || 0; // Cart item's sale price
       
       totalMRP += itemMRP * item.quantity;
       discountOnMRP += (itemMRP - itemPrice) * item.quantity;
     });
 
-    // ✅ Buy 2 Get 1 Free logic - Calculate for each product separately
+    // ✅ Buy 2 Get 1 Free logic - Discount lowest priced items
     let buy2Get1Discount = 0;
-    cartItems.forEach(item => {
-      const freeItems = Math.floor(item.quantity / 3); // For every 3 items, 1 is free
-      const itemPrice = item.price || 0;
-      buy2Get1Discount += freeItems * itemPrice; // Discount = free items × price per item
-    });
+    const totalQuantity = getTotalItems();
+    const freeItemsCount = Math.floor(totalQuantity / 3) || 0; // Total free items across all products
+    
+    if (freeItemsCount > 0) {
+      // Create array of all individual items with their prices (expanded by quantity)
+      const allItems = [];
+      cartItems.forEach(item => {
+        const itemPrice = Number(item.price) || 0;
+        for (let i = 0; i < item.quantity; i++) {
+          allItems.push({
+            productId: item.productId,
+            title: item.title,
+            price: itemPrice
+          });
+        }
+      });
+      
+      // Sort by price (ascending) to get cheapest items first
+      allItems.sort((a, b) => (a.price || 0) - (b.price || 0));
+      
+      // Apply discount to the cheapest items
+      for (let i = 0; i < freeItemsCount && i < allItems.length; i++) {
+        buy2Get1Discount += Number(allItems[i].price) || 0;
+      }
+    }
 
-    const totalAmount = getTotalPrice() - buy2Get1Discount;
+    // Ensure all values are numbers
+    totalMRP = Number(totalMRP) || 0;
+    discountOnMRP = Number(discountOnMRP) || 0;
+    buy2Get1Discount = Number(buy2Get1Discount) || 0;
+    const totalAmount = Number(getTotalPrice() - buy2Get1Discount) || 0;
 
-    return { totalMRP, discountOnMRP, buy2Get1Discount, totalAmount };
+    return { 
+      totalMRP, 
+      discountOnMRP, 
+      buy2Get1Discount, 
+      totalAmount, 
+      freeItemsCount: Number(freeItemsCount) || 0 
+    };
   };
 
   const handleCheckout = () => {
@@ -212,32 +242,61 @@ export default function CartDrawer({ isOpen, onClose }) {
                           {/* Price Section */}
                           <div className="space-y-1">
                             {(() => {
-                              const itemMRP = product?.regularPrice || item.price || 0;
-                              const itemPrice = item.price || 0;
+                              const itemMRP = Number(product?.regularPrice) || Number(item.price) || 0;
+                              const itemPrice = Number(item.price) || 0;
                               const totalPrice = itemPrice * item.quantity;
                               const totalMRP = itemMRP * item.quantity;
                               const discount = totalMRP - totalPrice;
-                              const freeItems = Math.floor(item.quantity / 3);
-                              const buy2Get1Discount = freeItems * itemPrice;
+                              
+                              // Calculate if this item gets any free items in Buy 2 Get 1 offer
+                              const totalQuantity = getTotalItems();
+                              const freeItemsCount = Math.floor(totalQuantity / 3) || 0;
+                              let itemBuy2Get1Discount = 0;
+                              
+                              if (freeItemsCount > 0) {
+                                // Create array of all items with prices
+                                const allItems = [];
+                                cartItems.forEach(cartItem => {
+                                  const price = Number(cartItem.price) || 0;
+                                  for (let i = 0; i < cartItem.quantity; i++) {
+                                    allItems.push({
+                                      productId: cartItem.productId,
+                                      price: price
+                                    });
+                                  }
+                                });
+                                
+                                // Sort by price to get cheapest items
+                                allItems.sort((a, b) => (a.price || 0) - (b.price || 0));
+                                
+                                // Count how many of current item's units are discounted
+                                let discountedUnits = 0;
+                                for (let i = 0; i < freeItemsCount && i < allItems.length; i++) {
+                                  if (allItems[i].productId === item.productId) {
+                                    discountedUnits++;
+                                  }
+                                }
+                                itemBuy2Get1Discount = Number(discountedUnits * itemPrice) || 0;
+                              }
 
                               return (
                                 <>
                                   {discount > 0 && (
                                     <div className="flex items-center gap-1">
                                       <span className="text-xs text-gray-400 line-through">
-                                        {currencySymbol}{totalMRP.toFixed(0)}
+                                        {currencySymbol}{Number(totalMRP).toFixed(0)}
                                       </span>
                                       <span className="text-xs text-green-600 font-medium bg-green-50 px-1 rounded">
-                                        -{currencySymbol}{discount.toFixed(0)}
+                                        -{currencySymbol}{Number(discount).toFixed(0)}
                                       </span>
                                     </div>
                                   )}
                                   
                                   <div className="font-semibold text-gray-900 text-sm">
-                                    {currencySymbol}{(totalPrice - buy2Get1Discount).toFixed(0)}
-                                    {freeItems > 0 && (
+                                    {currencySymbol}{Number(totalPrice - itemBuy2Get1Discount).toFixed(0)}
+                                    {itemBuy2Get1Discount > 0 && (
                                       <span className="text-xs text-blue-600 ml-1 font-normal">
-                                        (saved {currencySymbol}{buy2Get1Discount.toFixed(0)})
+                                        (saved {currencySymbol}{Number(itemBuy2Get1Discount).toFixed(0)})
                                       </span>
                                     )}
                                   </div>
@@ -283,8 +342,35 @@ export default function CartDrawer({ isOpen, onClose }) {
 
                       {/* Buy 2 Get 1 Free Offer Badge */}
                       {(() => {
-                        const freeItems = Math.floor(item.quantity / 3);
-                        if (freeItems > 0) {
+                        const totalQuantity = getTotalItems();
+                        const freeItemsCount = Math.floor(totalQuantity / 3) || 0;
+                        let discountedUnits = 0;
+                        
+                        if (freeItemsCount > 0) {
+                          // Create array of all items with prices
+                          const allItems = [];
+                          cartItems.forEach(cartItem => {
+                            const price = Number(cartItem.price) || 0;
+                            for (let i = 0; i < cartItem.quantity; i++) {
+                              allItems.push({
+                                productId: cartItem.productId,
+                                price: price
+                              });
+                            }
+                          });
+                          
+                          // Sort by price to get cheapest items
+                          allItems.sort((a, b) => (a.price || 0) - (b.price || 0));
+                          
+                          // Count how many of current item's units are discounted
+                          for (let i = 0; i < freeItemsCount && i < allItems.length; i++) {
+                            if (allItems[i].productId === item.productId) {
+                              discountedUnits++;
+                            }
+                          }
+                        }
+                        
+                        if (discountedUnits > 0) {
                           return (
                             <div className="mt-3 pt-3 border-t border-gray-100">
                               <div className="bg-gradient-to-r from-blue-50 to-cyan-50 border border-blue-200 rounded-md px-3 py-2">
@@ -293,7 +379,7 @@ export default function CartDrawer({ isOpen, onClose }) {
                                     <span className="text-xs text-blue-700 font-medium">🎉 Buy 2 Get 1 Free!</span>
                                   </div>
                                   <span className="text-xs text-blue-600 font-semibold">
-                                    {freeItems} free
+                                    {discountedUnits} unit{discountedUnits > 1 ? 's' : ''} free
                                   </span>
                                 </div>
                               </div>
@@ -313,51 +399,43 @@ export default function CartDrawer({ isOpen, onClose }) {
         {!loading && cartItems.length > 0 && getTotalItems() > 0 && (
           <DrawerFooter className="flex-col gap-3 pt-3 border-t border-gray-200">
             {(() => {
-              const { totalMRP, discountOnMRP, buy2Get1Discount, totalAmount } =
+              const { totalMRP, discountOnMRP, buy2Get1Discount, totalAmount, freeItemsCount } =
                 getDiscountDetails();
 
               return (
                 <div className="w-full bg-white rounded-lg border border-gray-200 shadow-sm p-3 space-y-2">
                   <div className="flex justify-between text-xs text-gray-700">
                     <span>Total MRP</span>
-                    <span className="font-medium">{currencySymbol}{totalMRP.toFixed(0)}</span>
+                    <span className="font-medium">{currencySymbol}{Number(totalMRP).toFixed(0)}</span>
                   </div>
-                  {discountOnMRP > 0 && (
+                  {Number(discountOnMRP) > 0 && (
                     <div className="flex justify-between text-xs text-green-600">
                       <span>Discount on MRP</span>
-                      <span className="font-medium">-{currencySymbol}{discountOnMRP.toFixed(0)}</span>
+                      <span className="font-medium">-{currencySymbol}{Number(discountOnMRP).toFixed(0)}</span>
                     </div>
                   )}
                   <div className="flex justify-between text-xs text-gray-700">
                     <span>Total Price</span>
-                    <span className="font-semibold">{currencySymbol}{(totalMRP - discountOnMRP).toFixed(0)}</span>
+                    <span className="font-semibold">{currencySymbol}{Number(totalMRP - discountOnMRP).toFixed(0)}</span>
                   </div>
-                  {buy2Get1Discount > 0 && (
+                  {Number(buy2Get1Discount) > 0 && (
                     <div className="bg-gradient-to-r from-blue-50 to-cyan-50 border border-blue-200 rounded-md p-2 mt-2">
                       <div className="flex justify-between text-blue-600 mb-1">
                         <span className="text-xs font-medium">🎉 Buy 2 Get 1 Free Applied</span>
-                        <span className="text-xs font-semibold">-{currencySymbol}{buy2Get1Discount.toFixed(0)}</span>
+                        <span className="text-xs font-semibold">-{currencySymbol}{Number(buy2Get1Discount).toFixed(0)}</span>
                       </div>
-                      <div className="text-xs text-blue-700 space-y-0.5">
-                        {cartItems.map((item, index) => {
-                          const freeItems = Math.floor(item.quantity / 3);
-                          if (freeItems > 0) {
-                            return (
-                              <div key={`offer-${item.productId}-${index}`} className="flex justify-between">
-                                <span className="truncate max-w-[130px] text-xs">{item.title}</span>
-                                <span className="font-medium text-xs">{freeItems} free</span>
-                              </div>
-                            );
-                          }
-                          return null;
-                        })}
+                      <div className="text-xs text-blue-700">
+                        <div className="flex justify-between">
+                          <span>Lowest priced items discounted</span>
+                          <span className="font-medium">{Number(freeItemsCount)} item{Number(freeItemsCount) > 1 ? 's' : ''} free</span>
+                        </div>
                       </div>
                     </div>
                   )}
 
                   <div className="flex justify-between items-center border-t border-gray-200 pt-2 mt-2">
                     <span className="text-sm font-semibold text-gray-900">Total Amount</span>
-                    <span className="text-sm font-bold text-gray-900">{currencySymbol}{totalAmount.toFixed(0)}</span>
+                    <span className="text-sm font-bold text-gray-900">{currencySymbol}{Number(totalAmount).toFixed(0)}</span>
                   </div>
 
                   <div className="text-xs text-gray-500 text-center">

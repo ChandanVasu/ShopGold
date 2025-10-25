@@ -4,11 +4,13 @@ import { useEffect, useState } from "react";
 import { Users, ShoppingBag, DollarSign, TrendingUp, Package, Clock } from "lucide-react";
 import { Spinner } from "@heroui/react";
 import formatDate from "@/utils/formatDate";
+import { useCurrency } from "@/hooks/useCurrency";
 
 export default function DashboardPage() {
   const [orders, setOrders] = useState([]);
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
+  const { symbol: currencySymbol } = useCurrency();
 
   useEffect(() => {
     fetchAnalytics();
@@ -32,10 +34,29 @@ export default function DashboardPage() {
   // Sort orders by newest first
   const filteredOrders = [...orders].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
 
-  const totalOrders = filteredOrders.length;
-  const totalRevenue = filteredOrders.reduce((sum, o) => sum + (o.paymentDetails?.total || 0), 0);
-  const currencySymbol = process.env.NEXT_PUBLIC_STORE_CURRENCY_SYMBOL || "$";
-  const uniqueCustomers = new Set(filteredOrders.map((o) => o.email)).size;
+  // Get today's date in YYYY-MM-DD format for comparison
+  const today = new Date();
+  const todayStart = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+  const todayEnd = new Date(today.getFullYear(), today.getMonth(), today.getDate() + 1);
+
+  // Filter today's data
+  const todaysOrders = filteredOrders.filter((order) => {
+    const orderDate = new Date(order.createdAt);
+    return orderDate >= todayStart && orderDate < todayEnd;
+  });
+
+  const todaysProducts = [...products]
+    .filter((product) => {
+      const productDate = new Date(product.createdAt);
+      return productDate >= todayStart && productDate < todayEnd;
+    })
+    .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+
+  // Today's analytics
+  const totalTodaysOrders = todaysOrders.length;
+  const todaysRevenue = todaysOrders.reduce((sum, o) => sum + (o.paymentDetails?.total || 0), 0);
+  const todaysCustomers = new Set(todaysOrders.map((o) => o.email)).size;
+  const totalTodaysProducts = todaysProducts.length;
 
   const recentOrders = filteredOrders.slice(0, 5);
   const latestProducts = [...products].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)).slice(0, 5);
@@ -65,12 +86,18 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      {/* Stats Grid */}
+      {/* Stats Grid - Today's Data */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard title="Total Orders" value={totalOrders} icon={<ShoppingBag size={20} />} color="blue" trend="+12%" />
-        <StatCard title="Revenue" value={`${totalRevenue.toLocaleString()}`} icon={<DollarSign size={20} />} color="green" trend="+8%" />
-        <StatCard title="Customers" value={uniqueCustomers} icon={<Users size={20} />} color="purple" trend="+23%" />
-        <StatCard title="Products" value={products.length} icon={<Package size={20} />} color="orange" trend="+3%" />
+        <StatCard title="Today's Orders" value={totalTodaysOrders} icon={<ShoppingBag size={20} />} color="blue" subtitle={`${filteredOrders.length} total`} />
+        <StatCard
+          title="Today's Revenue"
+          value={`${currencySymbol}${todaysRevenue.toLocaleString()}`}
+          icon={<DollarSign size={20} />}
+          color="green"
+          subtitle={`${currencySymbol}${filteredOrders.reduce((sum, o) => sum + (o.paymentDetails?.total || 0), 0).toLocaleString()} total`}
+        />
+        <StatCard title="Today's Customers" value={todaysCustomers} icon={<Users size={20} />} color="purple" subtitle={`${new Set(filteredOrders.map((o) => o.email)).size} total`} />
+        <StatCard title="Products Added Today" value={totalTodaysProducts} icon={<Package size={20} />} color="orange" subtitle={`${products.length} total`} />
       </div>
 
       {/* Content Grid */}
@@ -111,8 +138,7 @@ export default function DashboardPage() {
                   </div>
                   <div className="text-right">
                     <p className="font-semibold text-gray-900 text-sm">
-                      {/* {process.env.NEXT_PUBLIC_STORE_CURRENCY_SYMBOL} */}
-                      {product.salePrice || product.regularPrice}
+                      {currencySymbol}{product.salePrice || product.regularPrice}
                     </p>
                     <p className="text-xs text-gray-500">{formatDate(product.createdAt)}</p>
                   </div>
@@ -153,13 +179,12 @@ export default function DashboardPage() {
                     </div>
                     <div className="text-right">
                       <p className="font-semibold text-gray-900 text-sm">
-                        {/* {process.env.NEXT_PUBLIC_STORE_CURRENCY_SYMBOL} */}
-                        {order.paymentDetails?.total}
+                        {currencySymbol}{order.paymentDetails?.total}
                       </p>
                       <p className="text-xs text-gray-500">{formatDate(order.createdAt)}</p>
                     </div>
                   </div>
-                  
+
                   {/* Products in Order */}
                   <div className="space-y-2 pl-8">
                     {order.products?.items?.map((item, index) => (
@@ -179,14 +204,11 @@ export default function DashboardPage() {
                         </div>
                         <div className="text-right">
                           <p className="font-medium text-gray-900 text-xs">
-                            {process.env.NEXT_PUBLIC_STORE_CURRENCY_SYMBOL}
-                            {item.sellingPrice}
+                            {currencySymbol}{item.sellingPrice}
                           </p>
                         </div>
                       </div>
-                    )) || (
-                      <div className="text-xs text-gray-500 italic">No product details available</div>
-                    )}
+                    )) || <div className="text-xs text-gray-500 italic">No product details available</div>}
                   </div>
                 </div>
               ))
@@ -199,7 +221,7 @@ export default function DashboardPage() {
 }
 
 /* ---- Modern StatCard Component ---- */
-function StatCard({ title, value, icon, color, trend }) {
+function StatCard({ title, value, icon, color, subtitle }) {
   const colorClasses = {
     blue: "text-blue-600 bg-blue-50",
     green: "text-green-600 bg-green-50",
@@ -211,16 +233,11 @@ function StatCard({ title, value, icon, color, trend }) {
     <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 hover:shadow-md transition-all duration-200">
       <div className="flex items-center justify-between mb-4">
         <div className={`w-12 h-12 rounded-xl ${colorClasses[color]} flex items-center justify-center`}>{icon}</div>
-        {trend && (
-          <div className="flex items-center gap-1 text-green-600 bg-green-50 rounded-full px-2 py-1">
-            <TrendingUp size={12} />
-            <span className="text-xs font-medium">{trend}</span>
-          </div>
-        )}
       </div>
       <div>
         <p className="text-sm font-medium text-gray-600 mb-1">{title}</p>
-        <p className="text-2xl font-bold text-gray-900">{value}</p>
+        <p className="text-2xl font-bold text-gray-900 mb-1">{value}</p>
+        {subtitle && <p className="text-xs text-gray-500">{subtitle}</p>}
       </div>
     </div>
   );

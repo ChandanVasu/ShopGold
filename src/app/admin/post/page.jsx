@@ -129,6 +129,9 @@ export default function PostTablePage() {
                           pathname: "/admin/post/new",
                           query: { postId: post._id, isUpdate: true },
                         }}
+                        onClick={() => {
+                          console.log("🔗 Editing post:", { id: post._id, title: post.title, slug: post.slug }); // Debug log
+                        }}
                       >
                         <div className="bg-blue-100 p-2 rounded-md cursor-pointer hover:bg-blue-200">
                           <RiEditCircleFill className="text-blue-600 text-lg" />
