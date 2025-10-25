@@ -274,11 +274,9 @@ export default function SliderProduct({ header, products = [], type = "product" 
                       </div>
 
                       {/* Limited Time Deal Badge */}
-                      {hasLimitedDeal && (
-                        <div className="mb-1 text-center">
-                          <span className="text-xs text-green-700 font-normal">Limited Time Deal</span>
-                        </div>
-                      )}
+                   <div className="mb-1 text-center">
+                      <span className="text-xs text-green-700 font-normal">Limited Time Deal</span>
+                    </div>
                     </Link>
 
                     {/* Add to Cart Button - Outside Link */}

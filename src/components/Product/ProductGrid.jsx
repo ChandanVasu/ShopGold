@@ -223,11 +223,9 @@ export default function StyleOne() {
                   </div>
 
                   {/* Limited Time Deal Badge */}
-                  {hasLimitedDeal && (
-                    <div className="mb-1 text-center">
+                <div className="mb-1 text-center">
                       <span className="text-xs text-green-700 font-normal">Limited Time Deal</span>
                     </div>
-                  )}
                 </Link>
 
                 {/* Add to Cart Button - Outside Link */}
