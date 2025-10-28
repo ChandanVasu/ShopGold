@@ -45,18 +45,11 @@ export default function DashboardPage() {
     return orderDate >= todayStart && orderDate < todayEnd;
   });
 
-  const todaysProducts = [...products]
-    .filter((product) => {
-      const productDate = new Date(product.createdAt);
-      return productDate >= todayStart && productDate < todayEnd;
-    })
-    .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-
   // Today's analytics
   const totalTodaysOrders = todaysOrders.length;
   const todaysRevenue = todaysOrders.reduce((sum, o) => sum + (o.paymentDetails?.total || 0), 0);
   const todaysCustomers = new Set(todaysOrders.map((o) => o.email)).size;
-  const totalTodaysProducts = todaysProducts.length;
+  const todaysAverageOrderValue = totalTodaysOrders > 0 ? todaysRevenue / totalTodaysOrders : 0;
 
   const recentOrders = filteredOrders.slice(0, 5);
   const latestProducts = [...products].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)).slice(0, 5);
@@ -88,16 +81,22 @@ export default function DashboardPage() {
 
       {/* Stats Grid - Today's Data */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard title="Today's Orders" value={totalTodaysOrders} icon={<ShoppingBag size={20} />} color="blue" subtitle={`${filteredOrders.length} total`} />
+        <StatCard title="Today Orders" value={totalTodaysOrders} icon={<ShoppingBag size={20} />} color="blue" subtitle={`${filteredOrders.length} total`} />
         <StatCard
-          title="Today's Revenue"
+          title="Today Revenue"
           value={`${currencySymbol}${todaysRevenue.toLocaleString()}`}
           icon={<DollarSign size={20} />}
           color="green"
           subtitle={`${currencySymbol}${filteredOrders.reduce((sum, o) => sum + (o.paymentDetails?.total || 0), 0).toLocaleString()} total`}
         />
-        <StatCard title="Today's Customers" value={todaysCustomers} icon={<Users size={20} />} color="purple" subtitle={`${new Set(filteredOrders.map((o) => o.email)).size} total`} />
-        <StatCard title="Products Added Today" value={totalTodaysProducts} icon={<Package size={20} />} color="orange" subtitle={`${products.length} total`} />
+        <StatCard 
+          title="Today Average Order Value" 
+          value={`${currencySymbol}${todaysAverageOrderValue.toLocaleString()}`} 
+          icon={<TrendingUp size={20} />} 
+          color="purple" 
+          subtitle={`Avg per order today`} 
+        />
+        <StatCard title="Today Customers" value={todaysCustomers} icon={<Users size={20} />} color="orange" subtitle={`${new Set(filteredOrders.map((o) => o.email)).size} total`} />
       </div>
 
       {/* Content Grid */}

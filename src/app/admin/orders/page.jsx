@@ -104,14 +104,14 @@ export default function OrderTablePage() {
                           </p>
                           <span
                             className={`inline-block px-2 py-1 rounded-lg text-xs font-medium mt-1 ${
-                              order.paymentDetails?.paymentStatus === "succeeded" || order.paymentDetails?.paymentStatus === "paid"
+                              order.status === "success" || order.paymentDetails?.paymentStatus === "success"
                                 ? "bg-green-100 text-green-700"
-                                : order.paymentDetails?.paymentStatus === "failed"
+                                : order.status === "failed" || order.paymentDetails?.paymentStatus === "failed"
                                 ? "bg-red-100 text-red-700"
-                                : "bg-yellow-100 text-yellow-700"
+                                : "bg-gray-100 text-gray-700"
                             }`}
                           >
-                            {order.paymentDetails?.paymentStatus}
+                            {order.status || order.paymentDetails?.paymentStatus || "pending"}
                           </span>
                         </div>
                       </div>
@@ -171,14 +171,14 @@ export default function OrderTablePage() {
                       <TableCell>
                         <span
                           className={`inline-flex items-center px-3 py-1 rounded-lg text-xs font-medium ${
-                            order.paymentDetails?.paymentStatus === "succeeded" || order.paymentDetails?.paymentStatus === "paid"
+                            order.status === "success" || order.paymentDetails?.paymentStatus === "success"
                               ? "bg-green-100 text-green-700"
-                              : order.paymentDetails?.paymentStatus === "failed"
+                              : order.status === "failed" || order.paymentDetails?.paymentStatus === "failed"
                               ? "bg-red-100 text-red-700"
-                              : "bg-yellow-100 text-yellow-700"
+                              : "bg-gray-100 text-gray-700"
                           }`}
                         >
-                          {order.paymentDetails?.paymentStatus}
+                          {order.status || order.paymentDetails?.paymentStatus || "pending"}
                         </span>
                       </TableCell>
                       <TableCell className="hidden md:table-cell text-gray-600 text-sm">{formatDate(order.createdAt)}</TableCell>
@@ -254,8 +254,8 @@ export default function OrderTablePage() {
                     <p className="font-medium text-gray-900 capitalize">{selectedOrder.paymentDetails?.paymentMethod || "Unknown"}</p>
                   </div>
                   <div className="bg-green-50 p-4 rounded-xl">
-                    <p className="text-xs text-green-600 mb-2">Payment Status</p>
-                    <p className="font-medium text-gray-900 capitalize">{selectedOrder.paymentDetails?.paymentStatus || "Unknown"}</p>
+                    <p className="text-xs text-green-600 mb-2">Order Status</p>
+                    <p className="font-medium text-gray-900 capitalize">{selectedOrder.status || selectedOrder.paymentDetails?.paymentStatus || "pending"}</p>
                   </div>
                 </div>
 

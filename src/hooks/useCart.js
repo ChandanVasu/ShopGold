@@ -52,6 +52,10 @@ export const useCart = () => {
         }
 
         localStorage.setItem("cart", JSON.stringify(cart));
+        
+        // Dispatch cart update event for header count
+        window.dispatchEvent(new CustomEvent("cartUpdated"));
+        
         setAddingToCart((prev) => ({ ...prev, [product._id]: false }));
         
         // Open cart drawer after adding item

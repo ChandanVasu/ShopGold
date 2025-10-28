@@ -10,15 +10,25 @@ import PhonePeButton from "../paymentMethod/PhonePeButton";
 import PaytmButton from "../paymentMethod/PaytmButton";
 import orderCreate from "./orderCreate";
 import { usePaymentSettings } from "../PaymentContext";
-import { Tabs, Tab } from "@heroui/react";
 import { getAvailablePaymentGateways, gatewayInfo } from "@/utils/paymentValidation";
 
 export default function CheckoutOrderSummary({ billingDetails, setErrors }) {
   const { items: products, loading } = ProductData();
   const [storeSettings, setStoreSettings] = useState(null);
-  const [selectedPayment, setSelectedPayment] = useState("");
   const [availableGateways, setAvailableGateways] = useState([]);
   const paymentSettings = usePaymentSettings();
+
+  // Early return if billingDetails is not available
+  if (!billingDetails) {
+    return (
+      <div className="w-full rounded-2xl p-6 lg:p-8 border border-indigo-100 bg-white shadow-sm h-min">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading billing details...</p>
+        </div>
+      </div>
+    );
+  }
 
   useEffect(() => {
     const fetchSettings = async () => {
@@ -38,13 +48,8 @@ export default function CheckoutOrderSummary({ billingDetails, setErrors }) {
     if (paymentSettings) {
       const available = getAvailablePaymentGateways(paymentSettings);
       setAvailableGateways(available);
-
-      // Set default payment method to first available gateway
-      if (available.length > 0 && !selectedPayment) {
-        setSelectedPayment(available[0]);
-      }
     }
-  }, [paymentSettings, selectedPayment]);
+  }, [paymentSettings]);
 
   const currencySymbol = storeSettings?.currencySymbol || "₹";
   const storeCurrency = storeSettings?.storeCurrency || "INR";
@@ -89,13 +94,13 @@ export default function CheckoutOrderSummary({ billingDetails, setErrors }) {
 
   // Common order data for all payment gateways
   const orderDataForPayment = {
-    name: `${billingDetails.customer.fullName}`,
-    email: billingDetails.customer.email,
-    phone: billingDetails.customer.phone,
-    address: `${billingDetails.address.address1}, ${billingDetails.address.city}, ${billingDetails.address.state} ${billingDetails.address.zip}`,
-    company: billingDetails.customer.company,
-    country: billingDetails.address.country,
-    notes: billingDetails.notes,
+    name: `${billingDetails?.customer?.fullName || ''}`,
+    email: billingDetails?.customer?.email || '',
+    phone: billingDetails?.customer?.phone || '',
+    address: `${billingDetails?.address?.address1 || ''}, ${billingDetails?.address?.city || ''}, ${billingDetails?.address?.state || ''} ${billingDetails?.address?.zip || ''}`,
+    company: billingDetails?.customer?.company || '',
+    country: billingDetails?.address?.country || '',
+    notes: billingDetails?.notes || '',
   };
 
   // Common success handler for payment gateways
@@ -113,6 +118,9 @@ export default function CheckoutOrderSummary({ billingDetails, setErrors }) {
     });
 
     if (orderId) {
+      // Clear cart items after successful payment
+      localStorage.removeItem("buyNow");
+      localStorage.removeItem("cart");
       window.location.href = `/checkout/success`;
     } else {
       setErrors("Failed to create order after payment.");
@@ -121,16 +129,45 @@ export default function CheckoutOrderSummary({ billingDetails, setErrors }) {
   };
 
   // Common error handler
-  const handlePaymentError = (error) => {
+  const handlePaymentError = async (error) => {
     console.error("Payment error:", error);
+    
+    // Update pending order status to failed
+    const pendingOrderId = localStorage.getItem("pendingOrderId");
+    if (pendingOrderId) {
+      try {
+        await fetch("/api/order", {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            _id: pendingOrderId,
+            paymentDetails: {
+              paymentMethod: "failed",
+              total: costDetails.total,
+              status: "failed",
+              paymentStatus: "failed",
+              error: error.message || "Payment failed",
+            },
+            status: "failed",
+          }),
+        });
+      } catch (updateError) {
+        console.error("Failed to update order status:", updateError);
+      }
+    }
+    
     setErrors(error);
+    window.location.href = "/checkout/failure";
   };
 
   // Count enabled and properly configured payment methods
   const enabledMethods = availableGateways.length;
+  const activePaymentGateway = availableGateways.length > 0 ? availableGateways[0] : null;
 
   return (
-    <div className="w-full md:w-2/5 rounded-2xl p-6 border border-indigo-100 h-min">
+    <div className="w-full rounded-2xl p-6 lg:p-8 border border-indigo-100 bg-white shadow-sm h-min">
       <h3 className="text-xl font-semibold mb-6 text-indigo-900">Your Order</h3>
 
       {/* Product Summary */}
@@ -218,175 +255,152 @@ export default function CheckoutOrderSummary({ billingDetails, setErrors }) {
       <div className="mt-5 space-y-4">
         <h1 className="text-sm font-semibold">Payment Method</h1>
 
-        {/* Payment Method Tabs */}
-        {availableGateways.length > 0 && (
-          <Tabs selectedKey={selectedPayment} onSelectionChange={setSelectedPayment} variant="bordered" color="primary" className="w-full">
+        {/* Direct Payment Method - No Tabs */}
+        {activePaymentGateway && (
+          <div className="space-y-4">
+            {/* Show payment method name */}
+            <div className="text-sm text-gray-600 mb-3">
+              Pay with {gatewayInfo[activePaymentGateway]?.name}
+            </div>
+
             {/* Stripe */}
-            {availableGateways.includes("stripe") && (
-              <Tab key="stripe" title={gatewayInfo.stripe.name}>
-                <div className="mt-4">
-                  <StripeCardForm
-                    billingDetails={billingDetails}
-                    setErrors={setErrors}
-                    amount={costDetails.total}
-                    currency={storeCurrency}
-                    currencySymbol={currencySymbol}
-                    onSuccess={async (paymentIntent) => {
-                      await handlePaymentSuccess(
-                        {
-                          paymentIntentId: paymentIntent?.id,
-                          paymentStatus: paymentIntent?.status,
-                        },
-                        "stripe"
-                      );
-                    }}
-                    onError={handlePaymentError}
-                  />
-                </div>
-              </Tab>
+            {activePaymentGateway === "stripe" && (
+              <StripeCardForm
+                billingDetails={billingDetails}
+                setErrors={setErrors}
+                amount={costDetails.total}
+                currency={storeCurrency}
+                currencySymbol={currencySymbol}
+                onSuccess={async (paymentIntent) => {
+                  await handlePaymentSuccess(
+                    {
+                      paymentIntentId: paymentIntent?.id,
+                      paymentStatus: paymentIntent?.status,
+                    },
+                    "stripe"
+                  );
+                }}
+                onError={handlePaymentError}
+              />
             )}
 
             {/* Razorpay */}
-            {availableGateways.includes("razorpay") && (
-              <Tab key="razorpay" title={gatewayInfo.razorpay.name}>
-                <div className="mt-4">
-                  <RazorpayButton
-                    amount={costDetails.total}
-                    currency="INR"
-                    orderData={orderDataForPayment}
-                    onSuccess={async (order) => {
-                      await handlePaymentSuccess(
-                        {
-                          razorpayOrderId: order.paymentDetails?.orderId,
-                          razorpayPaymentId: order.paymentDetails?.paymentId,
-                        },
-                        "razorpay"
-                      );
-                    }}
-                    onError={handlePaymentError}
-                  />
-                </div>
-              </Tab>
+            {activePaymentGateway === "razorpay" && (
+              <RazorpayButton
+                amount={costDetails.total}
+                currency="INR"
+                orderData={orderDataForPayment}
+                onSuccess={async (order) => {
+                  await handlePaymentSuccess(
+                    {
+                      razorpayOrderId: order.paymentDetails?.orderId,
+                      razorpayPaymentId: order.paymentDetails?.paymentId,
+                    },
+                    "razorpay"
+                  );
+                }}
+                onError={handlePaymentError}
+              />
             )}
 
             {/* PayPal */}
-            {availableGateways.includes("paypal") && (
-              <Tab key="paypal" title={gatewayInfo.paypal.name}>
-                <div className="mt-4">
-                  <PayPalButton
-                    amount={costDetails.total}
-                    currency={storeCurrency}
-                    onSuccess={async (details) => {
-                      await handlePaymentSuccess(
-                        {
-                          paypalOrderId: details.id,
-                          paypalStatus: details.status,
-                        },
-                        "paypal"
-                      );
-                    }}
-                    onError={handlePaymentError}
-                  />
-                </div>
-              </Tab>
+            {activePaymentGateway === "paypal" && (
+              <PayPalButton
+                amount={costDetails.total}
+                currency={storeCurrency}
+                onSuccess={async (details) => {
+                  await handlePaymentSuccess(
+                    {
+                      paypalOrderId: details.id,
+                      paypalStatus: details.status,
+                    },
+                    "paypal"
+                  );
+                }}
+                onError={handlePaymentError}
+              />
             )}
 
             {/* Cashfree */}
-            {availableGateways.includes("cashfree") && (
-              <Tab key="cashfree" title={gatewayInfo.cashfree.name}>
-                <div className="mt-4">
-                  <CashfreeButton
-                    amount={costDetails.total}
-                    currency="INR"
-                    orderData={orderDataForPayment}
-                    onSuccess={async (order) => {
-                      await handlePaymentSuccess(
-                        {
-                          cashfreeOrderId: order.paymentDetails?.orderId,
-                          cashfreeTransactionId: order.paymentDetails?.cfTransactionId,
-                        },
-                        "cashfree"
-                      );
-                    }}
-                    onError={handlePaymentError}
-                  />
-                </div>
-              </Tab>
+            {activePaymentGateway === "cashfree" && (
+              <CashfreeButton
+                amount={costDetails.total}
+                currency="INR"
+                orderData={orderDataForPayment}
+                onSuccess={async (order) => {
+                  await handlePaymentSuccess(
+                    {
+                      cashfreeOrderId: order.paymentDetails?.orderId,
+                      cashfreeTransactionId: order.paymentDetails?.cfTransactionId,
+                    },
+                    "cashfree"
+                  );
+                }}
+                onError={handlePaymentError}
+              />
             )}
 
             {/* PayU */}
-            {availableGateways.includes("payu") && (
-              <Tab key="payu" title={gatewayInfo.payu.name}>
-                <div className="mt-4">
-                  <PayUButton
-                    amount={costDetails.total}
-                    currency="INR"
-                    orderData={orderDataForPayment}
-                    onSuccess={async (order) => {
-                      await handlePaymentSuccess(
-                        {
-                          payuTxnId: order.paymentDetails?.txnId,
-                          payuMoneyId: order.paymentDetails?.payuMoneyId,
-                        },
-                        "payu"
-                      );
-                    }}
-                    onError={handlePaymentError}
-                  />
-                </div>
-              </Tab>
+            {activePaymentGateway === "payu" && (
+              <PayUButton
+                amount={costDetails.total}
+                currency="INR"
+                orderData={orderDataForPayment}
+                onSuccess={async (order) => {
+                  await handlePaymentSuccess(
+                    {
+                      payuTxnId: order.paymentDetails?.txnId,
+                      payuMoneyId: order.paymentDetails?.payuMoneyId,
+                    },
+                    "payu"
+                  );
+                }}
+                onError={handlePaymentError}
+              />
             )}
 
             {/* PhonePe */}
-            {availableGateways.includes("phonepe") && (
-              <Tab key="phonepe" title={gatewayInfo.phonepe.name}>
-                <div className="mt-4">
-                  <PhonePeButton
-                    amount={costDetails.total}
-                    currency="INR"
-                    orderData={orderDataForPayment}
-                    onSuccess={async (order) => {
-                      await handlePaymentSuccess(
-                        {
-                          phonePeTransactionId: order.paymentDetails?.transactionId,
-                          phonePeStatus: order.paymentDetails?.paymentState,
-                        },
-                        "phonepe"
-                      );
-                    }}
-                    onError={handlePaymentError}
-                  />
-                </div>
-              </Tab>
+            {activePaymentGateway === "phonepe" && (
+              <PhonePeButton
+                amount={costDetails.total}
+                currency="INR"
+                orderData={orderDataForPayment}
+                onSuccess={async (order) => {
+                  await handlePaymentSuccess(
+                    {
+                      phonePeTransactionId: order.paymentDetails?.transactionId,
+                      phonePeStatus: order.paymentDetails?.paymentState,
+                    },
+                    "phonepe"
+                  );
+                }}
+                onError={handlePaymentError}
+              />
             )}
 
             {/* Paytm */}
-            {availableGateways.includes("paytm") && (
-              <Tab key="paytm" title={gatewayInfo.paytm.name}>
-                <div className="mt-4">
-                  <PaytmButton
-                    amount={costDetails.total}
-                    currency="INR"
-                    orderData={orderDataForPayment}
-                    onSuccess={async (order) => {
-                      await handlePaymentSuccess(
-                        {
-                          paytmOrderId: order.paymentDetails?.orderId,
-                          paytmTxnId: order.paymentDetails?.paytmTxnId,
-                        },
-                        "paytm"
-                      );
-                    }}
-                    onError={handlePaymentError}
-                  />
-                </div>
-              </Tab>
+            {activePaymentGateway === "paytm" && (
+              <PaytmButton
+                amount={costDetails.total}
+                currency="INR"
+                orderData={orderDataForPayment}
+                onSuccess={async (order) => {
+                  await handlePaymentSuccess(
+                    {
+                      paytmOrderId: order.paymentDetails?.orderId,
+                      paytmTxnId: order.paymentDetails?.paytmTxnId,
+                    },
+                    "paytm"
+                  );
+                }}
+                onError={handlePaymentError}
+              />
             )}
-          </Tabs>
+          </div>
         )}
 
         {/* No payment gateway configured message */}
-        {availableGateways.length === 0 && (
+        {!activePaymentGateway && (
           <div className="text-center py-8 bg-gray-50 rounded-lg">
             <p className="text-gray-600 text-sm">No payment methods available</p>
             <p className="text-gray-500 text-xs mt-1">Please configure payment gateway credentials in admin panel</p>

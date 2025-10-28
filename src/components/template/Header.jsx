@@ -12,12 +12,20 @@ export default function FullHeader() {
   const [menuItems, setMenuItems] = useState([]);
   const [storeSettings, setStoreSettings] = useState(null);
   const [wishlistCount, setWishlistCount] = useState(0);
+  const [cartCount, setCartCount] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
 
   // Memoize wishlist update function
   const updateWishlistCount = useCallback(() => {
     const savedWishlist = JSON.parse(localStorage.getItem("wishlist") || "[]");
     setWishlistCount(savedWishlist.length);
+  }, []);
+
+  // Memoize cart update function
+  const updateCartCount = useCallback(() => {
+    const savedCart = JSON.parse(localStorage.getItem("cart") || "[]");
+    const totalItems = savedCart.reduce((total, item) => total + (item.quantity || 1), 0);
+    setCartCount(totalItems);
   }, []);
 
   useEffect(() => {
@@ -47,16 +55,31 @@ export default function FullHeader() {
 
     fetchData();
     updateWishlistCount();
+    updateCartCount();
 
-    // Listen for wishlist updates
-    window.addEventListener("storage", updateWishlistCount);
+    // Create unified storage handler
+    const handleStorageChange = (e) => {
+      if (e.key === "wishlist") {
+        updateWishlistCount();
+      }
+      if (e.key === "cart") {
+        updateCartCount();
+      }
+    };
+
+    // Listen for storage changes (different tabs)
+    window.addEventListener("storage", handleStorageChange);
+
+    // Listen for custom events (same tab)
     window.addEventListener("wishlistUpdated", updateWishlistCount);
+    window.addEventListener("cartUpdated", updateCartCount);
 
     return () => {
-      window.removeEventListener("storage", updateWishlistCount);
+      window.removeEventListener("storage", handleStorageChange);
       window.removeEventListener("wishlistUpdated", updateWishlistCount);
+      window.removeEventListener("cartUpdated", updateCartCount);
     };
-  }, [updateWishlistCount]);
+  }, [updateWishlistCount, updateCartCount]);
 
   // Memoize derived values
   const logoSrc = useMemo(() => storeSettings?.logoImage || "/logonc.svg", [storeSettings?.logoImage]);
@@ -98,8 +121,9 @@ export default function FullHeader() {
               <Heart className="w-5 h-5" />
               {wishlistCount > 0 && <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] font-bold rounded-full w-4 h-4 flex items-center justify-center">{wishlistCount}</span>}
             </Link>
-            <Link href="/cart" className="text-black p-2 cursor-pointer hover:text-orange-500 transition-colors" prefetch={true}>
+            <Link href="/cart" className="text-black p-2 cursor-pointer relative hover:text-orange-500 transition-colors" prefetch={true}>
               <ShoppingCart className="w-5 h-5" />
+              {cartCount > 0 && <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] font-bold rounded-full w-4 h-4 flex items-center justify-center">{cartCount}</span>}
             </Link>
           </div>
         </div>

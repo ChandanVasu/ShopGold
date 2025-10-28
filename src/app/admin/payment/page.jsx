@@ -75,15 +75,17 @@ export default function PaymentTablePage() {
     return Number(total).toLocaleString();
   };
 
-  const getStatusColor = (status) => {
+  const getStatusColor = (order) => {
+    const status = order.status || order.paymentDetails?.paymentStatus;
     switch (status?.toLowerCase()) {
+      case "success":
       case "succeeded":
       case "paid":
         return "bg-green-100 text-green-700";
       case "failed":
         return "bg-red-100 text-red-700";
       case "pending":
-        return "bg-yellow-100 text-yellow-700";
+        return "bg-gray-100 text-gray-700";
       default:
         return "bg-gray-100 text-gray-700";
     }
@@ -143,8 +145,8 @@ export default function PaymentTablePage() {
                     </span>
                   </TableCell>
                   <TableCell>
-                    <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(order.paymentDetails?.paymentStatus)}`}>
-                      {getSafeValue(order.paymentDetails?.paymentStatus, "Failed")}
+                    <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(order)}`}>
+                      {getSafeValue(order.status || order.paymentDetails?.paymentStatus, "pending")}
                     </span>
                   </TableCell>
                   <TableCell className="text-gray-700">

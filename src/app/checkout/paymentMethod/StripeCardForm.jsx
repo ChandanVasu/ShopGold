@@ -27,19 +27,19 @@ export default function SplitCardForm({ billingDetails, amount, currency, onSucc
   const validateBillingDetails = () => {
     const newErrors = {};
 
-    if (!billingDetails.customer.fullName.trim()) {
+    if (!billingDetails?.customer?.fullName?.trim()) {
       newErrors.fullNameError = true;
     }
 
-    if (!billingDetails.customer.email.trim()) {
+    if (!billingDetails?.customer?.email?.trim()) {
       newErrors.emailError = true;
     }
 
-    if (!billingDetails.address.address1.trim()) {
+    if (!billingDetails?.address?.address1?.trim()) {
       newErrors.address1Error = true;
     }
 
-    if (!billingDetails.address.country.trim()) {
+    if (!billingDetails?.address?.country?.trim()) {
       newErrors.countryError = true;
     }
 
@@ -77,7 +77,7 @@ export default function SplitCardForm({ billingDetails, amount, currency, onSucc
         body: JSON.stringify({
           amount,
           currency,
-          customer: billingDetails.customer,
+          customer: billingDetails?.customer || {},
         }),
       });
 
@@ -93,8 +93,8 @@ export default function SplitCardForm({ billingDetails, amount, currency, onSucc
         payment_method: {
           card: numberElement,
           billing_details: {
-            name: billingDetails.customer.fullName,
-            email: billingDetails.customer.email,
+            name: billingDetails?.customer?.fullName || '',
+            email: billingDetails?.customer?.email || '',
           },
         },
       });
