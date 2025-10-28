@@ -32,6 +32,8 @@ function PostForm() {
   const [isImageSelectorOpen, setIsImageSelectorOpen] = useState(false);
   const [selectedImages, setSelectedImages] = useState([]);
   const [fetchError, setFetchError] = useState("");
+  const [isDraftLoaded, setIsDraftLoaded] = useState(false);
+  const [autoSaveStatus, setAutoSaveStatus] = useState('');
 
   const [postData, setPostData] = useState({
     title: "",
@@ -45,6 +47,56 @@ function PostForm() {
     seoDescription: "",
     category: "",
   });
+
+  // Create a localStorage key based on whether it's an update or new post
+  const getStorageKey = () => {
+    return isUpdate && postId ? `postDraft_edit_${postId}` : 'postDraft_new';
+  };
+
+  // Save form data to localStorage whenever postData changes
+  useEffect(() => {
+    if (postData.title || postData.content || postData.shortDescription) {
+      localStorage.setItem(getStorageKey(), JSON.stringify({
+        postData,
+        selectedImages,
+        timestamp: Date.now()
+      }));
+      
+      setAutoSaveStatus('Saved');
+      const timer = setTimeout(() => setAutoSaveStatus(''), 2000);
+      return () => clearTimeout(timer);
+    }
+  }, [postData, selectedImages, isUpdate, postId]);
+
+  // Load draft from localStorage on component mount
+  useEffect(() => {
+    const loadDraft = () => {
+      try {
+        const savedDraft = localStorage.getItem(getStorageKey());
+        if (savedDraft) {
+          const { postData: savedPostData, selectedImages: savedImages, timestamp } = JSON.parse(savedDraft);
+          
+          // Only load draft if it's less than 24 hours old
+          const hoursSinceSaved = (Date.now() - timestamp) / (1000 * 60 * 60);
+          if (hoursSinceSaved < 24) {
+            setPostData(savedPostData);
+            setSelectedImages(savedImages || []);
+            setIsDraftLoaded(true);
+          } else {
+            // Remove old draft
+            localStorage.removeItem(getStorageKey());
+          }
+        }
+      } catch (error) {
+        console.error("Error loading draft:", error);
+      }
+    };
+
+    // Only load draft if we're not updating an existing post or if the update fetch failed
+    if (!isUpdate || !postId) {
+      loadDraft();
+    }
+  }, [isUpdate, postId]);
 
   const statusOptions = ["Published", "Draft", "Archived"];
   const categories = ["Blog", "Page"];
@@ -102,24 +154,53 @@ function PostForm() {
           return;
         }
 
-        setPostData({
-          title: data.title || "",
-          content: data.content || "",
-          shortDescription: data.shortDescription || "",
-          tags: data.tags || "",
-          author: data.author || "",
-          status: data.status || "Published",
-          slug: data.slug || "",
-          seoTitle: data.seoTitle || "",
-          seoDescription: data.seoDescription || "",
-          category: data.category || "",
-        });
+        // Check if there's a newer draft in localStorage
+        const savedDraft = localStorage.getItem(getStorageKey());
+        let shouldUseDraft = false;
+        
+        if (savedDraft) {
+          try {
+            const { timestamp } = JSON.parse(savedDraft);
+            const draftAge = (Date.now() - timestamp) / (1000 * 60); // in minutes
+            
+            // If draft is less than 30 minutes old, automatically use the draft
+            if (draftAge < 30) {
+              shouldUseDraft = true;
+              setIsDraftLoaded(true);
+            }
+          } catch (e) {
+            console.error("Error parsing saved draft:", e);
+          }
+        }
 
-        setSelectedImages(data.images || []);
+        if (!shouldUseDraft) {
+          // Load the original post data and clear any existing draft
+          setPostData({
+            title: data.title || "",
+            content: data.content || "",
+            shortDescription: data.shortDescription || "",
+            tags: data.tags || "",
+            author: data.author || "",
+            status: data.status || "Published",
+            slug: data.slug || "",
+            seoTitle: data.seoTitle || "",
+            seoDescription: data.seoDescription || "",
+            category: data.category || "",
+          });
+
+          setSelectedImages(data.images || []);
+          
+          // Clear the old draft since we're loading fresh data
+          localStorage.removeItem(getStorageKey());
+        }
+        // If shouldUseDraft is true, the useEffect for loading draft will handle it
+
         setFetchError("");
       } catch (err) {
         console.error("❌ Failed to fetch post:", err);
         setFetchError(`Error: ${err.message}`);
+        
+        // Don't clear existing data if fetch fails - user might have unsaved changes
       }
     };
 
@@ -155,6 +236,10 @@ function PostForm() {
         throw new Error("Error saving post");
       }
 
+      // Clear the draft after successful save
+      localStorage.removeItem(getStorageKey());
+      setIsDraftLoaded(false);
+
       // Optional: toast or router
       // router.push("/admin/posts");
     } catch (err) {
@@ -174,15 +259,39 @@ function PostForm() {
               Editing Post ID: {postId} | Title: "{postData.title || 'Loading...'}"
             </p>
           )}
+          {isDraftLoaded && (
+            <div className="flex items-center gap-2 mt-2">
+              <p className="text-sm text-blue-600 bg-blue-50 px-3 py-1 rounded-md">
+                📝 Auto-restored from recent draft - Your changes are auto-saved
+              </p>
+              <button
+                onClick={() => {
+                  localStorage.removeItem(getStorageKey());
+                  setIsDraftLoaded(false);
+                  window.location.reload();
+                }}
+                className="text-xs text-gray-500 hover:text-gray-700 underline"
+              >
+                Reload Original
+              </button>
+            </div>
+          )}
           {fetchError && (
             <p className="text-sm text-red-600 mt-1 bg-red-50 px-3 py-2 rounded-md">
               ⚠️ {fetchError}
             </p>
           )}
         </div>
-        <CustomButton isLoading={addLoading} onPress={handlePostSave} className="bg-black text-white" size="sm">
-          {isUpdate ? "Update Post" : "Publish Post"}
-        </CustomButton>
+        <div className="flex items-center gap-3">
+          {autoSaveStatus && (
+            <span className="text-xs text-green-600 bg-green-50 px-2 py-1 rounded">
+              ✓ {autoSaveStatus}
+            </span>
+          )}
+          <CustomButton isLoading={addLoading} onPress={handlePostSave} className="bg-black text-white" size="sm">
+            {isUpdate ? "Update Post" : "Publish Post"}
+          </CustomButton>
+        </div>
       </div>
 
       <div className="flex flex-col lg:flex-row gap-6">

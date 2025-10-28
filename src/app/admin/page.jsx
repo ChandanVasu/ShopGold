@@ -22,7 +22,29 @@ export default function DashboardPage() {
       const ordersData = await ordersRes.json();
       const productsData = await productsRes.json();
 
-      setOrders(ordersData || []);
+      // Filter and deduplicate orders (same logic as orders page)
+      const filteredOrders = (ordersData || []).filter(order => {
+        // Only show orders that have proper structure (new system)
+        return order.products?.items && Array.isArray(order.products.items);
+      });
+      
+      // Group by sessionId and email+phone to remove duplicates
+      const orderMap = new Map();
+      
+      filteredOrders.forEach(order => {
+        const key = order.sessionId || `${order.email}-${order.phone}-${order.paymentDetails?.total}`;
+        const existing = orderMap.get(key);
+        
+        if (!existing || new Date(order.updatedAt) > new Date(existing.updatedAt)) {
+          orderMap.set(key, order);
+        }
+      });
+      
+      // Convert back to array and sort by creation date (newest first)
+      const uniqueOrders = Array.from(orderMap.values())
+        .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+
+      setOrders(uniqueOrders);
       setProducts(productsData || []);
     } catch (err) {
       console.error("Failed to fetch analytics data:", err);
@@ -39,17 +61,24 @@ export default function DashboardPage() {
   const todayStart = new Date(today.getFullYear(), today.getMonth(), today.getDate());
   const todayEnd = new Date(today.getFullYear(), today.getMonth(), today.getDate() + 1);
 
-  // Filter today's data
+  // Filter today's data - only count successful orders for revenue calculations
   const todaysOrders = filteredOrders.filter((order) => {
     const orderDate = new Date(order.createdAt);
     return orderDate >= todayStart && orderDate < todayEnd;
   });
 
+  // Filter successful orders for accurate revenue calculation
+  const todaysSuccessfulOrders = todaysOrders.filter((order) => {
+    return order.status === "success" || 
+           order.paymentDetails?.status === "paid" || 
+           order.paymentDetails?.paymentStatus === "success";
+  });
+
   // Today's analytics
   const totalTodaysOrders = todaysOrders.length;
-  const todaysRevenue = todaysOrders.reduce((sum, o) => sum + (o.paymentDetails?.total || 0), 0);
+  const todaysRevenue = todaysSuccessfulOrders.reduce((sum, o) => sum + (o.paymentDetails?.total || 0), 0);
   const todaysCustomers = new Set(todaysOrders.map((o) => o.email)).size;
-  const todaysAverageOrderValue = totalTodaysOrders > 0 ? todaysRevenue / totalTodaysOrders : 0;
+  const todaysAverageOrderValue = todaysSuccessfulOrders.length > 0 ? todaysRevenue / todaysSuccessfulOrders.length : 0;
 
   const recentOrders = filteredOrders.slice(0, 5);
   const latestProducts = [...products].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)).slice(0, 5);
@@ -87,7 +116,7 @@ export default function DashboardPage() {
           value={`${currencySymbol}${todaysRevenue.toLocaleString()}`}
           icon={<DollarSign size={20} />}
           color="green"
-          subtitle={`${currencySymbol}${filteredOrders.reduce((sum, o) => sum + (o.paymentDetails?.total || 0), 0).toLocaleString()} total`}
+          subtitle={`${currencySymbol}${filteredOrders.filter(o => o.status === "success" || o.paymentDetails?.status === "paid" || o.paymentDetails?.paymentStatus === "success").reduce((sum, o) => sum + (o.paymentDetails?.total || 0), 0).toLocaleString()} total`}
         />
         <StatCard 
           title="Today Average Order Value" 
@@ -174,7 +203,24 @@ export default function DashboardPage() {
                       <div className="w-6 h-6 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center text-white font-medium text-xs">
                         {order.name?.charAt(0)?.toUpperCase()}
                       </div>
-                      <span className="text-sm font-medium text-gray-700">Order #{order._id?.slice(-6)}</span>
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm font-medium text-gray-700">Order #{order._id?.slice(-6)}</span>
+                        <span
+                          className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+                            order.status === "success" || order.paymentDetails?.status === "paid" || order.paymentDetails?.paymentStatus === "success"
+                              ? "bg-green-100 text-green-700"
+                              : order.status === "failed" || order.paymentDetails?.status === "failed" || order.paymentDetails?.paymentStatus === "failed"
+                              ? "bg-red-100 text-red-700"
+                              : "bg-gray-100 text-gray-700"
+                          }`}
+                        >
+                          {order.status === "success" || order.paymentDetails?.status === "paid" || order.paymentDetails?.paymentStatus === "success" 
+                            ? "success" 
+                            : order.status === "failed" || order.paymentDetails?.status === "failed" || order.paymentDetails?.paymentStatus === "failed"
+                            ? "failed"
+                            : "pending"}
+                        </span>
+                      </div>
                     </div>
                     <div className="text-right">
                       <p className="font-semibold text-gray-900 text-sm">

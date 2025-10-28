@@ -89,7 +89,7 @@ export default function CartDrawer({ isOpen, onClose }) {
     const updatedCart = cartItems.map((item) => (item.productId === productId ? { ...item, quantity: newQuantity } : item));
     localStorage.setItem("cart", JSON.stringify(updatedCart));
     setCartItems(updatedCart);
-    
+
     // Dispatch cart update event for header count
     window.dispatchEvent(new CustomEvent("cartUpdated"));
   };
@@ -221,6 +221,9 @@ export default function CartDrawer({ isOpen, onClose }) {
         </DrawerHeader>
 
         <DrawerBody className="px-0">
+          <div className="w-full px-2">
+            <AddressDisplay size="small" showAddButton={false} />
+          </div>
           {!loading && cartItems.length > 0 && (
             <div className="flex items-center gap-2 ml-6">
               <input
@@ -236,7 +239,7 @@ export default function CartDrawer({ isOpen, onClose }) {
             </div>
           )}
           {loading ? (
-            <div className="px-6 space-y-4">
+            <div className="px-2 space-y-4">
               {Array.from({ length: 3 }).map((_, idx) => (
                 <div key={idx} className="flex gap-3 p-3 bg-gray-50 rounded-xl animate-pulse">
                   <div className="w-16 h-16 bg-gray-200 rounded-lg"></div>
@@ -260,7 +263,7 @@ export default function CartDrawer({ isOpen, onClose }) {
               </Button>
             </div>
           ) : (
-            <div className="px-6 space-y-4">
+            <div className="px-2 space-y-4">
               {cartItems.map((item, index) => {
                 const product = getProductDetails(item.productId);
                 if (!product) return null;
@@ -460,15 +463,7 @@ export default function CartDrawer({ isOpen, onClose }) {
               })}
             </div>
           )}
-        </DrawerBody>
-
-        {!loading && cartItems.length > 0 && getTotalItems() > 0 && (
-          <DrawerFooter className="flex-col gap-3 pt-3 border-t border-gray-200">
-            {/* Address Display */}
-            <div className="w-full">
-              <AddressDisplay size="small" showAddButton={false} />
-            </div>
-
+          <div className="px-2">
             {(() => {
               const { totalMRP, discountOnMRP, buy2Get1Discount, totalAmount, freeItemsCount } = getDiscountDetails();
 
@@ -521,11 +516,14 @@ export default function CartDrawer({ isOpen, onClose }) {
                 </div>
               );
             })()}
+          </div>
+        </DrawerBody>
 
+        {!loading && cartItems.length > 0 && getTotalItems() > 0 && (
+          <DrawerFooter className="flex-col gap-3 pt-3 border-t border-gray-200">
             <Button onPress={handleCheckout} className="w-full bg-gray-900 text-white h-11 rounded-lg font-semibold text-sm mt-2 shadow-sm hover:bg-gray-800 transition-colors">
               Pay Now
             </Button>
-
 
             {/* <div className="flex items-center justify-center gap-2 text-xs text-gray-500 border-t pt-2 mt-2">
               <span className="w-2 h-2 bg-green-500 rounded-full"></span>

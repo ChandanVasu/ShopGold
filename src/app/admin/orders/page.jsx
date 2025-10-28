@@ -15,6 +15,7 @@ export default function OrderTablePage() {
   const [loading, setLoading] = useState(true);
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [modalOpen, setModalOpen] = useState(false);
+  const [cleaning, setCleaning] = useState(false);
   const { symbol: currencySymbol, currency } = useCurrency();
 
   const totalPages = Math.ceil(orders.length / rowsPerPage);
@@ -28,9 +29,30 @@ export default function OrderTablePage() {
     try {
       const res = await fetch("/api/order");
       const data = await res.json();
-      // Sort orders by creation date (newest first)
-      const sortedOrders = (data || []).sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-      setOrders(sortedOrders);
+      
+      // Filter and deduplicate orders
+      const filteredOrders = (data || []).filter(order => {
+        // Only show orders that have proper structure (new system)
+        return order.products?.items && Array.isArray(order.products.items);
+      });
+      
+      // Group by sessionId and email+phone to remove duplicates
+      const orderMap = new Map();
+      
+      filteredOrders.forEach(order => {
+        const key = order.sessionId || `${order.email}-${order.phone}-${order.paymentDetails?.total}`;
+        const existing = orderMap.get(key);
+        
+        if (!existing || new Date(order.updatedAt) > new Date(existing.updatedAt)) {
+          orderMap.set(key, order);
+        }
+      });
+      
+      // Convert back to array and sort by creation date (newest first)
+      const uniqueOrders = Array.from(orderMap.values())
+        .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+      
+      setOrders(uniqueOrders);
     } catch (err) {
       console.error("Failed to fetch orders:", err);
     } finally {
@@ -41,6 +63,68 @@ export default function OrderTablePage() {
   const handleView = (order) => {
     setSelectedOrder(order);
     setModalOpen(true);
+  };
+
+  const cleanupDuplicateOrders = async () => {
+    if (!confirm("This will remove duplicate and invalid orders. Are you sure?")) {
+      return;
+    }
+
+    setCleaning(true);
+    try {
+      const res = await fetch("/api/order");
+      const allOrders = await res.json();
+      
+      // Find orders to delete (invalid structure or duplicates)
+      const ordersToDelete = [];
+      const validOrders = [];
+      const sessionMap = new Map();
+
+      allOrders.forEach(order => {
+        // Check if order has proper structure
+        if (!order.products?.items || !Array.isArray(order.products.items)) {
+          ordersToDelete.push(order._id);
+          return;
+        }
+
+        // Check for duplicates by sessionId
+        if (order.sessionId) {
+          const existing = sessionMap.get(order.sessionId);
+          if (existing) {
+            // Keep the newer order, delete the older one
+            if (new Date(order.updatedAt) > new Date(existing.updatedAt)) {
+              ordersToDelete.push(existing._id);
+              sessionMap.set(order.sessionId, order);
+            } else {
+              ordersToDelete.push(order._id);
+            }
+          } else {
+            sessionMap.set(order.sessionId, order);
+          }
+        } else {
+          validOrders.push(order);
+        }
+      });
+
+      // Delete invalid/duplicate orders
+      for (const orderId of ordersToDelete) {
+        await fetch("/api/order", {
+          method: "DELETE",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ _id: orderId }),
+        });
+      }
+
+      // Refresh the orders list
+      await fetchOrders();
+      
+      alert(`Cleanup completed! Removed ${ordersToDelete.length} duplicate/invalid orders.`);
+    } catch (error) {
+      console.error("Cleanup failed:", error);
+      alert("Cleanup failed. Please try again.");
+    } finally {
+      setCleaning(false);
+    }
   };
 
   if (loading) {
@@ -68,6 +152,15 @@ export default function OrderTablePage() {
             <ShoppingBag className="w-4 h-4 text-blue-600" />
             <span className="font-medium text-blue-700">{orders.length} Total</span>
           </div>
+          <CustomButton
+            intent="secondary"
+            size="sm"
+            onPress={cleanupDuplicateOrders}
+            loading={cleaning}
+            disabled={cleaning}
+          >
+            {cleaning ? "Cleaning..." : "Cleanup Duplicates"}
+          </CustomButton>
         </div>
       </div>
 
@@ -104,14 +197,18 @@ export default function OrderTablePage() {
                           </p>
                           <span
                             className={`inline-block px-2 py-1 rounded-lg text-xs font-medium mt-1 ${
-                              order.status === "success" || order.paymentDetails?.paymentStatus === "success"
+                              order.status === "success" || order.paymentDetails?.status === "paid" || order.paymentDetails?.paymentStatus === "success"
                                 ? "bg-green-100 text-green-700"
-                                : order.status === "failed" || order.paymentDetails?.paymentStatus === "failed"
+                                : order.status === "failed" || order.paymentDetails?.status === "failed" || order.paymentDetails?.paymentStatus === "failed"
                                 ? "bg-red-100 text-red-700"
                                 : "bg-gray-100 text-gray-700"
                             }`}
                           >
-                            {order.status || order.paymentDetails?.paymentStatus || "pending"}
+                            {order.status === "success" || order.paymentDetails?.status === "paid" || order.paymentDetails?.paymentStatus === "success" 
+                              ? "success" 
+                              : order.status === "failed" || order.paymentDetails?.status === "failed" || order.paymentDetails?.paymentStatus === "failed"
+                              ? "failed"
+                              : "pending"}
                           </span>
                         </div>
                       </div>
@@ -171,14 +268,18 @@ export default function OrderTablePage() {
                       <TableCell>
                         <span
                           className={`inline-flex items-center px-3 py-1 rounded-lg text-xs font-medium ${
-                            order.status === "success" || order.paymentDetails?.paymentStatus === "success"
+                            order.status === "success" || order.paymentDetails?.status === "paid" || order.paymentDetails?.paymentStatus === "success"
                               ? "bg-green-100 text-green-700"
-                              : order.status === "failed" || order.paymentDetails?.paymentStatus === "failed"
+                              : order.status === "failed" || order.paymentDetails?.status === "failed" || order.paymentDetails?.paymentStatus === "failed"
                               ? "bg-red-100 text-red-700"
                               : "bg-gray-100 text-gray-700"
                           }`}
                         >
-                          {order.status || order.paymentDetails?.paymentStatus || "pending"}
+                          {order.status === "success" || order.paymentDetails?.status === "paid" || order.paymentDetails?.paymentStatus === "success" 
+                            ? "success" 
+                            : order.status === "failed" || order.paymentDetails?.status === "failed" || order.paymentDetails?.paymentStatus === "failed"
+                            ? "failed"
+                            : "pending"}
                         </span>
                       </TableCell>
                       <TableCell className="hidden md:table-cell text-gray-600 text-sm">{formatDate(order.createdAt)}</TableCell>
@@ -255,7 +356,13 @@ export default function OrderTablePage() {
                   </div>
                   <div className="bg-green-50 p-4 rounded-xl">
                     <p className="text-xs text-green-600 mb-2">Order Status</p>
-                    <p className="font-medium text-gray-900 capitalize">{selectedOrder.status || selectedOrder.paymentDetails?.paymentStatus || "pending"}</p>
+                    <p className="font-medium text-gray-900 capitalize">
+                      {selectedOrder.status === "success" || selectedOrder.paymentDetails?.status === "paid" || selectedOrder.paymentDetails?.paymentStatus === "success" 
+                        ? "success" 
+                        : selectedOrder.status === "failed" || selectedOrder.paymentDetails?.status === "failed" || selectedOrder.paymentDetails?.paymentStatus === "failed"
+                        ? "failed"
+                        : "pending"}
+                    </p>
                   </div>
                 </div>
 
