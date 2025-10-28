@@ -24,11 +24,11 @@ export default function BlogPage() {
 
   const fetchBlogPosts = async () => {
     try {
-      const res = await fetch("/api/data?collection=Posts");
+      const res = await fetch("/api/blog");
       const data = await res.json();
       
       const blogPosts = data.filter(post => 
-        post.category === "Blog" && post.status === "Published"
+        post.status === "Published"
       ).sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
       
       setPosts(blogPosts);

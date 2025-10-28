@@ -23,8 +23,10 @@ import {
   Wallet,
   Code,
   HelpCircle,
-  BookOpen,
   Type,
+  PenTool,
+  BookOpen,
+  Files,
 } from "lucide-react";
 
 const SideBar = ({ onItemClick }) => {
@@ -36,7 +38,10 @@ const SideBar = ({ onItemClick }) => {
     { href: "/admin/product", icon: <Tags size={16} />, label: "Products" },
     { href: "/admin/product/new", icon: <Plus size={16} />, label: "Add Product" },
     { href: "/admin/collection", icon: <LayoutGrid size={16} />, label: "Collections" },
-    { href: "/admin/post", icon: <BookOpen size={16} />, label: "Blog & Pages" },
+    { href: "/admin/blog", icon: <BookOpen size={16} />, label: "Blog Posts" },
+    { href: "/admin/blog/new", icon: <PenTool size={16} />, label: "Add Blog Post" },
+    { href: "/admin/pages", icon: <Files size={16} />, label: "Pages" },
+    { href: "/admin/pages/new", icon: <FileText size={16} />, label: "Add Page" },
     { href: "/admin/orders", icon: <ShoppingCart size={16} />, label: "Orders" },
     { href: "/admin/payment", icon: <CreditCard size={16} />, label: "Payments" },
     { href: "/admin/contact", icon: <Mail size={16} />, label: "Contact" },

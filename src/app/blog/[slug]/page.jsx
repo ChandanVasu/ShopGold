@@ -22,10 +22,10 @@ export default function BlogPostPage() {
 
   const fetchPost = async () => {
     try {
-      const res = await fetch("/api/data?collection=Posts");
+      const res = await fetch("/api/blog");
       const data = await res.json();
       
-      const foundPost = data.find(p => p.slug === slug && p.category === "Blog" && p.status === "Published");
+      const foundPost = data.find(p => p.slug === slug && p.status === "Published");
       setPost(foundPost || null);
 
       // Get related posts (same tags, excluding current post)
@@ -34,7 +34,6 @@ export default function BlogPostPage() {
         const related = data
           .filter(p => 
             p._id !== foundPost._id && 
-            p.category === "Blog" && 
             p.status === "Published" &&
             p.tags && postTags.some(tag => p.tags.includes(tag))
           )

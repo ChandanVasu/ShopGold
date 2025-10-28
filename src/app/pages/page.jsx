@@ -24,12 +24,12 @@ export default function PagesPage() {
 
   const fetchPages = async () => {
     try {
-      const res = await fetch("/api/data?collection=Posts");
+      const res = await fetch("/api/pages");
       const data = await res.json();
       
-      // Filter only Page category posts and Published status
+      // Filter only Published status
       const pageData = data.filter(post => 
-        post.category === "Page" && post.status === "Published"
+        post.status === "Published"
       ).sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
       
       setPages(pageData);

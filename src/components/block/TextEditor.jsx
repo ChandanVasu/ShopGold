@@ -11,7 +11,7 @@ export default function TextEditor({ value, onChange }) {
       height="500px"
       placeholder="Write product description..."
       setOptions={{
-        defaultStyle: "direction: ltr; text-align: left;", // ✅ Force LTR
+        defaultStyle: "direction: ltr; text-align: left;",
         buttonList: [
           ["undo", "redo"],
           ["font", "fontSize"],

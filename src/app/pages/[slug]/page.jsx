@@ -21,10 +21,10 @@ export default function PageView() {
 
   const fetchPage = async () => {
     try {
-      const res = await fetch("/api/data?collection=Posts");
+      const res = await fetch("/api/pages");
       const data = await res.json();
       
-      const foundPage = data.find(p => p.slug === slug && p.category === "Page" && p.status === "Published");
+      const foundPage = data.find(p => p.slug === slug && p.status === "Published");
       setPage(foundPage || null);
     } catch (err) {
       console.error("Failed to fetch page:", err);
