@@ -173,7 +173,7 @@ export default function StyleOne() {
                   {product.rating && (
                     <div className="absolute bottom-1 sm:bottom-2 left-1 sm:left-2 bg-green-600 backdrop-blur-sm px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-md flex items-center gap-1">
                       <span className="text-xs text-white font-medium">
-                        {product.rating}.{Math.floor(Math.random() * 10) + 1}
+                        {product.rating}
                       </span>
                       <span className="text-xs text-white font-semibold">★</span>
                     </div>

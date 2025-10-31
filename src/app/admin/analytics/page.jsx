@@ -1,25 +1,134 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Table, TableHeader, TableBody, TableColumn, TableRow, TableCell, Spinner } from "@heroui/react";
-import { TrendingUp, ShoppingBag, DollarSign, Users, ChevronDown, BarChart3, Clock, Filter } from "lucide-react";
+import { Table, TableHeader, TableBody, TableColumn, TableRow, TableCell, Spinner, Input, Select, SelectItem, Chip, Pagination } from "@heroui/react";
+import { TrendingUp, ShoppingBag, DollarSign, Users, ChevronDown, BarChart3, Clock, Filter, Search, CheckCircle } from "lucide-react";
 import formatDate from "@/utils/formatDate";
+import { useStoreCurrency } from "@/hooks/useStoreCurrency";
 
 export default function AnalyticsPage() {
   const [orders, setOrders] = useState([]);
+  const [filteredOrders, setFilteredOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [dateFilter, setDateFilter] = useState("all");
   const [sortOrder, setSortOrder] = useState("desc"); // desc = newest first
+  const [searchTerm, setSearchTerm] = useState("");
+  const [page, setPage] = useState(1);
+  const [rowsPerPage] = useState(10);
+  const { symbol: currencySymbol, currency } = useStoreCurrency();
 
   useEffect(() => {
     fetchAnalytics();
   }, []);
 
+  useEffect(() => {
+    filterOrders();
+  }, [orders, searchTerm, dateFilter, sortOrder]);
+
+  const getOrderStatus = (order) => {
+    if (order.paymentDetails?.status) {
+      switch(order.paymentDetails.status.toLowerCase()) {
+        case 'paid':
+        case 'completed':
+        case 'success':
+        case 'succeeded':
+          return 'Success';
+        case 'pending':
+        case 'processing':
+          return 'Pending';
+        case 'failed':
+        case 'error':
+          return 'Failed';
+        case 'cancelled':
+          return 'Cancelled';
+        default:
+          return 'Pending';
+      }
+    }
+    // Also check paymentStatus field
+    if (order.paymentDetails?.paymentStatus) {
+      switch(order.paymentDetails.paymentStatus.toLowerCase()) {
+        case 'paid':
+        case 'completed':
+        case 'success':
+        case 'succeeded':
+          return 'Success';
+        case 'pending':
+        case 'processing':
+          return 'Pending';
+        case 'failed':
+        case 'error':
+          return 'Failed';
+        case 'cancelled':
+          return 'Cancelled';
+        default:
+          return 'Pending';
+      }
+    }
+    return 'Pending';
+  };
+
+  const filterOrders = () => {
+    let filtered = orders;
+
+    // Only show successful orders
+    filtered = filtered.filter(order => {
+      const status = getOrderStatus(order);
+      return status.toLowerCase() === 'success';
+    });
+
+    // Filter by search term (name, email, phone)
+    if (searchTerm) {
+      filtered = filtered.filter(order => 
+        order.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        order.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        order.phone?.includes(searchTerm) ||
+        order.sessionId?.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+    }
+
+    // Filter by date
+    filtered = filterByDate(filtered);
+
+    // Sort orders
+    filtered = filtered.sort((a, b) =>
+      sortOrder === "desc"
+        ? new Date(b.createdAt) - new Date(a.createdAt)
+        : new Date(a.createdAt) - new Date(b.createdAt)
+    );
+
+    setFilteredOrders(filtered);
+    setPage(1); // Reset to first page when filtering
+  };
+
   const fetchAnalytics = async () => {
     try {
       const res = await fetch("/api/order");
       const data = await res.json();
-      setOrders(data || []);
+      
+      // Filter and deduplicate orders (same logic as orders page)
+      const filteredOrders = (data || []).filter(order => {
+        // Only show orders that have proper structure (new system)
+        return order.products?.items && Array.isArray(order.products.items);
+      });
+      
+      // Group by sessionId and email+phone to remove duplicates
+      const orderMap = new Map();
+      
+      filteredOrders.forEach(order => {
+        const key = order.sessionId || `${order.email}-${order.phone}-${order.paymentDetails?.total}`;
+        const existing = orderMap.get(key);
+        
+        if (!existing || new Date(order.updatedAt) > new Date(existing.updatedAt)) {
+          orderMap.set(key, order);
+        }
+      });
+      
+      // Convert back to array and sort by creation date (newest first)
+      const uniqueOrders = Array.from(orderMap.values())
+        .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+      
+      setOrders(uniqueOrders);
     } catch (err) {
       console.error("Failed to fetch analytics data:", err);
     } finally {
@@ -66,21 +175,16 @@ export default function AnalyticsPage() {
   };
 
   // Apply filters & sorting
-  const filteredOrders = filterByDate(orders).sort((a, b) =>
-    sortOrder === "desc"
-      ? new Date(b.createdAt) - new Date(a.createdAt)
-      : new Date(a.createdAt) - new Date(b.createdAt)
-  );
+  const totalPages = Math.ceil(filteredOrders.length / rowsPerPage);
+  const paginatedOrders = filteredOrders.slice((page - 1) * rowsPerPage, page * rowsPerPage);
 
   const totalOrders = filteredOrders.length;
   const totalRevenue = filteredOrders.reduce(
     (sum, o) => sum + (o.paymentDetails?.total || 0),
     0
   );
-  const currencySymbol = process.env.NEXT_PUBLIC_CURRENCY_SYMBOL || "$";
   const uniqueCustomers = new Set(filteredOrders.map((o) => o.email)).size;
   const averageOrderValue = totalOrders > 0 ? totalRevenue / totalOrders : 0;
-  const recentOrders = filteredOrders.slice(0, 5);
 
   if (loading) {
     return (
@@ -95,53 +199,75 @@ export default function AnalyticsPage() {
   return (
     <div className="p-4 md:p-6 space-y-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Analytics</h1>
-          <p className="text-gray-600 text-sm mt-1">
-            Overview of your store performance and insights
-          </p>
+      <div className="flex flex-col gap-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900">Analytics - Success Orders</h1>
+            <p className="text-gray-600 text-sm mt-1">
+              Overview of your successful orders and revenue insights
+            </p>
+          </div>
+
+          {/* Filters and Actions */}
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2 bg-green-50 px-3 py-2 rounded-lg">
+              <CheckCircle className="w-4 h-4 text-green-600" />
+              <span className="font-medium text-green-700 text-sm">{filteredOrders.length} Success Orders</span>
+            </div>
+            
+            <div className="relative">
+              <select
+                value={dateFilter}
+                onChange={(e) => setDateFilter(e.target.value)}
+                className="appearance-none bg-white border border-gray-300 rounded-lg px-4 py-2 pr-8 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              >
+                <option value="today">Today</option>
+                <option value="yesterday">Yesterday</option>
+                <option value="7">Last 7 days</option>
+                <option value="30">Last 30 days</option>
+                <option value="90">Last 90 days</option>
+                <option value="all">All time</option>
+              </select>
+              <ChevronDown className="absolute right-2 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-500 pointer-events-none" />
+            </div>
+
+            <div className="relative">
+              <select
+                value={sortOrder}
+                onChange={(e) => setSortOrder(e.target.value)}
+                className="appearance-none bg-white border border-gray-300 rounded-lg px-4 py-2 pr-8 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              >
+                <option value="desc">Newest first</option>
+                <option value="asc">Oldest first</option>
+              </select>
+              <ChevronDown className="absolute right-2 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-500 pointer-events-none" />
+            </div>
+          </div>
         </div>
 
-        {/* Filters */}
-        <div className="flex items-center gap-3">
-          <div className="relative">
-            <select
-              value={dateFilter}
-              onChange={(e) => setDateFilter(e.target.value)}
-              className="appearance-none bg-white border border-gray-300 rounded-lg px-4 py-2 pr-8 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            >
-              <option value="today">Today</option>
-              <option value="yesterday">Yesterday</option>
-              <option value="7">Last 7 days</option>
-              <option value="30">Last 30 days</option>
-              <option value="90">Last 90 days</option>
-              <option value="all">All time</option>
-            </select>
-            <ChevronDown className="absolute right-2 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-500 pointer-events-none" />
-          </div>
-
-          <div className="relative">
-            <select
-              value={sortOrder}
-              onChange={(e) => setSortOrder(e.target.value)}
-              className="appearance-none bg-white border border-gray-300 rounded-lg px-4 py-2 pr-8 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            >
-              <option value="desc">Newest first</option>
-              <option value="asc">Oldest first</option>
-            </select>
-            <ChevronDown className="absolute right-2 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-500 pointer-events-none" />
-          </div>
+        {/* Search Bar */}
+        <div className="flex gap-3">
+          <Input
+            placeholder="Search by customer name, email, or phone..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            startContent={<Search className="w-4 h-4 text-gray-400" />}
+            className="flex-1"
+            classNames={{
+              input: "text-sm",
+              inputWrapper: "border border-gray-200 bg-white"
+            }}
+          />
         </div>
       </div>
 
       {/* Stats Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard
-          title="Total Orders"
+          title="Successful Orders"
           value={totalOrders}
-          icon={<ShoppingBag size={20} />}
-          color="blue"
+          icon={<CheckCircle size={20} />}
+          color="green"
           trend="+12%"
         />
         <StatCard
@@ -167,33 +293,33 @@ export default function AnalyticsPage() {
         />
       </div>
 
-      {/* Recent Orders */}
+      {/* Success Orders */}
       <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
         <div className="p-6 border-b border-gray-100">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="w-12 h-12 bg-blue-50 rounded-xl flex items-center justify-center">
-                <BarChart3 size={20} className="text-blue-600" />
+              <div className="w-12 h-12 bg-green-50 rounded-xl flex items-center justify-center">
+                <CheckCircle size={20} className="text-green-600" />
               </div>
               <div>
-                <h3 className="text-lg font-semibold text-gray-900">Recent Orders</h3>
-                <p className="text-sm text-gray-500">Latest {recentOrders.length} orders from your store</p>
+                <h3 className="text-lg font-semibold text-gray-900">Success Orders</h3>
+                <p className="text-sm text-gray-500">All successful orders from your store</p>
               </div>
             </div>
-            <div className="flex items-center gap-1 text-xs text-gray-500 bg-gray-50 rounded-lg px-3 py-1">
-              <ShoppingBag size={12} />
-              {recentOrders.length} orders
+            <div className="flex items-center gap-1 text-xs text-gray-500 bg-green-50 rounded-lg px-3 py-1">
+              <CheckCircle size={12} className="text-green-600" />
+              {filteredOrders.length} orders
             </div>
           </div>
         </div>
 
-        {recentOrders.length === 0 ? (
+        {filteredOrders.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-12 text-center">
             <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4">
-              <ShoppingBag size={24} className="text-gray-400" />
+              <CheckCircle size={24} className="text-gray-400" />
             </div>
-            <h3 className="text-sm font-medium text-gray-900 mb-1">No orders yet</h3>
-            <p className="text-xs text-gray-500">Once you receive orders, they will appear here for analysis.</p>
+            <h3 className="text-sm font-medium text-gray-900 mb-1">No successful orders yet</h3>
+            <p className="text-xs text-gray-500">Once you receive successful orders, they will appear here for analysis.</p>
           </div>
         ) : (
           <div className="overflow-hidden">
@@ -201,9 +327,9 @@ export default function AnalyticsPage() {
             <div className="block lg:hidden">
               <div className="p-4">
                 <div className="space-y-3">
-                  {recentOrders.map((order) => (
+                  {paginatedOrders.map((order) => (
                     <div key={order._id} className="flex items-center gap-4 p-4 rounded-xl hover:bg-gray-50 transition-colors border border-gray-100">
-                      <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center text-white font-medium text-sm flex-shrink-0">
+                      <div className="w-10 h-10 rounded-full bg-gradient-to-br from-green-500 to-emerald-500 flex items-center justify-center text-white font-medium text-sm flex-shrink-0">
                         {order.name?.charAt(0)?.toUpperCase()}
                       </div>
                       <div className="flex-1 min-w-0">
@@ -215,20 +341,16 @@ export default function AnalyticsPage() {
                       </div>
                       <div className="text-right">
                         <p className="font-semibold text-gray-900 text-sm mb-1">
-                          {order.paymentDetails?.currencySymbol}
+                          {order.paymentDetails?.currencySymbol || currencySymbol}
                           {order.paymentDetails?.total?.toLocaleString() || "0"}
                         </p>
-                        <span
-                          className={`inline-flex items-center px-2 py-1 rounded-lg text-xs font-medium ${
-                            order.paymentDetails?.paymentStatus === "succeeded" || order.paymentDetails?.paymentStatus === "paid"
-                              ? "bg-green-100 text-green-700"
-                              : order.paymentDetails?.paymentStatus === "failed"
-                              ? "bg-red-100 text-red-700"
-                              : "bg-yellow-100 text-yellow-700"
-                          }`}
+                        <Chip
+                          size="sm"
+                          color="success"
+                          className="text-xs"
                         >
-                          {order.paymentDetails?.paymentStatus || "Unknown"}
-                        </span>
+                          Success
+                        </Chip>
                         <p className="text-xs text-gray-500 mt-1">{formatDate(order.createdAt)}</p>
                       </div>
                     </div>
@@ -241,12 +363,19 @@ export default function AnalyticsPage() {
             <div className="hidden lg:block">
               <Table
                 shadow="none"
-                aria-label="Recent Orders Table"
+                aria-label="Success Orders Table"
                 classNames={{
                   wrapper: "shadow-none border-none rounded-none",
                   th: "bg-gray-50 text-gray-700 font-medium py-4",
                   td: "py-4"
                 }}
+                bottomContent={
+                  filteredOrders.length > rowsPerPage ? (
+                    <div className="w-full flex justify-center p-4 border-t border-gray-200">
+                      <Pagination isCompact showControls color="primary" page={page} total={totalPages} onChange={(page) => setPage(page)} />
+                    </div>
+                  ) : null
+                }
               >
                 <TableHeader>
                   <TableColumn>Customer</TableColumn>
@@ -255,12 +384,12 @@ export default function AnalyticsPage() {
                   <TableColumn>Status</TableColumn>
                   <TableColumn className="hidden md:table-cell">Date</TableColumn>
                 </TableHeader>
-                <TableBody emptyContent="No orders found">
-                  {recentOrders.map((order) => (
+                <TableBody emptyContent="No successful orders found">
+                  {paginatedOrders.map((order) => (
                     <TableRow key={order._id} className="hover:bg-gray-50 transition-colors">
                       <TableCell>
                         <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center text-white font-medium text-xs flex-shrink-0">
+                          <div className="w-8 h-8 rounded-full bg-gradient-to-br from-green-500 to-emerald-500 flex items-center justify-center text-white font-medium text-xs flex-shrink-0">
                             {order.name?.charAt(0)?.toUpperCase()}
                           </div>
                           <div>
@@ -273,21 +402,17 @@ export default function AnalyticsPage() {
                         {order.products?.items?.[0]?.title || "No products"}
                       </TableCell>
                       <TableCell className="font-semibold text-gray-900 text-sm">
-                        {order.paymentDetails?.currencySymbol}
+                        {order.paymentDetails?.currencySymbol || currencySymbol}
                         {order.paymentDetails?.total?.toLocaleString() || "0"}
                       </TableCell>
                       <TableCell>
-                        <span
-                          className={`inline-flex items-center px-3 py-1 rounded-lg text-xs font-medium ${
-                            order.paymentDetails?.paymentStatus === "succeeded" || order.paymentDetails?.paymentStatus === "paid"
-                              ? "bg-green-100 text-green-700"
-                              : order.paymentDetails?.paymentStatus === "failed"
-                              ? "bg-red-100 text-red-700"
-                              : "bg-yellow-100 text-yellow-700"
-                          }`}
+                        <Chip
+                          size="sm"
+                          color="success"
+                          className="text-xs font-medium"
                         >
-                          {order.paymentDetails?.paymentStatus || "Unknown"}
-                        </span>
+                          Success
+                        </Chip>
                       </TableCell>
                       <TableCell className="hidden md:table-cell text-gray-600 text-sm">
                         {formatDate(order.createdAt)}
@@ -297,6 +422,13 @@ export default function AnalyticsPage() {
                 </TableBody>
               </Table>
             </div>
+
+            {/* Mobile Pagination */}
+            {filteredOrders.length > rowsPerPage && (
+              <div className="block lg:hidden p-4 border-t border-gray-200">
+                <Pagination isCompact showControls color="primary" page={page} total={totalPages} onChange={(page) => setPage(page)} className="flex justify-center" />
+              </div>
+            )}
           </div>
         )}
       </div>

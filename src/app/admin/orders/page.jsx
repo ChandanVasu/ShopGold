@@ -1,7 +1,26 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Table, TableHeader, TableBody, TableColumn, TableRow, TableCell, Pagination, Modal, ModalBody, ModalContent, ModalHeader, ModalFooter, Spinner, User, Input, Select, SelectItem, Chip } from "@heroui/react";
+import {
+  Table,
+  TableHeader,
+  TableBody,
+  TableColumn,
+  TableRow,
+  TableCell,
+  Pagination,
+  Modal,
+  ModalBody,
+  ModalContent,
+  ModalHeader,
+  ModalFooter,
+  Spinner,
+  User,
+  Input,
+  Select,
+  SelectItem,
+  Chip,
+} from "@heroui/react";
 import { Eye, ShoppingBag, Package, X, Search, Filter } from "lucide-react";
 import CustomButton from "@/components/block/CustomButton";
 import formatDate from "@/utils/formatDate";
@@ -16,7 +35,6 @@ export default function OrderTablePage() {
   const [loading, setLoading] = useState(true);
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [modalOpen, setModalOpen] = useState(false);
-  const [cleaning, setCleaning] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const { symbol: currencySymbol, currency } = useCurrency();
@@ -29,7 +47,7 @@ export default function OrderTablePage() {
     { key: "success", label: "Success" },
     { key: "pending", label: "Pending" },
     { key: "failed", label: "Failed" },
-    { key: "cancelled", label: "Cancelled" }
+    { key: "cancelled", label: "Cancelled" },
   ];
 
   useEffect(() => {
@@ -45,17 +63,18 @@ export default function OrderTablePage() {
 
     // Filter by search term (name, email, phone)
     if (searchTerm) {
-      filtered = filtered.filter(order => 
-        order.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        order.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        order.phone?.includes(searchTerm) ||
-        order.sessionId?.toLowerCase().includes(searchTerm.toLowerCase())
+      filtered = filtered.filter(
+        (order) =>
+          order.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          order.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          order.phone?.includes(searchTerm) ||
+          order.sessionId?.toLowerCase().includes(searchTerm.toLowerCase())
       );
     }
 
     // Filter by status
     if (statusFilter !== "all") {
-      filtered = filtered.filter(order => {
+      filtered = filtered.filter((order) => {
         const status = getOrderStatus(order);
         return status.toLowerCase() === statusFilter.toLowerCase();
       });
@@ -67,33 +86,38 @@ export default function OrderTablePage() {
 
   const getOrderStatus = (order) => {
     if (order.paymentDetails?.status) {
-      switch(order.paymentDetails.status.toLowerCase()) {
-        case 'paid':
-        case 'completed':
-        case 'success':
-          return 'Success';
-        case 'pending':
-        case 'processing':
-          return 'Pending';
-        case 'failed':
-        case 'error':
-          return 'Failed';
-        case 'cancelled':
-          return 'Cancelled';
+      switch (order.paymentDetails.status.toLowerCase()) {
+        case "paid":
+        case "completed":
+        case "success":
+          return "Success";
+        case "pending":
+        case "processing":
+          return "Pending";
+        case "failed":
+        case "error":
+          return "Failed";
+        case "cancelled":
+          return "Cancelled";
         default:
-          return 'Pending';
+          return "Pending";
       }
     }
-    return 'Pending';
+    return "Pending";
   };
 
   const getStatusColor = (status) => {
-    switch(status.toLowerCase()) {
-      case 'success': return 'success';
-      case 'pending': return 'warning';
-      case 'failed': return 'danger';
-      case 'cancelled': return 'default';
-      default: return 'warning';
+    switch (status.toLowerCase()) {
+      case "success":
+        return "success";
+      case "pending":
+        return "warning";
+      case "failed":
+        return "danger";
+      case "cancelled":
+        return "default";
+      default:
+        return "warning";
     }
   };
 
@@ -101,29 +125,28 @@ export default function OrderTablePage() {
     try {
       const res = await fetch("/api/order");
       const data = await res.json();
-      
+
       // Filter and deduplicate orders
-      const filteredOrders = (data || []).filter(order => {
+      const filteredOrders = (data || []).filter((order) => {
         // Only show orders that have proper structure (new system)
         return order.products?.items && Array.isArray(order.products.items);
       });
-      
+
       // Group by sessionId and email+phone to remove duplicates
       const orderMap = new Map();
-      
-      filteredOrders.forEach(order => {
+
+      filteredOrders.forEach((order) => {
         const key = order.sessionId || `${order.email}-${order.phone}-${order.paymentDetails?.total}`;
         const existing = orderMap.get(key);
-        
+
         if (!existing || new Date(order.updatedAt) > new Date(existing.updatedAt)) {
           orderMap.set(key, order);
         }
       });
-      
+
       // Convert back to array and sort by creation date (newest first)
-      const uniqueOrders = Array.from(orderMap.values())
-        .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-      
+      const uniqueOrders = Array.from(orderMap.values()).sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+
       setOrders(uniqueOrders);
       setFilteredOrders(uniqueOrders); // Initialize filtered orders
     } catch (err) {
@@ -136,68 +159,6 @@ export default function OrderTablePage() {
   const handleView = (order) => {
     setSelectedOrder(order);
     setModalOpen(true);
-  };
-
-  const cleanupDuplicateOrders = async () => {
-    if (!confirm("This will remove duplicate and invalid orders. Are you sure?")) {
-      return;
-    }
-
-    setCleaning(true);
-    try {
-      const res = await fetch("/api/order");
-      const allOrders = await res.json();
-      
-      // Find orders to delete (invalid structure or duplicates)
-      const ordersToDelete = [];
-      const validOrders = [];
-      const sessionMap = new Map();
-
-      allOrders.forEach(order => {
-        // Check if order has proper structure
-        if (!order.products?.items || !Array.isArray(order.products.items)) {
-          ordersToDelete.push(order._id);
-          return;
-        }
-
-        // Check for duplicates by sessionId
-        if (order.sessionId) {
-          const existing = sessionMap.get(order.sessionId);
-          if (existing) {
-            // Keep the newer order, delete the older one
-            if (new Date(order.updatedAt) > new Date(existing.updatedAt)) {
-              ordersToDelete.push(existing._id);
-              sessionMap.set(order.sessionId, order);
-            } else {
-              ordersToDelete.push(order._id);
-            }
-          } else {
-            sessionMap.set(order.sessionId, order);
-          }
-        } else {
-          validOrders.push(order);
-        }
-      });
-
-      // Delete invalid/duplicate orders
-      for (const orderId of ordersToDelete) {
-        await fetch("/api/order", {
-          method: "DELETE",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ _id: orderId }),
-        });
-      }
-
-      // Refresh the orders list
-      await fetchOrders();
-      
-      alert(`Cleanup completed! Removed ${ordersToDelete.length} duplicate/invalid orders.`);
-    } catch (error) {
-      console.error("Cleanup failed:", error);
-      alert("Cleanup failed. Please try again.");
-    } finally {
-      setCleaning(false);
-    }
   };
 
   if (loading) {
@@ -225,15 +186,6 @@ export default function OrderTablePage() {
             <ShoppingBag className="w-4 h-4 text-blue-600" />
             <span className="font-medium text-blue-700">{orders.length} Total</span>
           </div>
-          <CustomButton
-            intent="secondary"
-            size="sm"
-            onPress={cleanupDuplicateOrders}
-            loading={cleaning}
-            disabled={cleaning}
-          >
-            {cleaning ? "Cleaning..." : "Cleanup Duplicates"}
-          </CustomButton>
         </div>
       </div>
 
@@ -247,7 +199,7 @@ export default function OrderTablePage() {
             startContent={<Search className="w-4 h-4 text-gray-400" />}
             classNames={{
               input: "text-sm",
-              inputWrapper: "border border-gray-200 hover:border-gray-300 focus-within:border-gray-400"
+              inputWrapper: "border border-gray-200 hover:border-gray-300 focus-within:border-gray-400",
             }}
             size="sm"
           />
@@ -259,7 +211,7 @@ export default function OrderTablePage() {
             onSelectionChange={(keys) => setStatusFilter(Array.from(keys)[0])}
             startContent={<Filter className="w-4 h-4 text-gray-400" />}
             classNames={{
-              trigger: "border border-gray-200 hover:border-gray-300"
+              trigger: "border border-gray-200 hover:border-gray-300",
             }}
             size="sm"
           >
@@ -301,12 +253,7 @@ export default function OrderTablePage() {
                             {order.paymentDetails?.currencySymbol || currencySymbol}
                             {order.paymentDetails?.total}
                           </p>
-                          <Chip 
-                            size="sm" 
-                            color={getStatusColor(getOrderStatus(order))} 
-                            variant="flat"
-                            className="mt-1"
-                          >
+                          <Chip size="sm" color={getStatusColor(getOrderStatus(order))} variant="flat" className="mt-1">
                             {getOrderStatus(order)}
                           </Chip>
                         </div>
@@ -365,11 +312,7 @@ export default function OrderTablePage() {
                         {order.paymentDetails?.currencySymbol || currencySymbol} {order.paymentDetails?.total}
                       </TableCell>
                       <TableCell>
-                        <Chip 
-                          size="sm" 
-                          color={getStatusColor(getOrderStatus(order))} 
-                          variant="flat"
-                        >
+                        <Chip size="sm" color={getStatusColor(getOrderStatus(order))} variant="flat">
                           {getOrderStatus(order)}
                         </Chip>
                       </TableCell>
@@ -448,8 +391,8 @@ export default function OrderTablePage() {
                   <div className="bg-green-50 p-4 rounded-xl">
                     <p className="text-xs text-green-600 mb-2">Order Status</p>
                     <p className="font-medium text-gray-900 capitalize">
-                      {selectedOrder.status === "success" || selectedOrder.paymentDetails?.status === "paid" || selectedOrder.paymentDetails?.paymentStatus === "success" 
-                        ? "success" 
+                      {selectedOrder.status === "success" || selectedOrder.paymentDetails?.status === "paid" || selectedOrder.paymentDetails?.paymentStatus === "success"
+                        ? "success"
                         : selectedOrder.status === "failed" || selectedOrder.paymentDetails?.status === "failed" || selectedOrder.paymentDetails?.paymentStatus === "failed"
                         ? "failed"
                         : "pending"}
@@ -505,11 +448,7 @@ export default function OrderTablePage() {
           </ModalBody>
 
           <ModalFooter className="px-6 py-4 ">
-            <CustomButton 
-              intent="secondary" 
-              size="sm" 
-              onPress={() => setModalOpen(false)}
-            >
+            <CustomButton intent="secondary" size="sm" onPress={() => setModalOpen(false)}>
               Close
             </CustomButton>
           </ModalFooter>

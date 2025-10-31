@@ -4,7 +4,7 @@ import React, { useState, useEffect, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import dynamic from "next/dynamic";
-import { Input, Select, SelectItem, Textarea } from "@heroui/react";
+import { Input, Select, SelectItem, Textarea, Switch } from "@heroui/react";
 import { ArrowLeft, Package, Plus, X, Save } from "lucide-react";
 import CustomButton from "@/components/block/CustomButton";
 import ImageSelector from "@/components/block/ImageSelector";
@@ -65,8 +65,9 @@ function ProductForm() {
     stockStatus: "In Stock",
     costPerItem: "",
     variants: [], // ✅ New: variants
-    rating: "", // ✅ Star rating (1-5)
-    limitedTimeDeal: "", // ✅ Limited time deal end date/time
+    rating: "", // ✅ Star rating (decimal like 4.2, 4.4)
+    reviewsCount: "", // ✅ Number of reviews
+    limitedTimeDeal: false, // ✅ Limited time deal toggle (true/false)
   });
 
   const visibilityOptions = ["Active", "Inactive"];
@@ -99,7 +100,8 @@ function ProductForm() {
           costPerItem: data.costPerItem || "",
           variants: data.variants || [], // ✅ load existing variants
           rating: data.rating || "",
-          limitedTimeDeal: data.limitedTimeDeal || "",
+          reviewsCount: data.reviewsCount || "",
+          limitedTimeDeal: data.limitedTimeDeal || false,
         });
 
         setSelectedImages(data.images || []);
@@ -496,36 +498,55 @@ function ProductForm() {
                 ))}
               </Select>
 
-              <Select
+              <Input
                 label="Star Rating"
                 labelPlacement="outside"
-                placeholder="Select rating"
+                type="number"
+                step="0.1"
+                min="0"
+                max="5"
                 isDisabled={isFetching}
-                selectedKeys={productData.rating ? [productData.rating.toString()] : []}
-                onSelectionChange={(keys) => setProductData({ ...productData, rating: Array.from(keys)[0] })}
-                classNames={{
-                  label: "text-sm font-medium text-gray-700",
-                }}
-              >
-                {[1, 2, 3, 4, 5].map((star) => (
-                  <SelectItem key={star.toString()}>{star} Star{star > 1 ? "s" : ""}</SelectItem>
-                ))}
-              </Select>
-
-              <Input
-                label="Limited Time Deal (End Date & Time)"
-                labelPlacement="outside"
-                type="datetime-local"
-                isDisabled={isFetching}
-                placeholder="Select end date and time"
-                value={productData.limitedTimeDeal}
-                onChange={(e) => setProductData({ ...productData, limitedTimeDeal: e.target.value })}
+                placeholder="e.g., 4.2, 4.6"
+                value={productData.rating}
+                onChange={(e) => setProductData({ ...productData, rating: e.target.value })}
                 classNames={{
                   input: "text-sm",
                   label: "text-sm font-medium text-gray-700",
                 }}
-                description="Set the deadline for limited time deals"
+                description="Enter rating from 0 to 5 (decimals allowed)"
               />
+
+              <Input
+                label="Number of Reviews"
+                labelPlacement="outside"
+                type="number"
+                min="0"
+                isDisabled={isFetching}
+                placeholder="e.g., 125, 50"
+                value={productData.reviewsCount}
+                onChange={(e) => setProductData({ ...productData, reviewsCount: e.target.value })}
+                classNames={{
+                  input: "text-sm",
+                  label: "text-sm font-medium text-gray-700",
+                }}
+                description="Total number of customer reviews"
+              />
+
+              <div className="flex flex-col gap-2">
+                <label className="text-sm font-medium text-gray-700">Limited Time Deal</label>
+                <Switch
+                  isSelected={productData.limitedTimeDeal}
+                  onValueChange={(value) => setProductData({ ...productData, limitedTimeDeal: value })}
+                  classNames={{
+                    wrapper: "group-data-[selected=true]:bg-blue-600",
+                  }}
+                >
+                  <span className="text-sm text-gray-600">
+                    {productData.limitedTimeDeal ? "Deal is active" : "Deal is inactive"}
+                  </span>
+                </Switch>
+                <p className="text-xs text-gray-500">Toggle to activate/deactivate limited time deal</p>
+              </div>
 
               <Input
                 label="Tags"

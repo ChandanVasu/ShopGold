@@ -9,30 +9,104 @@ export default function AddressPage() {
   const router = useRouter();
   const { currency } = useCurrency();
   const isIndianCurrency = currency === "INR";
-  
+
   // State options based on currency
   const stateOptions = {
     INR: [
-      "Andhra Pradesh", "Arunachal Pradesh", "Assam", "Bihar", "Chhattisgarh", "Goa", "Gujarat", 
-      "Haryana", "Himachal Pradesh", "Jharkhand", "Karnataka", "Kerala", "Madhya Pradesh", 
-      "Maharashtra", "Manipur", "Meghalaya", "Mizoram", "Nagaland", "Odisha", "Punjab", 
-      "Rajasthan", "Sikkim", "Tamil Nadu", "Telangana", "Tripura", "Uttar Pradesh", 
-      "Uttarakhand", "West Bengal", "Delhi", "Jammu and Kashmir", "Ladakh"
+      // States and Union Territories in alphabetical order
+      "Andaman and Nicobar Islands",
+      "Andhra Pradesh",
+      "Arunachal Pradesh",
+      "Assam",
+      "Bihar",
+      "Chandigarh",
+      "Chhattisgarh",
+      "Dadra and Nagar Haveli and Daman and Diu",
+      "Delhi",
+      "Goa",
+      "Gujarat",
+      "Haryana",
+      "Himachal Pradesh",
+      "Jammu and Kashmir",
+      "Jharkhand",
+      "Karnataka",
+      "Kerala",
+      "Ladakh",
+      "Lakshadweep",
+      "Madhya Pradesh",
+      "Maharashtra",
+      "Manipur",
+      "Meghalaya",
+      "Mizoram",
+      "Nagaland",
+      "Odisha",
+      "Puducherry",
+      "Punjab",
+      "Rajasthan",
+      "Sikkim",
+      "Tamil Nadu",
+      "Telangana",
+      "Tripura",
+      "Uttar Pradesh",
+      "Uttarakhand",
+      "West Bengal",
     ],
     USD: [
-      "Alabama", "Alaska", "Arizona", "Arkansas", "California", "Colorado", "Connecticut", 
-      "Delaware", "Florida", "Georgia", "Hawaii", "Idaho", "Illinois", "Indiana", "Iowa", 
-      "Kansas", "Kentucky", "Louisiana", "Maine", "Maryland", "Massachusetts", "Michigan", 
-      "Minnesota", "Mississippi", "Missouri", "Montana", "Nebraska", "Nevada", "New Hampshire", 
-      "New Jersey", "New Mexico", "New York", "North Carolina", "North Dakota", "Ohio", 
-      "Oklahoma", "Oregon", "Pennsylvania", "Rhode Island", "South Carolina", "South Dakota", 
-      "Tennessee", "Texas", "Utah", "Vermont", "Virginia", "Washington", "West Virginia", 
-      "Wisconsin", "Wyoming"
-    ]
+      "Alabama",
+      "Alaska",
+      "Arizona",
+      "Arkansas",
+      "California",
+      "Colorado",
+      "Connecticut",
+      "Delaware",
+      "Florida",
+      "Georgia",
+      "Hawaii",
+      "Idaho",
+      "Illinois",
+      "Indiana",
+      "Iowa",
+      "Kansas",
+      "Kentucky",
+      "Louisiana",
+      "Maine",
+      "Maryland",
+      "Massachusetts",
+      "Michigan",
+      "Minnesota",
+      "Mississippi",
+      "Missouri",
+      "Montana",
+      "Nebraska",
+      "Nevada",
+      "New Hampshire",
+      "New Jersey",
+      "New Mexico",
+      "New York",
+      "North Carolina",
+      "North Dakota",
+      "Ohio",
+      "Oklahoma",
+      "Oregon",
+      "Pennsylvania",
+      "Rhode Island",
+      "South Carolina",
+      "South Dakota",
+      "Tennessee",
+      "Texas",
+      "Utah",
+      "Vermont",
+      "Virginia",
+      "Washington",
+      "West Virginia",
+      "Wisconsin",
+      "Wyoming",
+    ],
   };
 
   const currentStates = stateOptions[currency] || stateOptions.INR;
-  
+
   const [billingDetails, setBillingDetails] = useState({
     customer: { fullName: "", phone: "" },
     address: { address1: "", address2: "", city: "", state: "", zip: "" },
@@ -53,22 +127,22 @@ export default function AddressPage() {
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    
+
     const [group, field] = name.split(".");
-    
+
     // Handle mobile number validation (max 10 digits)
-    if (field === 'phone' && value.replace(/\D/g, '').length > 10) {
+    if (field === "phone" && value.replace(/\D/g, "").length > 10) {
       return;
     }
 
     // Handle pincode validation (max 6 digits for INR, 5 for USD)
-    if (field === 'zip') {
+    if (field === "zip") {
       const maxLength = isIndianCurrency ? 6 : 5;
-      if (value.replace(/\D/g, '').length > maxLength) {
+      if (value.replace(/\D/g, "").length > maxLength) {
         return;
       }
     }
-    
+
     setBillingDetails((prev) => ({
       ...prev,
       [group]: {
@@ -76,7 +150,7 @@ export default function AddressPage() {
         [field]: value,
       },
     }));
-    
+
     // Auto-save to localStorage on every change
     setTimeout(() => {
       const updatedDetails = { ...billingDetails };
@@ -86,10 +160,10 @@ export default function AddressPage() {
         [field]: value,
       };
       localStorage.setItem("checkoutBillingDetails", JSON.stringify(updatedDetails));
-      
+
       // Dispatch custom event to notify other components
       window.dispatchEvent(new CustomEvent("addressUpdated"));
-      
+
       // Show save notification
       setSaveNotification(true);
       setTimeout(() => setSaveNotification(false), 2000);
@@ -104,7 +178,7 @@ export default function AddressPage() {
         state: value,
       },
     }));
-    
+
     // Auto-save state selection
     setTimeout(() => {
       const updatedDetails = {
@@ -115,10 +189,10 @@ export default function AddressPage() {
         },
       };
       localStorage.setItem("checkoutBillingDetails", JSON.stringify(updatedDetails));
-      
+
       // Dispatch custom event to notify other components
       window.dispatchEvent(new CustomEvent("addressUpdated"));
-      
+
       setSaveNotification(true);
       setTimeout(() => setSaveNotification(false), 2000);
     }, 100);
@@ -131,7 +205,7 @@ export default function AddressPage() {
     if (!billingDetails.customer.fullName.trim()) {
       newErrors.fullNameError = true;
     }
-    if (!billingDetails.customer.phone.trim() || billingDetails.customer.phone.replace(/\D/g, '').length !== 10) {
+    if (!billingDetails.customer.phone.trim() || billingDetails.customer.phone.replace(/\D/g, "").length !== 10) {
       newErrors.phoneError = true;
     }
 
@@ -147,7 +221,7 @@ export default function AddressPage() {
     }
     if (!billingDetails.address.zip.trim()) {
       const requiredLength = isIndianCurrency ? 6 : 5;
-      if (billingDetails.address.zip.replace(/\D/g, '').length !== requiredLength) {
+      if (billingDetails.address.zip.replace(/\D/g, "").length !== requiredLength) {
         newErrors.zipError = true;
       }
     }
@@ -160,10 +234,10 @@ export default function AddressPage() {
     if (validateForm()) {
       // Save billing details to localStorage
       localStorage.setItem("checkoutBillingDetails", JSON.stringify(billingDetails));
-      
+
       // Create pending order with address details
       await createPendingOrder();
-      
+
       // Navigate to payment page
       router.push("/checkout/payment");
     }
@@ -173,7 +247,7 @@ export default function AddressPage() {
     try {
       // Get cart items
       const cartItems = JSON.parse(localStorage.getItem("buyNow") || "[]");
-      
+
       if (cartItems.length === 0) {
         console.log("No items in cart, skipping pending order creation");
         return;
@@ -182,7 +256,7 @@ export default function AddressPage() {
       // Create pending order
       const orderPayload = {
         name: billingDetails.customer.fullName,
-        email: billingDetails.customer.email || `${billingDetails.customer.phone}@temp.com`, // Fallback email
+        email: billingDetails.customer.email || ``,
         phone: billingDetails.customer.phone,
         shipping: {
           address: billingDetails.address,
@@ -202,7 +276,7 @@ export default function AddressPage() {
         },
         paymentDetails: {
           paymentMethod: "pending",
-          total: cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0),
+          total: cartItems.reduce((sum, item) => sum + item.price * item.quantity, 0),
           status: "pending",
           paymentStatus: "pending",
         },
@@ -237,15 +311,13 @@ export default function AddressPage() {
     setBillingDetails(emptyDetails);
     setIsAutoFilled(false);
     localStorage.removeItem("checkoutBillingDetails");
-    
+
     // Dispatch custom event to notify other components
     window.dispatchEvent(new CustomEvent("addressUpdated"));
   };
 
   return (
     <div className="min-h-screen bg-gray-50">
-
-
       <div className="max-w-4xl mx-auto px-4 py-6">
         {/* Progress Steps */}
         <div className="flex justify-center items-center gap-4 mb-8">
@@ -267,7 +339,6 @@ export default function AddressPage() {
 
         {/* Main Form */}
         <div className="bg-white rounded-xl p-2 md:p-8">
-   
           <div className="mb-8">
             <div className="flex items-center gap-2 mb-4">
               <User className="w-5 h-5 text-gray-600" />
@@ -355,18 +426,18 @@ export default function AddressPage() {
               />
 
               <Input
-                label={`${isIndianCurrency ? 'Pincode' : 'ZIP Code'} *`}
+                label={`${isIndianCurrency ? "Pincode" : "ZIP Code"} *`}
                 name="address.zip"
                 value={billingDetails.address.zip}
                 onChange={handleInputChange}
-                placeholder={`Enter ${isIndianCurrency ? '6 digit pincode' : '5 digit ZIP code'}`}
+                placeholder={`Enter ${isIndianCurrency ? "6 digit pincode" : "5 digit ZIP code"}`}
                 labelPlacement="outside"
                 size="lg"
                 type="tel"
                 maxLength={isIndianCurrency ? 6 : 5}
                 pattern="[0-9]*"
                 isInvalid={errors.zipError}
-                errorMessage={errors.zipError ? `${isIndianCurrency ? '6 digit pincode' : '5 digit ZIP code'} is required` : ""}
+                errorMessage={errors.zipError ? `${isIndianCurrency ? "6 digit pincode" : "5 digit ZIP code"} is required` : ""}
                 isRequired
               />
 
@@ -394,13 +465,7 @@ export default function AddressPage() {
 
           {/* Continue Button */}
           <div className="flex justify-end">
-            <Button
-              onClick={handleContinue}
-              color="primary"
-              size="lg"
-              endContent={<ArrowRight className="w-4 h-4" />}
-              className="px-8 bg-[#5A3E1B] hover:bg-[#4A3217]"
-            >
+            <Button onClick={handleContinue} color="primary" size="lg" endContent={<ArrowRight className="w-4 h-4" />} className="px-8 bg-[#5A3E1B] hover:bg-[#4A3217]">
               Continue to Payment
             </Button>
           </div>
