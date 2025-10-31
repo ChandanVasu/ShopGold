@@ -181,7 +181,6 @@ function AllProductsPage() {
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 md:gap-6 gap-3 px-4">
           {filteredProducts.map((product) => {
             const discount = calculateDiscount(product.regularPrice, product.salePrice);
-            const hasLimitedDeal = isLimitedTimeDeal(product.limitedTimeDeal);
 
             return (
               <div key={product._id} className="bg-gray-50 border border-gray-100 rounded-xl overflow-hidden">
@@ -258,7 +257,7 @@ function AllProductsPage() {
                     </div>
 
                     {/* Limited Time Deal Badge */}
-                    {hasLimitedDeal && (
+                    {product.limitedTimeDeal && (
                       <div className="mb-1 text-center">
                         <span className="text-xs text-green-700 font-normal">Limited Time Deal</span>
                       </div>

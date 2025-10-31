@@ -193,7 +193,38 @@ export default function CartDrawer({ isOpen, onClose }) {
 
     localStorage.setItem("buyNow", JSON.stringify(buyNowData));
     onClose();
-    window.location.href = "/checkout";
+
+    // Check if address is saved in localStorage
+    const savedAddress = localStorage.getItem("checkoutBillingDetails");
+    
+    if (savedAddress) {
+      try {
+        const addressData = JSON.parse(savedAddress);
+        // Check if required address fields are filled
+        const isAddressComplete = 
+          addressData.customer?.fullName &&
+          addressData.customer?.phone &&
+          addressData.address?.address1 &&
+          addressData.address?.city &&
+          addressData.address?.state &&
+          addressData.address?.zip;
+
+        if (isAddressComplete) {
+          // Address is complete, redirect to payment
+          window.location.href = "/checkout/payment";
+        } else {
+          // Address is incomplete, redirect to address page
+          window.location.href = "/checkout/address";
+        }
+      } catch (error) {
+        // Error parsing address, redirect to address page
+        console.error("Error parsing saved address:", error);
+        window.location.href = "/checkout/address";
+      }
+    } else {
+      // No saved address, redirect to address page
+      window.location.href = "/checkout/address";
+    }
   };
 
   return (

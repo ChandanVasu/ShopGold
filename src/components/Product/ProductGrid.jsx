@@ -17,7 +17,7 @@ export default function StyleOne() {
   useEffect(() => {
     async function fetchProducts() {
       try {
-        const res = await fetch("/api/product", );
+        const res = await fetch("/api/product");
         if (!res.ok) throw new Error("Network response was not ok");
         const data = await res.json();
         if (Array.isArray(data) && data.length > 0) {
@@ -172,9 +172,7 @@ export default function StyleOne() {
                   {/* Rating Badge at bottom */}
                   {product.rating && (
                     <div className="absolute bottom-1 sm:bottom-2 left-1 sm:left-2 bg-green-600 backdrop-blur-sm px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-md flex items-center gap-1">
-                      <span className="text-xs text-white font-medium">
-                        {product.rating}
-                      </span>
+                      <span className="text-xs text-white font-medium">{product.rating}</span>
                       <span className="text-xs text-white font-semibold">★</span>
                     </div>
                   )}
@@ -223,9 +221,11 @@ export default function StyleOne() {
                   </div>
 
                   {/* Limited Time Deal Badge */}
-                <div className="mb-1 text-center">
+                  {product.limitedTimeDeal && (
+                    <div className="mb-1 text-center">
                       <span className="text-xs text-green-700 font-normal">Limited Time Deal</span>
                     </div>
+                  )}
                 </Link>
 
                 {/* Add to Cart Button - Outside Link */}
