@@ -8,6 +8,7 @@ import { Input, Select, SelectItem, Textarea } from "@heroui/react";
 import { ArrowLeft, Package, Plus, X, Save } from "lucide-react";
 import CustomButton from "@/components/block/CustomButton";
 import ImageSelector from "@/components/block/ImageSelector";
+import { useStoreCurrency } from "@/hooks/useStoreCurrency";
 
 const TextEditor = dynamic(() => import("@/components/block/TextEditor"), { ssr: false });
 
@@ -26,6 +27,7 @@ function ProductForm() {
   const [isFetching, setIsFetching] = useState(false);
 
   const [variantInput, setVariantInput] = useState({ name: "", options: "" });
+  const { symbol: currencySymbol, code: currencyCode, loading: currencyLoading } = useStoreCurrency();
 
   const fetchCollection = async () => {
     setIsFetching(true);
@@ -277,8 +279,8 @@ function ProductForm() {
                 label="Regular Price"
                 labelPlacement="outside"
                 type="number"
-                isDisabled={isFetching}
-                startContent={<span className="text-gray-500 text-sm">{process.env.NEXT_PUBLIC_CURRENCY_SYMBOL || "$"}</span>}
+                isDisabled={isFetching || currencyLoading}
+                startContent={<span className="text-gray-500 text-sm">{currencySymbol}</span>}
                 placeholder="0.00"
                 value={productData.regularPrice}
                 isInvalid={isInvalid && !productData.regularPrice}
@@ -293,8 +295,8 @@ function ProductForm() {
                 label="Sale Price"
                 labelPlacement="outside"
                 type="number"
-                isDisabled={isFetching}
-                startContent={<span className="text-gray-500 text-sm">{process.env.NEXT_PUBLIC_CURRENCY_SYMBOL || "$"}</span>}
+                isDisabled={isFetching || currencyLoading}
+                startContent={<span className="text-gray-500 text-sm">{currencySymbol}</span>}
                 placeholder="0.00"
                 value={productData.salePrice}
                 onChange={(e) => setProductData({ ...productData, salePrice: e.target.value })}
@@ -307,8 +309,8 @@ function ProductForm() {
                 label="Cost per Item"
                 labelPlacement="outside"
                 type="number"
-                isDisabled={isFetching}
-                startContent={<span className="text-gray-500 text-sm">{process.env.NEXT_PUBLIC_CURRENCY_SYMBOL || "$"}</span>}
+                isDisabled={isFetching || currencyLoading}
+                startContent={<span className="text-gray-500 text-sm">{currencySymbol}</span>}
                 placeholder="0.00"
                 value={productData.costPerItem}
                 onChange={(e) => setProductData({ ...productData, costPerItem: e.target.value })}
@@ -321,7 +323,7 @@ function ProductForm() {
                 label="Profit"
                 labelPlacement="outside"
                 isDisabled={true}
-                startContent={<span className="text-gray-500 text-sm">{process.env.NEXT_PUBLIC_CURRENCY_SYMBOL || "$"}</span>}
+                startContent={<span className="text-gray-500 text-sm">{currencySymbol}</span>}
                 placeholder="Auto-calculated"
                 value={productData.costPerItem ? (parseFloat(productData.salePrice || productData.regularPrice || "0") - parseFloat(productData.costPerItem || "0")).toFixed(2) : ""}
                 classNames={{

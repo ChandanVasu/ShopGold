@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Table, TableHeader, TableBody, TableColumn, TableRow, TableCell, Pagination, Modal, ModalBody, ModalContent, ModalHeader, ModalFooter, Spinner, User } from "@heroui/react";
-import { Eye, ShoppingBag, Package, X } from "lucide-react";
+import { Table, TableHeader, TableBody, TableColumn, TableRow, TableCell, Pagination, Modal, ModalBody, ModalContent, ModalHeader, ModalFooter, Spinner, User, Input, Select, SelectItem, Chip } from "@heroui/react";
+import { Eye, ShoppingBag, Package, X, Search, Filter } from "lucide-react";
 import CustomButton from "@/components/block/CustomButton";
 import formatDate from "@/utils/formatDate";
 import Empty from "@/components/block/Empty";
@@ -10,20 +10,92 @@ import { useCurrency } from "@/hooks/useCurrency";
 
 export default function OrderTablePage() {
   const [orders, setOrders] = useState([]);
+  const [filteredOrders, setFilteredOrders] = useState([]);
   const [page, setPage] = useState(1);
   const [rowsPerPage] = useState(10);
   const [loading, setLoading] = useState(true);
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [modalOpen, setModalOpen] = useState(false);
   const [cleaning, setCleaning] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
   const { symbol: currencySymbol, currency } = useCurrency();
 
-  const totalPages = Math.ceil(orders.length / rowsPerPage);
-  const paginatedOrders = orders.slice((page - 1) * rowsPerPage, page * rowsPerPage);
+  const totalPages = Math.ceil(filteredOrders.length / rowsPerPage);
+  const paginatedOrders = filteredOrders.slice((page - 1) * rowsPerPage, page * rowsPerPage);
+
+  const statusOptions = [
+    { key: "all", label: "All Orders" },
+    { key: "success", label: "Success" },
+    { key: "pending", label: "Pending" },
+    { key: "failed", label: "Failed" },
+    { key: "cancelled", label: "Cancelled" }
+  ];
 
   useEffect(() => {
     fetchOrders();
   }, []);
+
+  useEffect(() => {
+    filterOrders();
+  }, [orders, searchTerm, statusFilter]);
+
+  const filterOrders = () => {
+    let filtered = orders;
+
+    // Filter by search term (name, email, phone)
+    if (searchTerm) {
+      filtered = filtered.filter(order => 
+        order.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        order.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        order.phone?.includes(searchTerm) ||
+        order.sessionId?.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+    }
+
+    // Filter by status
+    if (statusFilter !== "all") {
+      filtered = filtered.filter(order => {
+        const status = getOrderStatus(order);
+        return status.toLowerCase() === statusFilter.toLowerCase();
+      });
+    }
+
+    setFilteredOrders(filtered);
+    setPage(1); // Reset to first page when filtering
+  };
+
+  const getOrderStatus = (order) => {
+    if (order.paymentDetails?.status) {
+      switch(order.paymentDetails.status.toLowerCase()) {
+        case 'paid':
+        case 'completed':
+        case 'success':
+          return 'Success';
+        case 'pending':
+        case 'processing':
+          return 'Pending';
+        case 'failed':
+        case 'error':
+          return 'Failed';
+        case 'cancelled':
+          return 'Cancelled';
+        default:
+          return 'Pending';
+      }
+    }
+    return 'Pending';
+  };
+
+  const getStatusColor = (status) => {
+    switch(status.toLowerCase()) {
+      case 'success': return 'success';
+      case 'pending': return 'warning';
+      case 'failed': return 'danger';
+      case 'cancelled': return 'default';
+      default: return 'warning';
+    }
+  };
 
   const fetchOrders = async () => {
     try {
@@ -53,6 +125,7 @@ export default function OrderTablePage() {
         .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
       
       setOrders(uniqueOrders);
+      setFilteredOrders(uniqueOrders); // Initialize filtered orders
     } catch (err) {
       console.error("Failed to fetch orders:", err);
     } finally {
@@ -144,7 +217,7 @@ export default function OrderTablePage() {
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Orders</h1>
           <p className="text-gray-600 text-sm mt-1">
-            {orders.length} {orders.length === 1 ? "order" : "orders"} from your customers
+            {filteredOrders.length} of {orders.length} {orders.length === 1 ? "order" : "orders"} from your customers
           </p>
         </div>
         <div className="flex items-center gap-3 text-sm text-gray-600">
@@ -161,6 +234,39 @@ export default function OrderTablePage() {
           >
             {cleaning ? "Cleaning..." : "Cleanup Duplicates"}
           </CustomButton>
+        </div>
+      </div>
+
+      {/* Search and Filter Controls */}
+      <div className="bg-white rounded-xl p-4 space-y-4 sm:space-y-0 sm:flex sm:items-center sm:gap-4">
+        <div className="flex-1">
+          <Input
+            placeholder="Search by name, email, phone, or order ID..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            startContent={<Search className="w-4 h-4 text-gray-400" />}
+            classNames={{
+              input: "text-sm",
+              inputWrapper: "border border-gray-200 hover:border-gray-300 focus-within:border-gray-400"
+            }}
+            size="sm"
+          />
+        </div>
+        <div className="w-full sm:w-48">
+          <Select
+            placeholder="Filter by status"
+            selectedKeys={[statusFilter]}
+            onSelectionChange={(keys) => setStatusFilter(Array.from(keys)[0])}
+            startContent={<Filter className="w-4 h-4 text-gray-400" />}
+            classNames={{
+              trigger: "border border-gray-200 hover:border-gray-300"
+            }}
+            size="sm"
+          >
+            {statusOptions.map((option) => (
+              <SelectItem key={option.key}>{option.label}</SelectItem>
+            ))}
+          </Select>
         </div>
       </div>
 
@@ -195,21 +301,14 @@ export default function OrderTablePage() {
                             {order.paymentDetails?.currencySymbol || currencySymbol}
                             {order.paymentDetails?.total}
                           </p>
-                          <span
-                            className={`inline-block px-2 py-1 rounded-lg text-xs font-medium mt-1 ${
-                              order.status === "success" || order.paymentDetails?.status === "paid" || order.paymentDetails?.paymentStatus === "success"
-                                ? "bg-green-100 text-green-700"
-                                : order.status === "failed" || order.paymentDetails?.status === "failed" || order.paymentDetails?.paymentStatus === "failed"
-                                ? "bg-red-100 text-red-700"
-                                : "bg-gray-100 text-gray-700"
-                            }`}
+                          <Chip 
+                            size="sm" 
+                            color={getStatusColor(getOrderStatus(order))} 
+                            variant="flat"
+                            className="mt-1"
                           >
-                            {order.status === "success" || order.paymentDetails?.status === "paid" || order.paymentDetails?.paymentStatus === "success" 
-                              ? "success" 
-                              : order.status === "failed" || order.paymentDetails?.status === "failed" || order.paymentDetails?.paymentStatus === "failed"
-                              ? "failed"
-                              : "pending"}
-                          </span>
+                            {getOrderStatus(order)}
+                          </Chip>
                         </div>
                       </div>
                       <div className="flex justify-end">
@@ -234,7 +333,7 @@ export default function OrderTablePage() {
                   td: "py-3",
                 }}
                 bottomContent={
-                  orders.length > rowsPerPage ? (
+                  filteredOrders.length > rowsPerPage ? (
                     <div className="w-full flex justify-center p-4 border-t border-gray-200">
                       <Pagination isCompact showControls color="primary" page={page} total={totalPages} onChange={(page) => setPage(page)} />
                     </div>
@@ -266,21 +365,13 @@ export default function OrderTablePage() {
                         {order.paymentDetails?.currencySymbol || currencySymbol} {order.paymentDetails?.total}
                       </TableCell>
                       <TableCell>
-                        <span
-                          className={`inline-flex items-center px-3 py-1 rounded-lg text-xs font-medium ${
-                            order.status === "success" || order.paymentDetails?.status === "paid" || order.paymentDetails?.paymentStatus === "success"
-                              ? "bg-green-100 text-green-700"
-                              : order.status === "failed" || order.paymentDetails?.status === "failed" || order.paymentDetails?.paymentStatus === "failed"
-                              ? "bg-red-100 text-red-700"
-                              : "bg-gray-100 text-gray-700"
-                          }`}
+                        <Chip 
+                          size="sm" 
+                          color={getStatusColor(getOrderStatus(order))} 
+                          variant="flat"
                         >
-                          {order.status === "success" || order.paymentDetails?.status === "paid" || order.paymentDetails?.paymentStatus === "success" 
-                            ? "success" 
-                            : order.status === "failed" || order.paymentDetails?.status === "failed" || order.paymentDetails?.paymentStatus === "failed"
-                            ? "failed"
-                            : "pending"}
-                        </span>
+                          {getOrderStatus(order)}
+                        </Chip>
                       </TableCell>
                       <TableCell className="hidden md:table-cell text-gray-600 text-sm">{formatDate(order.createdAt)}</TableCell>
                       <TableCell>
