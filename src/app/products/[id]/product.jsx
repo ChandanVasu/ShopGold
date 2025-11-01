@@ -234,11 +234,10 @@ export default function Product({ data }) {
                     <Star className="w-3 h-3 fill-white" />
                   </div>
                   <span className="text-xs text-gray-500">
-                    {data.rating} {data.ratingsCount || "0"} ratings & {data.reviewsCount || "0"} reviews
+                    {data.ratingsCount || "0"} ratings & {data.reviewsCount || "0"} reviews
                   </span>
                 </div>
               )}
-
             </div>
 
             {/* Price */}
@@ -249,7 +248,7 @@ export default function Product({ data }) {
               </div>
 
               <div className="flex items-baseline gap-3 mb-2">
-                <span className="text-xl font-bold text-gray-900">
+                <span className="text-3xl font-bold text-gray-900">
                   {data.currencySymbol || currencySymbol}
                   {data.salePrice || data.regularPrice}
                 </span>
