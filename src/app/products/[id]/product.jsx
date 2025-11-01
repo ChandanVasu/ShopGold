@@ -328,17 +328,13 @@ export default function Product({ data }) {
             }
 
             {/* Stock & Special Offer */}
-            <div className="space-y-3">
-              <div className="bg-green-50 border border-green-200 rounded-lg px-3 py-2 inline-block">
-                <p className="text-xs font-medium text-green-700">✓ In Stock</p>
-              </div>
-
-              <div className="bg-blue-50 rounded-lg p-3">
-                <div className="flex items-center gap-2 mb-2">
-                  <Gift className="w-4 h-4 text-blue-600" />
-                  <span className="text-xs font-medium text-blue-900">Buy 2 Get 1 Free</span>
+            <div className="bg-blue-50 rounded-lg p-4 border border-blue-100">
+              <div className="flex items-start gap-3">
+                <Tag className="w-5 h-5 text-blue-600 mt-0.5" />
+                <div>
+                  <h3 className="text-sm font-semibold text-blue-900 mb-1">Special Offer: Buy 2 Get 1 Free!</h3>
+                  <p className="text-xs text-blue-700">Add 3 items to cart and get 1 absolutely free</p>
                 </div>
-                <p className="text-xs text-blue-700">Add 3 items to cart, get 1 free automatically</p>
               </div>
             </div>
 
@@ -381,7 +377,9 @@ export default function Product({ data }) {
             )}
 
             {/* Quantity Selector */}
-            <div className="space-y-2">
+            <div className="space-y-3">
+              {" "}
+              <span className="text-sm font-medium text-gray-900 mb-4">Quantity:</span>
               <div className="flex items-center gap-3">
                 <button
                   onClick={() => handleQuantityChange("decrement")}
