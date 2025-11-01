@@ -7,8 +7,9 @@ import SliderCollection from "@/components/Colleaction/SliderCollection";
 import VideoReels from "@/components/VideoReels";
 import SupportBenefits from "@/components/SupportBenefits";
 import ProductGrid from "@/components/Product/ProductGrid";
+import { BadgeCheck, ShieldCheck, ShoppingCart } from "lucide-react";
 
-import { ShoppingBag, Heart, Star, Truck, Shield, RotateCcw, ChevronRight, Share2, Plus, Minus, Check, Gift, Tag, Percent } from "lucide-react";
+import { ShoppingBag, Heart, Star, Truck, Shield, RotateCcw, ChevronRight, Share2, Plus, Minus, Check, Gift, Tag, Percent, Award, Box } from "lucide-react";
 import { Button } from "@heroui/react";
 import { useCart } from "@/hooks/useCart";
 import { useCurrency } from "@/hooks/useCurrency";
@@ -18,17 +19,21 @@ export default function Product({ data }) {
   const [selectedSize, setSelectedSize] = useState(null);
   const [selectedColor, setSelectedColor] = useState(null);
   const [wishlist, setWishlist] = useState([]);
-  const [showMobileFooter, setShowMobileFooter] = useState(false);
+  const [showMobileFooter, setShowMobileFooter] = useState(true); // Always show from beginning
   const [timeLeft, setTimeLeft] = useState(8 * 60);
   const [pincode, setPincode] = useState("");
   const [deliveryInfo, setDeliveryInfo] = useState(null);
   const [checkingDelivery, setCheckingDelivery] = useState(false);
+  const [storeSettings, setStoreSettings] = useState(null);
   const { addToCart, isAddingToCart } = useCart();
   const { symbol: currencySymbol } = useCurrency();
 
   useEffect(() => {
     const savedWishlist = JSON.parse(localStorage.getItem("wishlist") || "[]");
     setWishlist(savedWishlist);
+
+    // Fetch store settings
+    fetchStoreSettings();
 
     const timer = setInterval(() => {
       setTimeLeft((prevTime) => {
@@ -39,18 +44,22 @@ export default function Product({ data }) {
       });
     }, 1000);
 
-    const handleScroll = () => {
-      const scrollPosition = window.scrollY;
-      setShowMobileFooter(scrollPosition > 200);
-    };
-
-    window.addEventListener("scroll", handleScroll);
-
     return () => {
       clearInterval(timer);
-      window.removeEventListener("scroll", handleScroll);
     };
   }, []);
+
+  const fetchStoreSettings = async () => {
+    try {
+      const response = await fetch("/api/setting?type=store");
+      if (response.ok) {
+        const settings = await response.json();
+        setStoreSettings(settings);
+      }
+    } catch (error) {
+      console.error("Failed to fetch store settings:", error);
+    }
+  };
 
   const handleQuantityChange = (type) => {
     if (type === "increment") {
@@ -224,52 +233,62 @@ export default function Product({ data }) {
                     <span>{data.rating}</span>
                     <Star className="w-3 h-3 fill-white" />
                   </div>
-                  <span className="text-xs text-gray-500">1,234 reviews</span>
+                  <span className="text-xs text-gray-500">{data.reviewsCount || "0"} reviews</span>
                 </div>
               )}
             </div>
 
             {/* Countdown Timer */}
-            <div className="bg-white border-2 border-gray-300 rounded-2xl p-4">
-              <h3 className="text-center text-sm font-medium text-gray-700 mb-4">Offer ends in</h3>
-              <div className="flex items-center justify-center gap-3">
-                {/* Hours */}
-                <div className="flex flex-col items-center">
-                  <div className="bg-black text-white rounded-2xl w-20 h-20 flex items-center justify-center">
-                    <span className="text-3xl font-bold">{Math.floor(timeLeft / 3600).toString().padStart(2, '0')}</span>
+            {data.limitedTimeDeal && (
+              <div className="bg-white border border-gray-300 rounded-lg p-3">
+                <h3 className="text-center text-xs font-medium text-gray-700 mb-3">Offer ends in</h3>
+                <div className="flex items-center justify-center gap-2">
+                  {/* Hours */}
+                  <div className="flex flex-col items-center">
+                    <div className="bg-black text-white rounded-lg w-12 h-12 flex items-center justify-center">
+                      <span className="text-lg font-bold">
+                        {Math.floor(timeLeft / 3600)
+                          .toString()
+                          .padStart(2, "0")}
+                      </span>
+                    </div>
+                    <span className="text-xs font-medium text-gray-700 mt-1">Hours</span>
                   </div>
-                  <span className="text-xs font-medium text-gray-700 mt-2">Hours</span>
-                </div>
-                
-                {/* Separator */}
-                <div className="flex flex-col gap-2 pb-6">
-                  <div className="w-1.5 h-1.5 bg-gray-800 rounded-full"></div>
-                  <div className="w-1.5 h-1.5 bg-gray-800 rounded-full"></div>
-                </div>
-                
-                {/* Minutes */}
-                <div className="flex flex-col items-center">
-                  <div className="bg-black text-white rounded-2xl w-20 h-20 flex items-center justify-center">
-                    <span className="text-3xl font-bold">{Math.floor((timeLeft % 3600) / 60).toString().padStart(2, '0')}</span>
+
+                  {/* Separator */}
+                  <div className="flex flex-col gap-1 pb-4">
+                    <div className="w-1 h-1 bg-gray-800 rounded-full"></div>
+                    <div className="w-1 h-1 bg-gray-800 rounded-full"></div>
                   </div>
-                  <span className="text-xs font-medium text-gray-700 mt-2">Minutes</span>
-                </div>
-                
-                {/* Separator */}
-                <div className="flex flex-col gap-2 pb-6">
-                  <div className="w-1.5 h-1.5 bg-gray-800 rounded-full"></div>
-                  <div className="w-1.5 h-1.5 bg-gray-800 rounded-full"></div>
-                </div>
-                
-                {/* Seconds */}
-                <div className="flex flex-col items-center">
-                  <div className="bg-black text-white rounded-2xl w-20 h-20 flex items-center justify-center">
-                    <span className="text-3xl font-bold">{(timeLeft % 60).toString().padStart(2, '0')}</span>
+
+                  {/* Minutes */}
+                  <div className="flex flex-col items-center">
+                    <div className="bg-black text-white rounded-lg w-12 h-12 flex items-center justify-center">
+                      <span className="text-lg font-bold">
+                        {Math.floor((timeLeft % 3600) / 60)
+                          .toString()
+                          .padStart(2, "0")}
+                      </span>
+                    </div>
+                    <span className="text-xs font-medium text-gray-700 mt-1">Minutes</span>
                   </div>
-                  <span className="text-xs font-medium text-gray-700 mt-2">Seconds</span>
+
+                  {/* Separator */}
+                  <div className="flex flex-col gap-1 pb-4">
+                    <div className="w-1 h-1 bg-gray-800 rounded-full"></div>
+                    <div className="w-1 h-1 bg-gray-800 rounded-full"></div>
+                  </div>
+
+                  {/* Seconds */}
+                  <div className="flex flex-col items-center">
+                    <div className="bg-black text-white rounded-lg w-12 h-12 flex items-center justify-center">
+                      <span className="text-lg font-bold">{(timeLeft % 60).toString().padStart(2, "0")}</span>
+                    </div>
+                    <span className="text-xs font-medium text-gray-700 mt-1">Seconds</span>
+                  </div>
                 </div>
               </div>
-            </div>
+            )}
 
             {/* Price */}
             <div className="bg-gray-50 rounded-lg p-4">
@@ -321,59 +340,6 @@ export default function Product({ data }) {
               </div>
             </div>
 
-            {/* Delivery Check */}
-            <div className="bg-gray-50 rounded-lg p-4">
-              <div className="flex items-center gap-2 mb-3">
-                <Truck className="w-4 h-4 text-gray-700" />
-                <span className="text-xs font-medium text-gray-900">Delivery Check</span>
-              </div>
-
-              <div className="space-y-3">
-                <div className="flex gap-2">
-                  <input
-                    type="text"
-                    value={pincode}
-                    onChange={handlePincodeChange}
-                    placeholder="Enter 6-digit pincode"
-                    maxLength={6}
-                    className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-xs focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
-                  />
-                  <Button
-                    size="sm"
-                    isLoading={checkingDelivery}
-                    isDisabled={pincode.length !== 6}
-                    onPress={() => checkDelivery(pincode)}
-                    className="bg-gray-900 text-white font-medium hover:bg-gray-800 px-3 py-2 text-xs rounded-lg"
-                  >
-                    {checkingDelivery ? "..." : "Check"}
-                  </Button>
-                </div>
-
-                {deliveryInfo && (
-                  <div className="bg-white rounded-lg p-3 border border-gray-200">
-                    <div className="flex items-start gap-3">
-                      <Check className="w-4 h-4 text-green-600 mt-0.5" />
-                      <div className="flex-1">
-                        <p className="text-xs font-medium text-gray-900 mb-2">Available to {deliveryInfo.location}</p>
-                        <div className="space-y-1">
-                          <p className="text-xs text-gray-700">
-                            🚛 <strong>2 Day Guaranteed Delivery</strong>
-                          </p>
-                          <p className="text-xs text-gray-700">🎁 Free Delivery</p>
-                          <p className="text-xs text-gray-700">💰 Cash on Delivery</p>
-                        </div>
-                        <div className="bg-green-50 rounded p-2 mt-2">
-                          <p className="text-xs text-green-700 font-medium">
-                            Order today, get by {new Date(Date.now() + deliveryInfo.days * 24 * 60 * 60 * 1000).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
-
             {/* Size Selector */}
             {data.sizes && data.sizes.length > 0 && (
               <div className="space-y-2">
@@ -414,7 +380,6 @@ export default function Product({ data }) {
 
             {/* Quantity Selector */}
             <div className="space-y-2">
-              <label className="text-xs font-medium text-gray-900">Quantity:</label>
               <div className="flex items-center gap-3">
                 <button
                   onClick={() => handleQuantityChange("decrement")}
@@ -461,56 +426,101 @@ export default function Product({ data }) {
             </div>
 
             {/* Trust Badges */}
-            <div className="grid grid-cols-2 gap-2 pt-3 border-t border-gray-200">
-              <div className="flex items-center gap-2 text-sm text-gray-600">
-                <Shield className="w-6 h-6 text-gray-500" />
-                <span>Secure transaction</span>
+            <div className="grid grid-cols-4 gap-2 md:gap-4 py-4 md:py-6 border-t border-gray-200">
+              <div className="flex flex-col items-center text-center gap-1">
+                <BadgeCheck className="w-5 h-5 md:w-8 md:h-8 text-gray-700" />
+                <div className="text-[10px] md:text-xs font-medium text-gray-700 line-clamp-2 leading-tight">PREMIUM QUALITY</div>
               </div>
-              <div className="flex items-center gap-2 text-sm text-gray-600">
-                <RotateCcw className="w-6 h-6 text-gray-500" />
-                <span>7 days replacement</span>
+
+              <div className="flex flex-col items-center text-center gap-1">
+                <Truck className="w-5 h-5 md:w-8 md:h-8 text-gray-700" />
+                <div className="text-[10px] md:text-xs font-medium text-gray-700 line-clamp-2 leading-tight">SHIPPING FREE</div>
               </div>
-              <div className="flex items-center gap-2 text-sm text-gray-600">
-                <Truck className="w-6 h-6 text-gray-500" />
-                <span>Free shipping</span>
+
+              <div className="flex flex-col items-center text-center gap-1">
+                <ShoppingCart className="w-5 h-5 md:w-8 md:h-8 text-gray-700" />
+                <div className="text-[10px] md:text-xs font-medium text-gray-700 line-clamp-2 leading-tight">BEST PRICE GUARANTEE</div>
               </div>
-              <div className="flex items-center gap-2 text-sm text-gray-600">
-                <Check className="w-6 h-6 text-green-600" />
-                <span>Quality assured</span>
+
+              <div className="flex flex-col items-center text-center gap-1">
+                <ShieldCheck className="w-5 h-5 md:w-8 md:h-8 text-gray-700" />
+                <div className="text-[10px] md:text-xs font-medium text-gray-700 line-clamp-2 leading-tight">VERIFIED AND SECURED</div>
               </div>
             </div>
 
-            {/* Description */}
-            {data.shortDescription && (
-              <div className="space-y-2 pt-3 border-t border-gray-200">
-                <h3 className="text-xs font-medium text-gray-900">About this item</h3>
-                <p className="text-xs text-gray-700 leading-relaxed">{data.shortDescription}</p>
+            {/* Description - Open by default */}
+            {data.description && (
+              <div className="pt-3 border-t border-gray-200">
+                <h3 className="text-xs font-medium text-gray-900 mb-2">Product Details</h3>
+                <div className="text-xs text-gray-700 leading-relaxed" dangerouslySetInnerHTML={{ __html: data.description }} />
               </div>
             )}
 
-            {/* Full Description */}
-            {data.description && (
-              <div className="pt-3 border-t border-gray-200">
-                <details className="group">
-                  <summary className="flex items-center justify-between cursor-pointer text-xs font-medium text-gray-900 py-2">
-                    Product Details
-                    <ChevronRight className="w-3 h-3 transition-transform group-open:rotate-90" />
-                  </summary>
-                  <div className="text-xs text-gray-700 leading-relaxed mt-2" dangerouslySetInnerHTML={{ __html: data.description }} />
-                </details>
+            {/* Delivery Check */}
+            <div className="bg-gray-50 rounded-lg p-4">
+              <div className="flex items-center gap-2 mb-3">
+                <Truck className="w-4 h-4 text-gray-700" />
+                <span className="text-xs font-medium text-gray-900">Delivery Check</span>
               </div>
-            )}
+
+              <div className="space-y-3">
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={pincode}
+                    onChange={handlePincodeChange}
+                    placeholder="Enter 6-digit pincode"
+                    maxLength={6}
+                    className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-xs focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+                  />
+                  <Button
+                    size="sm"
+                    isLoading={checkingDelivery}
+                    isDisabled={pincode.length !== 6}
+                    onPress={() => checkDelivery(pincode)}
+                    className="bg-gray-900 text-white font-medium hover:bg-gray-800 px-3 py-2 text-xs rounded-lg"
+                  >
+                    {checkingDelivery ? "..." : "Check"}
+                  </Button>
+                </div>
+
+                {deliveryInfo && (
+                  <div className="bg-white rounded-lg p-3 border border-gray-200">
+                    <div className="flex items-start gap-3">
+                      <Check className="w-4 h-4 text-green-600 mt-0.5" />
+                      <div className="flex-1">
+                        <p className="text-xs font-medium text-gray-900 mb-2">Available to {deliveryInfo.location}</p>
+                        <div className="space-y-1">
+                          <p className="text-xs text-gray-700">
+                            <strong>3-4 Day Guaranteed Delivery</strong>
+                          </p>
+                          <p className="text-xs text-gray-700">Open Box Delivery</p>
+                          <p className="text-xs text-gray-700">Free Delivery</p>
+                        </div>
+                        <div className="bg-green-50 rounded p-2 mt-2">
+                          <p className="text-xs text-green-700 font-medium">
+                            Order today, get by {new Date(Date.now() + deliveryInfo.days * 24 * 60 * 60 * 1000).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
 
             {/* Delivery Time Dropdown */}
             <div className="pt-2">
               <details className="group border border-gray-200 rounded-lg">
                 <summary className="flex items-center justify-between cursor-pointer text-xs font-semibold text-gray-900 py-3 px-4">
-                  DELIVERY TIME
+                  Delivery Time
                   <ChevronRight className="w-4 h-4 transition-transform group-open:rotate-90" />
                 </summary>
                 <div className="px-4 pb-3 pt-1 border-t border-gray-200">
                   <p className="text-xs text-gray-700 mb-2">It Will take Max 4 to 7 Days For Delivery In India.</p>
-                  <button className="text-xs text-blue-600 font-medium hover:underline">View More</button>
+                  <a href="/pages/shipping-info" className="text-xs text-blue-600 font-medium hover:underline">
+                    View More
+                  </a>
                 </div>
               </details>
             </div>
@@ -519,14 +529,17 @@ export default function Product({ data }) {
             <div className="pt-2">
               <details className="group border border-gray-200 rounded-lg">
                 <summary className="flex items-center justify-between cursor-pointer text-xs font-semibold text-gray-900 py-3 px-4">
-                  RETURN & EXCHANGE
+                  Return & Exchange
                   <ChevronRight className="w-4 h-4 transition-transform group-open:rotate-90" />
                 </summary>
                 <div className="px-4 pb-3 pt-1 border-t border-gray-200">
                   <p className="text-xs text-gray-700 leading-relaxed mb-2">
-                    We have a friendly replacement policy to ensure your online purchase is free of stress. We offer 3 Days Exchange for our valued customers. We are always with you, before your purchase and after your purchase. We are not perfect but we have ensured that our replacement policies do not bring any ugly surprises to you post your purchase.
+                    We have a friendly replacement policy to ensure your online purchase is free of stress. We offer 3 Days Exchange for our valued customers. We are always with you, before your
+                    purchase and after your purchase. We are not perfect but we have ensured that our replacement policies do not bring any ugly surprises to you post your purchase.
                   </p>
-                  <button className="text-xs text-blue-600 font-medium hover:underline">View More</button>
+                  <a href="/pages/return-policy" className="text-xs text-blue-600 font-medium hover:underline">
+                    View More
+                  </a>
                 </div>
               </details>
             </div>
@@ -541,15 +554,15 @@ export default function Product({ data }) {
                 <div className="px-4 pb-3 pt-1 border-t border-gray-200 space-y-2">
                   <div>
                     <span className="text-xs font-medium text-gray-900">Company Name: </span>
-                    <span className="text-xs text-gray-700">www.crunchskizy.in</span>
+                    <span className="text-xs text-gray-700">{storeSettings?.storeName || "Store Name"}</span>
                   </div>
                   <div>
                     <span className="text-xs font-medium text-gray-900">Email: </span>
-                    <span className="text-xs text-gray-700">care@www.crunchskizy.in</span>
+                    <span className="text-xs text-gray-700">{storeSettings?.storeEmail || "support@store.com"}</span>
                   </div>
                   <div>
                     <span className="text-xs font-medium text-gray-900">Registered Address: </span>
-                    <span className="text-xs text-gray-700">601, Riviera Heights, Opp. Shyam Business Hub, Dharampur Road, Valsad - 396001, Gujarat, India</span>
+                    <span className="text-xs text-gray-700">{storeSettings?.storeAddress || "Store Address"}</span>
                   </div>
                 </div>
               </details>
@@ -559,32 +572,20 @@ export default function Product({ data }) {
             <div className="pt-4">
               <div className="grid grid-cols-3 gap-4 text-center">
                 <div className="flex flex-col items-center">
-                  <div className="w-12 h-12 mb-2 flex items-center justify-center">
-                    <svg viewBox="0 0 64 64" className="w-10 h-10" fill="none" xmlns="http://www.w3.org/2000/svg">
-                      <path d="M32 8L24 4L16 8L8 4V24C8 40 24 52 32 60C40 52 56 40 56 24V4L48 8L40 4L32 8Z" stroke="#374151" strokeWidth="2" strokeLinejoin="round"/>
-                      <text x="32" y="35" textAnchor="middle" fontSize="16" fill="#374151" fontWeight="bold">✓</text>
-                    </svg>
+                  <div className="w-12 h-12 mb-2 flex items-center justify-center bg-green-50 rounded-full">
+                    <Award className="w-6 h-6 text-green-600" />
                   </div>
                   <p className="text-xs font-medium text-gray-900">Genuine Products</p>
                 </div>
                 <div className="flex flex-col items-center">
-                  <div className="w-12 h-12 mb-2 flex items-center justify-center">
-                    <svg viewBox="0 0 64 64" className="w-10 h-10" fill="none" xmlns="http://www.w3.org/2000/svg">
-                      <circle cx="32" cy="32" r="20" stroke="#374151" strokeWidth="2"/>
-                      <path d="M32 12L35 25L32 32L29 25L32 12Z" fill="#EF4444"/>
-                      <circle cx="32" cy="32" r="4" fill="#374151"/>
-                      <path d="M22 28L28 32L22 36" stroke="#EF4444" strokeWidth="2"/>
-                      <path d="M42 28L36 32L42 36" stroke="#EF4444" strokeWidth="2"/>
-                    </svg>
+                  <div className="w-12 h-12 mb-2 flex items-center justify-center bg-blue-50 rounded-full">
+                    <Check className="w-6 h-6 text-blue-600" />
                   </div>
                   <p className="text-xs font-medium text-gray-900">7 Step Quality Check</p>
                 </div>
                 <div className="flex flex-col items-center">
-                  <div className="w-12 h-12 mb-2 flex items-center justify-center">
-                    <svg viewBox="0 0 64 64" className="w-10 h-10" fill="none" xmlns="http://www.w3.org/2000/svg">
-                      <path d="M32 8C20 8 10 18 10 30V40C10 46 14 50 20 50H24V30C24 22 28 18 32 18C36 18 40 22 40 30V50H44C50 50 54 46 54 40V30C54 18 44 8 32 8Z" stroke="#374151" strokeWidth="2"/>
-                      <text x="32" y="38" textAnchor="middle" fontSize="20" fill="#374151" fontWeight="bold">₹</text>
-                    </svg>
+                  <div className="w-12 h-12 mb-2 flex items-center justify-center bg-green-50 rounded-full">
+                    <Shield className="w-6 h-6 text-green-600" />
                   </div>
                   <p className="text-xs font-medium text-gray-900">Secure Payments</p>
                 </div>
@@ -610,34 +611,30 @@ export default function Product({ data }) {
       </div>
 
       {/* Mobile Fixed Footer */}
-      <div
-        className={`fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-gray-200 shadow-lg transition-transform duration-300 md:hidden ${
-          showMobileFooter ? "translate-y-0" : "translate-y-full"
-        }`}
-      >
+      <div className="fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-gray-200 shadow-lg md:hidden">
         <div className="px-3 py-3">
           <div className="flex items-center gap-3">
-            <div className="flex-1">
+            <div className="flex-1 flex items-center gap-2">
               <div className="flex items-center gap-2">
-                <span className="text-sm font-semibold text-gray-900">
+                <p className="text-2xl font-semibold text-gray-900">
                   {data.currencySymbol}
                   {data.salePrice || data.regularPrice}
-                </span>
+                </p>
                 {data.salePrice && (
-                  <span className="text-xs text-gray-500 line-through">
+                  <p className="text-xs text-gray-500 line-through">
                     {data.currencySymbol}
                     {data.regularPrice}
-                  </span>
+                  </p>
                 )}
               </div>
-              {discount > 0 && <span className="text-xs text-green-600 font-medium">Save {discount}%</span>}
+              {discount > 0 && <p className="text-xs text-green-600 font-medium">Save {discount}%</p>}
             </div>
 
             <div className="flex gap-2">
-              <Button size="sm" isLoading={isAddingToCart(data._id)} onPress={handleAddToCart} className="bg-yellow-400 text-gray-900 font-medium hover:bg-yellow-500 px-3 py-2 text-xs rounded-lg">
-                {isAddingToCart(data._id) ? "Adding..." : "Add"}
-              </Button>
-              <Button size="sm" onPress={handleBuyNow} className="bg-orange-500 text-white font-medium hover:bg-orange-600 px-4 py-2 text-xs rounded-lg">
+              {/* <Button size="sm" isLoading={isAddingToCart(data._id)} onPress={handleAddToCart} className="bg-yellow-400 text-gray-900 font-medium hover:bg-yellow-500 px-3 py-2 text-xs rounded-lg">
+                {isAddingToCart(data._id) ? "Adding..." : "Add to Cart"}
+              </Button> */}
+              <Button size="sm" onPress={handleBuyNow} className="bg-orange-500 text-white font-medium hover:bg-orange-600 px-8 py-2 text-xs rounded-lg">
                 Buy Now
               </Button>
             </div>

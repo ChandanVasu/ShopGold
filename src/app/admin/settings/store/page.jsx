@@ -25,6 +25,8 @@ export default function StoreSettingsPage() {
     faviconImage: "",
     storeCurrency: "USD",
     currencySymbol: "$",
+    storeEmail: "",
+    storeAddress: "",
   });
 
   useEffect(() => {
@@ -44,6 +46,8 @@ export default function StoreSettingsPage() {
           faviconImage: data.faviconImage || "",
           storeCurrency: data.storeCurrency || "USD",
           currencySymbol: data.currencySymbol || "$",
+          storeEmail: data.storeEmail || "",
+          storeAddress: data.storeAddress || "",
         });
       }
     } catch (err) {
@@ -183,6 +187,38 @@ export default function StoreSettingsPage() {
               description: "text-xs",
             }}
           />
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 lg:gap-6">
+            <Input
+              label="Store Email"
+              labelPlacement="outside"
+              placeholder="support@shopgold.com"
+              value={settings.storeEmail}
+              onChange={(e) => setSettings({ ...settings, storeEmail: e.target.value })}
+              description="Customer support email address"
+              size="sm"
+              classNames={{
+                inputWrapper: "border-gray-300 hover:border-gray-400 focus-within:border-blue-500",
+                label: "text-xs lg:text-sm font-medium",
+                description: "text-xs",
+              }}
+            />
+
+            <Input
+              label="Store Address"
+              labelPlacement="outside"
+              placeholder="123 Business Street, City, State 12345"
+              value={settings.storeAddress}
+              onChange={(e) => setSettings({ ...settings, storeAddress: e.target.value })}
+              description="Registered business address"
+              size="sm"
+              classNames={{
+                inputWrapper: "border-gray-300 hover:border-gray-400 focus-within:border-blue-500",
+                label: "text-xs lg:text-sm font-medium",
+                description: "text-xs",
+              }}
+            />
+          </div>
         </div>
 
         {/* Visual Branding */}
