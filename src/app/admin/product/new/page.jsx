@@ -66,6 +66,7 @@ function ProductForm() {
     costPerItem: "",
     variants: [], // ✅ New: variants
     rating: "", // ✅ Star rating (decimal like 4.2, 4.4)
+    ratingsCount: "", // ✅ Number of people who rated
     reviewsCount: "", // ✅ Number of reviews
     limitedTimeDeal: false, // ✅ Limited time deal toggle (true/false)
   });
@@ -100,6 +101,7 @@ function ProductForm() {
           costPerItem: data.costPerItem || "",
           variants: data.variants || [], // ✅ load existing variants
           rating: data.rating || "",
+          ratingsCount: data.ratingsCount || "",
           reviewsCount: data.reviewsCount || "",
           limitedTimeDeal: data.limitedTimeDeal || false,
         });
@@ -517,19 +519,35 @@ function ProductForm() {
               />
 
               <Input
+                label="Number of Ratings"
+                labelPlacement="outside"
+                type="number"
+                min="0"
+                isDisabled={isFetching}
+                placeholder="e.g., 5000, 1200"
+                value={productData.ratingsCount}
+                onChange={(e) => setProductData({ ...productData, ratingsCount: e.target.value })}
+                classNames={{
+                  input: "text-sm",
+                  label: "text-sm font-medium text-gray-700",
+                }}
+                description="Total number of people who rated this product"
+              />
+
+              <Input
                 label="Number of Reviews"
                 labelPlacement="outside"
                 type="number"
                 min="0"
                 isDisabled={isFetching}
-                placeholder="e.g., 125, 50"
+                placeholder="e.g., 450, 125"
                 value={productData.reviewsCount}
                 onChange={(e) => setProductData({ ...productData, reviewsCount: e.target.value })}
                 classNames={{
                   input: "text-sm",
                   label: "text-sm font-medium text-gray-700",
                 }}
-                description="Total number of customer reviews"
+                description="Total number of detailed reviews written"
               />
 
               <div className="flex flex-col gap-2">
