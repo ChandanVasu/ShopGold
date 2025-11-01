@@ -27,6 +27,7 @@ import {
   PenTool,
   BookOpen,
   Files,
+  Hash,
 } from "lucide-react";
 
 const SideBar = ({ onItemClick }) => {
@@ -54,6 +55,7 @@ const SideBar = ({ onItemClick }) => {
     { href: "/admin/menu", icon: <Menu size={16} />, label: "Menus" },
     { href: "/admin/support-benefits", icon: <FileText size={16} />, label: "Support Benefits" },
     { href: "/admin/news-latter", icon: <Mail size={16} />, label: "Newsletter" },
+    { href: "/admin/data-hashing", icon: <Hash size={16} />, label: "Data Hashing" },
     { href: "/admin/settings", icon: <Settings size={16} />, label: "Store Settings" },
     { href: "/admin/payment-gateway", icon: <Wallet size={16} />, label: "Payment Gateway" },
     { href: "/admin/app-integrations", icon: <Code size={16} />, label: "App Integrations" },

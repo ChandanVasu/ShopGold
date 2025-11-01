@@ -480,7 +480,7 @@ export default function Product({ data }) {
                     <div className="flex items-start gap-3">
                       <Check className="w-4 h-4 text-green-600 mt-0.5" />
                       <div className="flex-1">
-                        <p className="text-xs font-medium text-gray-900 mb-2">Available to {deliveryInfo.location}</p>
+                        <p className="text-xs font-medium text-gray-900 mb-2">Available To Your Location</p>
                         <div className="space-y-1">
                           <p className="text-xs text-gray-700">
                             🚚 <strong>3-4 Day Guaranteed Delivery</strong>
@@ -590,7 +590,9 @@ export default function Product({ data }) {
       </div>
 
       {/* Related Products Section */}
+
       <div className="py-6 bg-gray-50">
+        <h1 className="text-lg font-semibold text-gray-900 px-4 md:px-20 container mx-auto mb-2">Related Products</h1>
         <ProductGrid />
       </div>
 
@@ -608,9 +610,9 @@ export default function Product({ data }) {
       <div className="fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-gray-200 shadow-lg md:hidden">
         <div className="px-3 py-3">
           <div className="flex items-center gap-3">
-            <div className="flex-1 flex items-center gap-2">
+            <div className="flex-1 ">
               <div className="flex items-center gap-2">
-                <p className="text-2xl font-semibold text-gray-900">
+                <p className="text-xl font-semibold text-gray-900">
                   {data.currencySymbol}
                   {data.salePrice || data.regularPrice}
                 </p>
@@ -625,9 +627,9 @@ export default function Product({ data }) {
             </div>
 
             <div className="flex gap-2">
-              {/* <Button size="sm" isLoading={isAddingToCart(data._id)} onPress={handleAddToCart} className="bg-yellow-400 text-gray-900 font-medium hover:bg-yellow-500 px-3 py-2 text-xs rounded-lg">
+              <Button size="sm" isLoading={isAddingToCart(data._id)} onPress={handleAddToCart} className="bg-yellow-400 text-gray-900 font-medium hover:bg-yellow-500 px-3 py-2 text-xs rounded-lg">
                 {isAddingToCart(data._id) ? "Adding..." : "Add to Cart"}
-              </Button> */}
+              </Button>
               <Button size="sm" onPress={handleBuyNow} className="bg-orange-500 text-white font-medium hover:bg-orange-600 px-8 py-2 text-xs rounded-lg">
                 Buy Now
               </Button>
