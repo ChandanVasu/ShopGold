@@ -50,3 +50,67 @@ export async function GET(req) {
     return Response.json({ error: "Failed to fetch document" }, { status: 500 });
   }
 }
+
+// ✅ PUT: Update document by ID
+export async function PUT(req, { params }) {
+  try {
+    await dbConnect();
+
+    const { id } = params;
+    const data = await req.json();
+    const { collection, ...updateData } = data;
+
+    if (!collection) {
+      return Response.json({ error: "Collection is required" }, { status: 400 });
+    }
+
+    // Validate ObjectId
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return Response.json({ error: "Invalid ID" }, { status: 400 });
+    }
+
+    const Model = getDynamicModel(collection);
+    const updatedDoc = await Model.findByIdAndUpdate(id, updateData, { new: true, runValidators: true });
+
+    if (!updatedDoc) {
+      return Response.json({ error: "Document not found" }, { status: 404 });
+    }
+
+    return Response.json(updatedDoc);
+  } catch (error) {
+    console.error("PUT error:", error);
+    return Response.json({ error: "Failed to update document" }, { status: 500 });
+  }
+}
+
+// ✅ DELETE: Delete document by ID
+export async function DELETE(req, { params }) {
+  try {
+    await dbConnect();
+
+    const { id } = params;
+    const { searchParams } = new URL(req.url);
+    const collection = searchParams.get("collection");
+
+    if (!collection) {
+      return Response.json({ error: "Collection is required" }, { status: 400 });
+    }
+
+    // Validate ObjectId
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return Response.json({ error: "Invalid ID" }, { status: 400 });
+    }
+
+    const Model = getDynamicModel(collection);
+    const deletedDoc = await Model.findByIdAndDelete(id);
+
+    if (!deletedDoc) {
+      return Response.json({ error: "Document not found" }, { status: 404 });
+    }
+
+    return Response.json({ message: "Document deleted successfully" });
+  } catch (error) {
+    console.error("DELETE error:", error);
+    return Response.json({ error: "Failed to delete document" }, { status: 500 });
+  }
+}

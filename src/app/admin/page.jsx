@@ -76,9 +76,21 @@ export default function DashboardPage() {
 
   // Today's analytics
   const totalTodaysOrders = todaysOrders.length;
+  const totalTodaysSuccessOrders = todaysSuccessfulOrders.length;
   const todaysRevenue = todaysSuccessfulOrders.reduce((sum, o) => sum + (o.paymentDetails?.total || 0), 0);
   const todaysCustomers = new Set(todaysOrders.map((o) => o.email)).size;
+  const todaysSuccessCustomers = new Set(todaysSuccessfulOrders.map((o) => o.email)).size;
   const todaysAverageOrderValue = todaysSuccessfulOrders.length > 0 ? todaysRevenue / todaysSuccessfulOrders.length : 0;
+
+  // Total analytics (all time)
+  const totalAllOrders = filteredOrders.length;
+  const totalAllSuccessOrders = filteredOrders.filter((order) => {
+    return order.status === "success" || 
+           order.paymentDetails?.status === "paid" || 
+           order.paymentDetails?.paymentStatus === "success";
+  }).length;
+  const totalAllRevenue = filteredOrders.filter(o => o.status === "success" || o.paymentDetails?.status === "paid" || o.paymentDetails?.paymentStatus === "success").reduce((sum, o) => sum + (o.paymentDetails?.total || 0), 0);
+  const totalAllCustomers = new Set(filteredOrders.map((o) => o.email)).size;
 
   const recentOrders = filteredOrders.slice(0, 5);
   const latestProducts = [...products].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)).slice(0, 5);
@@ -110,22 +122,34 @@ export default function DashboardPage() {
 
       {/* Stats Grid - Today's Data */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard title="Today Orders" value={totalTodaysOrders} icon={<ShoppingBag size={20} />} color="blue" subtitle={`${filteredOrders.length} total`} />
+        <StatCard 
+          title="Today Success Orders" 
+          value={totalTodaysSuccessOrders} 
+          icon={<ShoppingBag size={20} />} 
+          color="blue" 
+          subtitle={`${totalTodaysOrders} total today`} 
+        />
         <StatCard
           title="Today Revenue"
           value={`${currencySymbol}${todaysRevenue.toLocaleString()}`}
           icon={<DollarSign size={20} />}
           color="green"
-          subtitle={`${currencySymbol}${filteredOrders.filter(o => o.status === "success" || o.paymentDetails?.status === "paid" || o.paymentDetails?.paymentStatus === "success").reduce((sum, o) => sum + (o.paymentDetails?.total || 0), 0).toLocaleString()} total`}
+          subtitle={`${currencySymbol}${totalAllRevenue.toLocaleString()} all time`}
         />
         <StatCard 
-          title="Today Average Order Value" 
+          title="Today Avg Order Value" 
           value={`${currencySymbol}${todaysAverageOrderValue.toLocaleString()}`} 
           icon={<TrendingUp size={20} />} 
           color="purple" 
-          subtitle={`Avg per order today`} 
+          subtitle={`From ${totalTodaysSuccessOrders} success orders`} 
         />
-        <StatCard title="Today Customers" value={todaysCustomers} icon={<Users size={20} />} color="orange" subtitle={`${new Set(filteredOrders.map((o) => o.email)).size} total`} />
+        <StatCard 
+          title="Today Success Customers" 
+          value={todaysSuccessCustomers} 
+          icon={<Users size={20} />} 
+          color="orange" 
+          subtitle={`${todaysCustomers} total today`} 
+        />
       </div>
 
       {/* Content Grid */}

@@ -11,8 +11,8 @@ import { Skeleton } from "@heroui/skeleton";
 export default function SliderCollection({ isTitle = true }) {
   const [collections, setCollections] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [sectionTitle, setSectionTitle] = useState("Explore Our Collections");
-  const [sectionDescription, setSectionDescription] = useState("Discover a wide range of collections tailored to your interests");
+  const [sectionTitle, setSectionTitle] = useState("");
+  const [sectionDescription, setSectionDescription] = useState("");
 
   useEffect(() => {
     async function fetchCollections() {
@@ -35,7 +35,7 @@ export default function SliderCollection({ isTitle = true }) {
     async function fetchSectionSettings() {
       try {
         const res = await fetch("/api/data?collection=collection-section", {
-          cache: "no-store" // Prevent caching to get fresh data
+          cache: "no-store", // Prevent caching to get fresh data
         });
         const data = await res.json();
         if (data && data.length > 0) {
@@ -62,50 +62,50 @@ export default function SliderCollection({ isTitle = true }) {
       fetchSectionSettings();
     };
 
-    window.addEventListener('storage', handleStorageChange);
-    window.addEventListener('sectionSettingsUpdated', handleSectionUpdate);
+    window.addEventListener("storage", handleStorageChange);
+    window.addEventListener("sectionSettingsUpdated", handleSectionUpdate);
 
     return () => {
-      window.removeEventListener('storage', handleStorageChange);
-      window.removeEventListener('sectionSettingsUpdated', handleSectionUpdate);
+      window.removeEventListener("storage", handleStorageChange);
+      window.removeEventListener("sectionSettingsUpdated", handleSectionUpdate);
     };
   }, []);
 
   // Show skeleton while loading
-  if (loading) {
-    return (
-      <section>
-        <div className="container mx-auto px-4 md:px-20">
-          {isTitle && (
-            <div>
-              <h2 className="text-lg md:text-2xl font-semibold mb-2 text-center">{sectionTitle}</h2>
-              <p className="text-center text-xs md:text-sm md:mb-8 mb-4">{sectionDescription}</p>
-            </div>
-          )}
-          <Swiper
-            modules={[Navigation, Pagination, Autoplay]}
-            spaceBetween={20}
-            className="collection-swiper hide-swiper-dots"
-            breakpoints={{
-              0: { slidesPerView: 3 },
-              640: { slidesPerView: 3 },
-              768: { slidesPerView: 4 },
-              1024: { slidesPerView: 7 },
-            }}
-          >
-            {[...Array(7)].map((_, index) => (
-              <SwiperSlide key={index}>
-                <div className="flex flex-col items-center">
-                  <Skeleton className="md:w-28 md:h-28 w-24 h-24 rounded-full" />
-                  <Skeleton className="w-20 h-4 mt-2 rounded" />
-                </div>
-              </SwiperSlide>
-            ))}
-          </Swiper>
-        </div>
-      </section>
-    );
-  }
+  // if (loading) {
+  //   return (
+  //     <section>
+  //       <div className="container mx-auto px-4 md:px-20">
+  //         {isTitle && (
+  //           <div>
+  //             <h2 className="text-lg md:text-2xl font-semibold mb-2 text-center">{sectionTitle}</h2>
+  //             <p className="text-center text-xs md:text-sm md:mb-8 mb-4">{sectionDescription}</p>
+  //           </div>
+  //         )}
+  //         <Swiper
+  //           modules={[Navigation, Pagination, Autoplay]}
+  //           spaceBetween={20}
+  //           className="collection-swiper hide-swiper-dots"
+  //           breakpoints={{
+  //             0: { slidesPerView: 3 },
+  //             640: { slidesPerView: 3 },
+  //             768: { slidesPerView: 4 },
+  //             1024: { slidesPerView: 7 },
+  //           }}
+  //         >
+  //           {[...Array(7)].map((_, index) => (
+  //             <SwiperSlide key={index}>
+  //               <div className="flex flex-col items-center">
+  //                 <Skeleton className="md:w-28 md:h-28 w-24 h-24 rounded-full" />
+  //                 <Skeleton className="w-20 h-4 mt-2 rounded" />
+  //               </div>
+  //             </SwiperSlide>
+  //           ))}
+  //         </Swiper>
+  //       </div>
+  //     </section>
+  //   );
+  // }
 
   // Don't render if no collections
   if (collections.length === 0) {

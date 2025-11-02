@@ -25,43 +25,61 @@ export const useCartDrawer = () => {
 
 export const useCart = () => {
   const [addingToCart, setAddingToCart] = useState({});
-  const { setCartDrawerOpen } = useCartDrawer();
+  const cartDrawerContext = useCartDrawer();
+  const { setCartDrawerOpen } = cartDrawerContext || { setCartDrawerOpen: () => {} };
 
   const addToCart = (product, quantity = 1) => {
-    return new Promise((resolve) => {
+    return new Promise((resolve, reject) => {
+      if (!product || !product._id) {
+        console.error("Invalid product data:", product);
+        reject(new Error("Invalid product data"));
+        return;
+      }
+
       setAddingToCart((prev) => ({ ...prev, [product._id]: true }));
 
       setTimeout(() => {
-        // Add to cart logic
-        const cart = JSON.parse(localStorage.getItem("cart") || "[]");
-        const existingIndex = cart.findIndex((item) => item.productId === product._id);
+        try {
+          // Add to cart logic
+          const cart = JSON.parse(localStorage.getItem("cart") || "[]");
+          const existingIndex = cart.findIndex((item) => item.productId === product._id);
 
-        if (existingIndex !== -1) {
-          cart[existingIndex].quantity += quantity;
-        } else {
-          cart.push({
+          const cartItem = {
             productId: product._id,
             title: product.title,
             quantity: quantity,
             color: null,
             size: null,
-            image: product.images?.[0]?.url || product.images?.[0],
-            price: product.salePrice || product.regularPrice,
+            image: product.images?.[0]?.url || product.images?.[0] || "",
+            price: parseFloat(product.salePrice || product.regularPrice || 0),
             currency: product.currencySymbol || process.env.NEXT_PUBLIC_CURRENCY_SYMBOL || "$",
-          });
-        }
+          };
 
-        localStorage.setItem("cart", JSON.stringify(cart));
-        
-        // Dispatch cart update event for header count
-        window.dispatchEvent(new CustomEvent("cartUpdated"));
-        
-        setAddingToCart((prev) => ({ ...prev, [product._id]: false }));
-        
-        // Open cart drawer after adding item
-        setCartDrawerOpen(true);
-        
-        resolve();
+          if (existingIndex !== -1) {
+            cart[existingIndex].quantity += quantity;
+          } else {
+            cart.push(cartItem);
+          }
+
+          localStorage.setItem("cart", JSON.stringify(cart));
+          
+          // Dispatch cart update event for header count
+          window.dispatchEvent(new CustomEvent("cartUpdated"));
+          
+          setAddingToCart((prev) => ({ ...prev, [product._id]: false }));
+          
+          // Open cart drawer after adding item (if context is available)
+          if (setCartDrawerOpen) {
+            setCartDrawerOpen(true);
+          }
+          
+          console.log("Product added to cart:", cartItem);
+          resolve(cartItem);
+        } catch (error) {
+          console.error("Error adding to cart:", error);
+          setAddingToCart((prev) => ({ ...prev, [product._id]: false }));
+          reject(error);
+        }
       }, 500);
     });
   };

@@ -397,11 +397,22 @@ export default function Product({ data }) {
 
             {/* Action Buttons */}
             <div className="flex gap-3 pt-2">
-              <Button size="sm" isLoading={isAddingToCart(data._id)} onPress={handleAddToCart} className="flex-1 bg-yellow-400 text-gray-900 font-medium hover:bg-yellow-500 h-10 text-xs rounded-lg">
-                {isAddingToCart(data._id) ? "Adding..." : "Add to Cart"}
-              </Button>
-              <Button size="sm" onPress={handleBuyNow} className="flex-1 bg-orange-500 text-white font-medium hover:bg-orange-600 h-10 text-xs rounded-lg">
-                Buy Now
+              {data.stockStatus === "Out of Stock" ? (
+                <Button size="sm" disabled={true} className="flex-1 bg-gray-300 text-gray-500 font-medium cursor-not-allowed h-10 text-xs rounded-lg">
+                  Out of Stock
+                </Button>
+              ) : (
+                <Button size="sm" isLoading={isAddingToCart(data._id)} onPress={handleAddToCart} className="flex-1 bg-yellow-400 text-gray-900 font-medium hover:bg-yellow-500 h-10 text-xs rounded-lg">
+                  {isAddingToCart(data._id) ? "Adding..." : "Add to Cart"}
+                </Button>
+              )}
+              <Button
+                size="sm"
+                onPress={handleBuyNow}
+                disabled={data.stockStatus === "Out of Stock"}
+                className="flex-1 bg-orange-500 text-white font-medium hover:bg-orange-600 h-10 text-xs rounded-lg disabled:bg-gray-300 disabled:text-gray-500 disabled:cursor-not-allowed"
+              >
+                {data.stockStatus === "Out of Stock" ? "Out of Stock" : "Buy Now"}
               </Button>
             </div>
 
@@ -485,7 +496,6 @@ export default function Product({ data }) {
                           <p className="text-xs text-gray-700">
                             🚚 <strong>3-4 Day Guaranteed Delivery</strong>
                           </p>
-                          <p className="text-xs text-gray-700">📦 Open Box Delivery</p>
                           <p className="text-xs text-gray-700">🎁 Free Delivery</p>
                         </div>
                       </div>
@@ -596,11 +606,6 @@ export default function Product({ data }) {
         <ProductGrid />
       </div>
 
-      {/* Video Reels */}
-      <div className="py-6">
-        <VideoReels />
-      </div>
-
       {/* Support Benefits */}
       <div className="bg-gray-50">
         <SupportBenefits />
@@ -627,11 +632,22 @@ export default function Product({ data }) {
             </div>
 
             <div className="flex gap-2">
-              <Button size="sm" isLoading={isAddingToCart(data._id)} onPress={handleAddToCart} className="bg-yellow-400 text-gray-900 font-medium hover:bg-yellow-500 px-3 py-2 text-xs rounded-lg">
-                {isAddingToCart(data._id) ? "Adding..." : "Add to Cart"}
-              </Button>
-              <Button size="sm" onPress={handleBuyNow} className="bg-orange-500 text-white font-medium hover:bg-orange-600 px-8 py-2 text-xs rounded-lg">
-                Buy Now
+              {data.stockStatus === "Out of Stock" ? (
+                <Button size="sm" disabled={true} className="bg-gray-300 text-gray-500 font-medium cursor-not-allowed px-3 py-2 text-xs rounded-lg">
+                  Out of Stock
+                </Button>
+              ) : (
+                <Button size="sm" isLoading={isAddingToCart(data._id)} onPress={handleAddToCart} className="bg-yellow-400 text-gray-900 font-medium hover:bg-yellow-500 px-3 py-2 text-xs rounded-lg">
+                  {isAddingToCart(data._id) ? "Adding..." : "Add to Cart"}
+                </Button>
+              )}
+              <Button
+                size="sm"
+                onPress={handleBuyNow}
+                disabled={data.stockStatus === "Out of Stock"}
+                className="bg-orange-500 text-white font-medium hover:bg-orange-600 px-8 py-2 text-xs rounded-lg disabled:bg-gray-300 disabled:text-gray-500 disabled:cursor-not-allowed"
+              >
+                {data.stockStatus === "Out of Stock" ? "Out of Stock" : "Buy Now"}
               </Button>
             </div>
           </div>

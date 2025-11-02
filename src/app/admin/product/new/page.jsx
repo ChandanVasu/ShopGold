@@ -51,7 +51,6 @@ function ProductForm() {
   const [productData, setProductData] = useState({
     title: "",
     description: "",
-    shortDescription: "",
     regularPrice: "",
     salePrice: "",
     sku: "",
@@ -86,7 +85,6 @@ function ProductForm() {
         setProductData({
           title: data.title || "",
           description: data.description || "",
-          shortDescription: data.shortDescription || "",
           regularPrice: data.regularPrice || "",
           salePrice: data.salePrice || "",
           sku: data.sku || "",
@@ -221,19 +219,6 @@ function ProductForm() {
                 isInvalid={isInvalid && !productData.title}
                 errorMessage="Product name is required"
                 onChange={(e) => setProductData({ ...productData, title: e.target.value })}
-                classNames={{
-                  input: "text-sm",
-                  label: "text-sm font-medium text-gray-700",
-                }}
-              />
-
-              <Textarea
-                label="Short Description"
-                isDisabled={isFetching}
-                labelPlacement="outside"
-                placeholder="Brief product summary..."
-                value={productData.shortDescription}
-                onChange={(e) => setProductData({ ...productData, shortDescription: e.target.value })}
                 classNames={{
                   input: "text-sm",
                   label: "text-sm font-medium text-gray-700",
@@ -394,13 +379,7 @@ function ProductForm() {
                 />
               </div>
 
-              <CustomButton 
-                intent="ghost" 
-                size="sm" 
-                onPress={addVariant}
-                startContent={<Plus className="w-4 h-4" />}
-                tooltip="Add a new product variant"
-              >
+              <CustomButton intent="ghost" size="sm" onPress={addVariant} startContent={<Plus className="w-4 h-4" />} tooltip="Add a new product variant">
                 Add Variant
               </CustomButton>
 
@@ -559,9 +538,7 @@ function ProductForm() {
                     wrapper: "group-data-[selected=true]:bg-blue-600",
                   }}
                 >
-                  <span className="text-sm text-gray-600">
-                    {productData.limitedTimeDeal ? "Deal is active" : "Deal is inactive"}
-                  </span>
+                  <span className="text-sm text-gray-600">{productData.limitedTimeDeal ? "Deal is active" : "Deal is inactive"}</span>
                 </Switch>
                 <p className="text-xs text-gray-500">Toggle to activate/deactivate limited time deal</p>
               </div>

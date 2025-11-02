@@ -42,7 +42,49 @@ export default function StyleOne() {
   }, []);
 
   const handleAddToCart = async (product, e) => {
-    await addToCart(product);
+    // Handle both regular events and HeroUI onPress events
+    if (e && typeof e.preventDefault === 'function') {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+
+    try {
+      console.log("Adding product to cart:", product.title, product);
+      await addToCart(product, 1);
+      console.log("Product added to cart successfully:", product.title);
+
+      // Show a simple notification
+      const notification = document.createElement("div");
+      notification.textContent = `${product.title} added to cart!`;
+      notification.className = "fixed top-4 right-4 bg-green-500 text-white px-4 py-2 rounded-lg shadow-lg z-50 transition-opacity";
+      document.body.appendChild(notification);
+
+      setTimeout(() => {
+        notification.style.opacity = "0";
+        setTimeout(() => {
+          if (document.body.contains(notification)) {
+            document.body.removeChild(notification);
+          }
+        }, 300);
+      }, 2000);
+    } catch (error) {
+      console.error("Failed to add product to cart:", error);
+
+      // Show error notification
+      const notification = document.createElement("div");
+      notification.textContent = "Failed to add item to cart. Please try again.";
+      notification.className = "fixed top-4 right-4 bg-red-500 text-white px-4 py-2 rounded-lg shadow-lg z-50 transition-opacity";
+      document.body.appendChild(notification);
+
+      setTimeout(() => {
+        notification.style.opacity = "0";
+        setTimeout(() => {
+          if (document.body.contains(notification)) {
+            document.body.removeChild(notification);
+          }
+        }, 300);
+      }, 3000);
+    }
   };
 
   const handleWishlist = (product, e) => {
@@ -229,15 +271,26 @@ export default function StyleOne() {
                 </Link>
 
                 {/* Add to Cart Button - Outside Link */}
-                <Button
-                  size="sm"
-                  isLoading={isAddingToCart(product._id)}
-                  onPress={(e) => handleAddToCart(product, e)}
-                  className="w-full bg-gray-800 text-white font-medium rounded-lg text-sm py-1 sm:text-sm sm:py-2"
-                  startContent={!isAddingToCart(product._id) && <ShoppingCart className="w-3 h-3 sm:w-4 sm:h-4" />}
-                >
-                  {isAddingToCart(product._id) ? "Adding..." : "Add to Cart"}
-                </Button>
+                {product.stockStatus === "Out of Stock" ? (
+                  <Button
+                    size="sm"
+                    disabled={true}
+                    className="w-full bg-gray-300 text-gray-500 font-medium rounded-lg text-sm py-1 sm:text-sm sm:py-2 cursor-not-allowed"
+                  >
+                    Out of Stock
+                  </Button>
+                ) : (
+                  <Button
+                    size="sm"
+                    isLoading={isAddingToCart(product._id)}
+                    onPress={(e) => handleAddToCart(product, e)}
+                    disabled={!product._id || !product.title || (!product.salePrice && !product.regularPrice)}
+                    className="w-full bg-gray-800 text-white font-medium rounded-lg text-sm py-1 sm:text-sm sm:py-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                    startContent={!isAddingToCart(product._id) && <ShoppingCart className="w-3 h-3 sm:w-4 sm:h-4" />}
+                  >
+                    {isAddingToCart(product._id) ? "Adding..." : "Add to Cart"}
+                  </Button>
+                )}
               </div>
             </div>
           );

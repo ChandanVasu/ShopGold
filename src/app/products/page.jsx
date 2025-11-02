@@ -26,7 +26,7 @@ function AllProductsPage() {
       try {
         const res = await fetch("/api/product", {
           cache: "force-cache",
-          next: { revalidate: 300 }
+          next: { revalidate: 300 },
         });
         if (!res.ok) throw new Error("Network response was not ok");
         const data = await res.json();
@@ -57,10 +57,7 @@ function AllProductsPage() {
     } else {
       const query = searchQuery.toLowerCase();
       const filtered = products.filter(
-        (product) =>
-          product.title?.toLowerCase().includes(query) ||
-          product.shortDescription?.toLowerCase().includes(query) ||
-          product.description?.toLowerCase().includes(query)
+        (product) => product.title?.toLowerCase().includes(query) || product.shortDescription?.toLowerCase().includes(query) || product.description?.toLowerCase().includes(query)
       );
       setFilteredProducts(filtered);
     }
@@ -71,11 +68,20 @@ function AllProductsPage() {
   };
 
   const handleAddToCart = async (product, e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    await addToCart(product);
-  };
+    // Handle both regular events and HeroUI onPress events
+    if (e && typeof e.preventDefault === "function") {
+      e.preventDefault();
+      e.stopPropagation();
+    }
 
+    try {
+      console.log("Adding product to cart:", product.title, product);
+      await addToCart(product, 1);
+      console.log("Product added to cart successfully:", product.title);
+    } catch (error) {
+      console.error("Failed to add product to cart:", error);
+    }
+  };
   const handleWishlist = (product, e) => {
     e.preventDefault();
     e.stopPropagation();
@@ -104,7 +110,7 @@ function AllProductsPage() {
 
     setWishlist(updatedWishlist);
     localStorage.setItem("wishlist", JSON.stringify(updatedWishlist));
-    
+
     // Dispatch custom event to update header count
     window.dispatchEvent(new Event("wishlistUpdated"));
   };
@@ -190,15 +196,23 @@ function AllProductsPage() {
 
                     {/* Product Label */}
                     {product.productLabel && (
-                      <span className={`absolute top-1 sm:top-2 left-1 sm:left-2 px-1.5 sm:px-2 py-0.5 sm:py-1 text-xs font-medium rounded-lg backdrop-blur-sm ${
-                        product.productLabel === 'New' ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white' :
-                        product.productLabel === 'Hot' ? 'bg-gradient-to-r from-red-500 to-red-600 text-white' :
-                        product.productLabel === 'Sale' ? 'bg-gradient-to-r from-pink-500 to-pink-600 text-white' :
-                        product.productLabel === 'Best Seller' ? 'bg-gradient-to-r from-green-500 to-green-600 text-white' :
-                        product.productLabel === 'Trending' ? 'bg-gradient-to-r from-yellow-400 to-orange-400 text-black' :
-                        product.productLabel === 'Limited Edition' ? 'bg-gradient-to-r from-purple-500 to-purple-600 text-white' :
-                        'bg-gradient-to-r from-gray-700 to-gray-800 text-white'
-                      }`}>
+                      <span
+                        className={`absolute top-1 sm:top-2 left-1 sm:left-2 px-1.5 sm:px-2 py-0.5 sm:py-1 text-xs font-medium rounded-lg backdrop-blur-sm ${
+                          product.productLabel === "New"
+                            ? "bg-gradient-to-r from-blue-500 to-blue-600 text-white"
+                            : product.productLabel === "Hot"
+                            ? "bg-gradient-to-r from-red-500 to-red-600 text-white"
+                            : product.productLabel === "Sale"
+                            ? "bg-gradient-to-r from-pink-500 to-pink-600 text-white"
+                            : product.productLabel === "Best Seller"
+                            ? "bg-gradient-to-r from-green-500 to-green-600 text-white"
+                            : product.productLabel === "Trending"
+                            ? "bg-gradient-to-r from-yellow-400 to-orange-400 text-black"
+                            : product.productLabel === "Limited Edition"
+                            ? "bg-gradient-to-r from-purple-500 to-purple-600 text-white"
+                            : "bg-gradient-to-r from-gray-700 to-gray-800 text-white"
+                        }`}
+                      >
                         {product.productLabel}
                       </span>
                     )}
@@ -206,9 +220,7 @@ function AllProductsPage() {
                     {/* Rating Badge at bottom */}
                     {product.rating && (
                       <div className="absolute bottom-1 sm:bottom-2 left-1 sm:left-2 bg-green-600 backdrop-blur-sm px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-md flex items-center gap-1">
-                        <span className="text-xs text-white font-medium">
-                          {product.rating}
-                        </span>
+                        <span className="text-xs text-white font-medium">{product.rating}</span>
                         <span className="text-xs text-white font-semibold">★</span>
                       </div>
                     )}
@@ -255,8 +267,6 @@ function AllProductsPage() {
                       {/* Discount Badge */}
                       {discount > 0 && <div className="bg-white text-green-500 px-1 sm:px-2 py-0.5 rounded text-[10px] font-medium">{discount}% OFF</div>}
                     </div>
-
-                    {/* Limited Time Deal Badge */}
                     {product.limitedTimeDeal && (
                       <div className="mb-1 text-center">
                         <span className="text-xs text-green-700 font-normal">Limited Time Deal</span>
@@ -265,15 +275,22 @@ function AllProductsPage() {
                   </Link>
 
                   {/* Add to Cart Button - Outside Link */}
-                  <Button
-                    size="sm"
-                    isLoading={isAddingToCart(product._id)}
-                    onPress={(e) => handleAddToCart(product, e)}
-                    className="w-full bg-gray-800 text-white font-medium rounded-lg text-xs py-1 sm:text-sm sm:py-2"
-                    startContent={!isAddingToCart(product._id) && <ShoppingCart className="w-3 h-3 sm:w-4 sm:h-4" />}
-                  >
-                    {isAddingToCart(product._id) ? "Adding..." : "Add to Cart"}
-                  </Button>
+                  {product.stockStatus === "Out of Stock" ? (
+                    <Button size="sm" disabled={true} className="w-full bg-gray-300 text-gray-500 font-medium rounded-lg text-xs py-1 sm:text-sm sm:py-2 cursor-not-allowed">
+                      Out of Stock
+                    </Button>
+                  ) : (
+                    <Button
+                      size="sm"
+                      isLoading={isAddingToCart(product._id)}
+                      onPress={(e) => handleAddToCart(product, e)}
+                      disabled={!product._id || !product.title || (!product.salePrice && !product.regularPrice)}
+                      className="w-full bg-gray-800 text-white font-medium rounded-lg text-xs py-1 sm:text-sm sm:py-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                      startContent={!isAddingToCart(product._id) && <ShoppingCart className="w-3 h-3 sm:w-4 sm:h-4" />}
+                    >
+                      {isAddingToCart(product._id) ? "Adding..." : "Add to Cart"}
+                    </Button>
+                  )}
                 </div>
               </div>
             );
@@ -285,10 +302,7 @@ function AllProductsPage() {
 
       {!loading && products.length > 0 && filteredProducts.length === 0 && (
         <div className="px-4">
-          <Empty 
-            title="No products found" 
-            description={`No products match "${searchQuery}". Try a different search term.`} 
-          />
+          <Empty title="No products found" description={`No products match "${searchQuery}". Try a different search term.`} />
         </div>
       )}
 

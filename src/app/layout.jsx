@@ -5,6 +5,7 @@ import "suneditor/dist/css/suneditor.min.css";
 import MainFooterWrapper from "@/components/template/MainFooterWrapper";
 import MainHeaderWrapper from "@/components/template/MainHeaderWrapper";
 import ScriptInjector from "@/components/ScriptInjector";
+import UtmTracker from "@/components/UtmTracker";
 import { getStoreSettings } from "@/lib/getStoreSettings";
 
 // Load the Rubik font with CSS variable support
@@ -35,6 +36,7 @@ export default function RootLayout({ children }) {
       </head>
       <body className="antialiased">
         <Providers>
+          <UtmTracker />
           <ScriptInjector />
           <MainHeaderWrapper />
           {children}

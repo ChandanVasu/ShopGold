@@ -1,5 +1,11 @@
+import { getStoredUtmSource } from '@/utils/utmTracking';
+
 export default async function orderCreate({ products, paymentDetails, billingDetails, status = "success", extraData = {} }) {
   try {
+    // Get utm_source for the order
+    const utmSource = getStoredUtmSource();
+    console.log('UTM source for order:', utmSource);
+    
     // Check if there's a pending order to update
     const pendingOrderId = localStorage.getItem("pendingOrderId");
     
@@ -16,6 +22,7 @@ export default async function orderCreate({ products, paymentDetails, billingDet
           ...paymentDetails.extra, // support gateway-specific fields
         },
         status: paymentDetails.status === "paid" ? "success" : "failed",
+        utm_source: utmSource,
         ...extraData,
       };
 
@@ -65,6 +72,7 @@ export default async function orderCreate({ products, paymentDetails, billingDet
           ...paymentDetails.extra, // support gateway-specific fields
         },
         status: paymentDetails.status === "paid" ? "success" : "failed",
+        utm_source: utmSource,
         ...extraData, // optional metadata (storeId, userId, etc.)
       };
 

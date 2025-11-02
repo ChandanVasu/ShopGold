@@ -21,7 +21,7 @@ import {
   SelectItem,
   Chip,
 } from "@heroui/react";
-import { Eye, ShoppingBag, Package, X, Search, Filter } from "lucide-react";
+import { Eye, ShoppingBag, Package, X, Search, Filter, Download } from "lucide-react";
 import CustomButton from "@/components/block/CustomButton";
 import formatDate from "@/utils/formatDate";
 import Empty from "@/components/block/Empty";
@@ -161,6 +161,105 @@ export default function OrderTablePage() {
     setModalOpen(true);
   };
 
+  const exportToCSV = () => {
+    if (filteredOrders.length === 0) {
+      alert("No orders to export");
+      return;
+    }
+
+    const csvHeaders = [
+      "Order ID",
+      "Customer Name",
+      "Customer Email",
+      "Contact Number",
+      "Shipping Address",
+      "Payment Method",
+      "Order Status",
+      "Total Amount",
+      "Currency",
+      "Order Date",
+      "Product Name",
+      "Quantity",
+      "Unit Price",
+      "Product Total",
+    ];
+
+    const csvRows = [];
+
+    filteredOrders.forEach((order) => {
+      const baseOrderData = {
+        orderId: order.sessionId || order._id,
+        customerName: order.name || "N/A",
+        customerEmail: order.email || "N/A",
+        contactNumber: order.shipping?.phone || order.phone || "N/A",
+        shippingAddress: order.shipping?.address
+          ? `${order.shipping.address.address1 || ""}, ${order.shipping.address.address2 || ""}, ${order.shipping.address.city || ""}, ${order.shipping.address.state || ""}, ${
+              order.shipping.address.country || ""
+            } - ${order.shipping.address.zip || ""}`
+              .replace(/,\s*,/g, ",")
+              .replace(/^,\s*/, "")
+              .replace(/,\s*$/, "")
+          : "N/A",
+        paymentMethod: order.paymentDetails?.paymentMethod || "Unknown",
+        orderStatus: getOrderStatus(order),
+        totalAmount: order.paymentDetails?.total || 0,
+        currency: order.paymentDetails?.currencySymbol || currencySymbol,
+        orderDate: formatDate(order.createdAt),
+      };
+
+      if (order.products?.items?.length > 0) {
+        order.products.items.forEach((item) => {
+          const productTotal = (item.quantity * item.sellingPrice).toFixed(2);
+          csvRows.push([
+            baseOrderData.orderId,
+            baseOrderData.customerName,
+            baseOrderData.customerEmail,
+            baseOrderData.contactNumber,
+            baseOrderData.shippingAddress,
+            baseOrderData.paymentMethod,
+            baseOrderData.orderStatus,
+            baseOrderData.totalAmount,
+            baseOrderData.currency,
+            baseOrderData.orderDate,
+            item.title || "N/A",
+            item.quantity || 0,
+            item.sellingPrice || 0,
+            productTotal,
+          ]);
+        });
+      } else {
+        csvRows.push([
+          baseOrderData.orderId,
+          baseOrderData.customerName,
+          baseOrderData.customerEmail,
+          baseOrderData.contactNumber,
+          baseOrderData.shippingAddress,
+          baseOrderData.paymentMethod,
+          baseOrderData.orderStatus,
+          baseOrderData.totalAmount,
+          baseOrderData.currency,
+          baseOrderData.orderDate,
+          "No products",
+          0,
+          0,
+          0,
+        ]);
+      }
+    });
+
+    const csvContent = [csvHeaders, ...csvRows].map((row) => row.map((field) => `"${String(field).replace(/"/g, '""')}"`).join(",")).join("\n");
+
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const link = document.createElement("a");
+    const url = URL.createObjectURL(blob);
+    link.setAttribute("href", url);
+    link.setAttribute("download", `orders_export_${new Date().toISOString().split("T")[0]}.csv`);
+    link.style.visibility = "hidden";
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   if (loading) {
     return (
       <div className="flex justify-center items-center h-[calc(100vh-80px)]">
@@ -181,8 +280,12 @@ export default function OrderTablePage() {
             {filteredOrders.length} of {orders.length} {orders.length === 1 ? "order" : "orders"} from your customers
           </p>
         </div>
-        <div className="flex items-center gap-3 text-sm text-gray-600">
-          <div className="flex items-center gap-2 bg-blue-50 px-3 py-2 rounded-lg">
+        <div className="flex items-center gap-3">
+          <CustomButton intent="secondary" size="sm" onPress={exportToCSV} isDisabled={filteredOrders.length === 0} className="flex items-center gap-2">
+            <Download className="w-4 h-4" />
+            Export CSV
+          </CustomButton>
+          <div className="flex items-center gap-2 bg-blue-50 px-3 py-2 rounded-lg text-sm text-gray-600">
             <ShoppingBag className="w-4 h-4 text-blue-600" />
             <span className="font-medium text-blue-700">{orders.length} Total</span>
           </div>
@@ -300,7 +403,7 @@ export default function OrderTablePage() {
                       <TableCell>
                         <User
                           name={<span className="font-medium text-gray-900">{order.name}</span>}
-                          description={<span className="text-gray-600">{order.email}</span>}
+                          description={<span className="text-gray-600">{order.phone}</span>}
                           avatarProps={{
                             src: order.products?.items?.[0]?.images?.[0] || "",
                             size: "md",
@@ -398,6 +501,9 @@ export default function OrderTablePage() {
                         : "pending"}
                     </p>
                   </div>
+                     <div className="bg-purple-50 p-4 rounded-xl">
+                  <p className="text-xs text-purple-600 mb-2">Source</p>
+                  <p className="font-medium text-gray-900 capitalize">{selectedOrder.utm_source || "direct"}</p>
                 </div>
 
                 <div className="bg-gradient-to-r from-green-50 to-blue-50 p-4 rounded-xl">
@@ -407,6 +513,11 @@ export default function OrderTablePage() {
                     {selectedOrder.paymentDetails?.total}
                   </p>
                 </div>
+                </div>
+
+                {/* utm_source */}
+
+             
 
                 {/* Products List */}
                 <div>
