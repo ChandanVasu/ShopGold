@@ -7,6 +7,7 @@ import { PayPalScriptProvider } from "@paypal/react-paypal-js";
 import { Spinner } from "@heroui/react";
 import { CheckCircle, MapPin, CreditCard } from "lucide-react";
 import PaymentContext from "./PaymentContext";
+import ErrorBoundary from "./components/ErrorBoundary";
 
 export default function CheckoutLayout({ children }) {
   const pathname = usePathname();
@@ -109,19 +110,21 @@ export default function CheckoutLayout({ children }) {
   };
 
   return (
-    <PaymentContext.Provider value={paymentSettings}>
-      <PayPalScriptProvider options={paypalOptions}>
-        <Elements stripe={stripePromise}>
-          <div className="min-h-screen bg-gray-50">
-          
+    <ErrorBoundary>
+      <PaymentContext.Provider value={paymentSettings}>
+        <PayPalScriptProvider options={paypalOptions}>
+          <Elements stripe={stripePromise}>
+            <div className="min-h-screen bg-gray-50">
+            
 
-            {/* Page Content */}
-            <div className="flex-1">
-              {children}
+              {/* Page Content */}
+              <div className="flex-1">
+                {children}
+              </div>
             </div>
-          </div>
-        </Elements>
-      </PayPalScriptProvider>
-    </PaymentContext.Provider>
+          </Elements>
+        </PayPalScriptProvider>
+      </PaymentContext.Provider>
+    </ErrorBoundary>
   );
 }

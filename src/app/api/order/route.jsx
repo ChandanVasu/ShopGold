@@ -17,9 +17,45 @@ if (mongoose.models.Orders) {
 }
 const Order = mongoose.model("Orders", OrderSchema);
 
-// ✅ GET all orders
-export async function GET() {
+// ✅ GET all orders or search orders
+export async function GET(req) {
   await dbConnect();
+  
+  const url = new URL(req.url);
+  const orderId = url.searchParams.get('orderId');
+  const phone = url.searchParams.get('phone');
+  const email = url.searchParams.get('email');
+
+  // If search parameters provided, search for specific orders
+  if (orderId || phone || email) {
+    const searchQuery = {};
+    
+    if (orderId) {
+      // Search by sessionId or _id
+      searchQuery.$or = [
+        { sessionId: orderId },
+        { _id: mongoose.Types.ObjectId.isValid(orderId) ? orderId : null }
+      ].filter(Boolean);
+    }
+    
+    if (phone) {
+      // Search by phone in multiple possible fields
+      searchQuery.$or = [
+        ...(searchQuery.$or || []),
+        { phone: phone },
+        { 'shipping.phone': phone }
+      ];
+    }
+    
+    if (email) {
+      searchQuery.email = email;
+    }
+    
+    const orders = await Order.find(searchQuery).sort({ createdAt: -1 });
+    return Response.json(orders);
+  }
+  
+  // Return all orders if no search parameters
   const orders = await Order.find({});
   return Response.json(orders);
 }

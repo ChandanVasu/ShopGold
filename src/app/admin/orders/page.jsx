@@ -464,8 +464,14 @@ export default function OrderTablePage() {
                   </div>
                   <div className="bg-gray-50 p-4 rounded-xl">
                     <p className="text-xs text-gray-500 mb-2">Contact Number</p>
-                    <p className="font-medium text-gray-900">{selectedOrder.shipping?.phone || "Not provided"}</p>
+                    <p className="font-medium text-gray-900">{selectedOrder.shipping?.phone || selectedOrder.phone || "Not provided"}</p>
                   </div>
+                </div>
+
+                {/* Order ID */}
+                <div className="bg-gray-50 p-4 rounded-xl">
+                  <p className="text-xs text-gray-500 mb-2">Order ID</p>
+                  <p className="font-medium text-gray-900 font-mono">{selectedOrder.sessionId || selectedOrder._id}</p>
                 </div>
 
                 {/* Shipping Address */}

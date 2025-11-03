@@ -35,9 +35,14 @@ export default async function orderCreate({ products, paymentDetails, billingDet
       });
 
       if (res.ok) {
+        const updatedOrder = await res.json();
         // Clear pending order ID
         localStorage.removeItem("pendingOrderId");
-        return pendingOrderId;
+        return {
+          orderId: pendingOrderId,
+          sessionId: updatedOrder.sessionId || updatedOrder._id,
+          success: true
+        };
       } else {
         throw new Error("Failed to update pending order");
       }
@@ -87,10 +92,19 @@ export default async function orderCreate({ products, paymentDetails, billingDet
       if (!res.ok) throw new Error("Failed to create order");
 
       const data = await res.json();
-      return data?._id || null;
+      return {
+        orderId: data._id,
+        sessionId: data.sessionId || data._id,
+        success: true
+      };
     }
   } catch (error) {
     console.error("Order creation error:", error.message || error);
-    return null;
+    return {
+      orderId: null,
+      sessionId: null,
+      success: false,
+      error: error.message || error
+    };
   }
 }

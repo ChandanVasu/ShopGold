@@ -105,7 +105,7 @@ export default function CheckoutOrderSummary({ billingDetails, setErrors }) {
 
   // Common success handler for payment gateways
   const handlePaymentSuccess = async (paymentDetails, paymentMethod) => {
-    const orderId = await orderCreate({
+    const orderResponse = await orderCreate({
       products,
       billingDetails,
       paymentDetails: {
@@ -117,12 +117,38 @@ export default function CheckoutOrderSummary({ billingDetails, setErrors }) {
       },
     });
 
-    if (orderId) {
+    if (orderResponse && orderResponse.success && orderResponse.orderId) {
+      // Store order details for success page
+      localStorage.setItem("lastOrderId", orderResponse.orderId);
+      localStorage.setItem("lastSessionId", orderResponse.sessionId || orderResponse.orderId);
+      
       // Clear cart items after successful payment
       localStorage.removeItem("buyNow");
       localStorage.removeItem("cart");
-      window.location.href = `/checkout/success`;
+      
+      // Create URL with order details as search parameters
+      const successUrl = new URL('/checkout/success', window.location.origin);
+      successUrl.searchParams.set('sessionId', orderResponse.sessionId || orderResponse.orderId);
+      successUrl.searchParams.set('orderId', orderResponse.orderId);
+      
+      // Add payment-specific identifiers if available
+      if (paymentDetails.paymentIntentId) {
+        successUrl.searchParams.set('payment_intent', paymentDetails.paymentIntentId);
+      }
+      if (paymentDetails.razorpayOrderId) {
+        successUrl.searchParams.set('razorpay_order_id', paymentDetails.razorpayOrderId);
+      }
+      if (paymentDetails.paypalOrderId) {
+        successUrl.searchParams.set('paypal_order_id', paymentDetails.paypalOrderId);
+      }
+      if (paymentDetails.cashfreeOrderId) {
+        successUrl.searchParams.set('cashfree_order_id', paymentDetails.cashfreeOrderId);
+      }
+      
+      console.log('Redirecting to success page with URL:', successUrl.toString());
+      window.location.href = successUrl.toString();
     } else {
+      console.error('Order creation failed:', orderResponse);
       setErrors("Failed to create order after payment.");
       window.location.href = "/checkout/failure";
     }
