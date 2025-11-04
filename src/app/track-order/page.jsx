@@ -9,6 +9,7 @@ export default function TrackOrderPage() {
   const [orderId, setOrderId] = useState("");
   const [phone, setPhone] = useState("");
   const [order, setOrder] = useState(null);
+  const [allOrders, setAllOrders] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const { symbol: currencySymbol, currency } = useCurrency();
@@ -17,6 +18,7 @@ export default function TrackOrderPage() {
     e.preventDefault();
     setError("");
     setOrder(null);
+    setAllOrders([]);
 
     if (!orderId && !phone) {
       setError("Please enter either Order ID or Phone Number");
@@ -33,28 +35,67 @@ export default function TrackOrderPage() {
       const res = await fetch(`/api/order?${params.toString()}`);
       const data = await res.json();
 
+      console.log("API Response:", data);
+
       if (res.ok && Array.isArray(data) && data.length > 0) {
-        // Filter orders to find the best match
         let foundOrder = null;
 
-        if (orderId) {
-          // First try to match by sessionId, then by _id
+        // Scenario 1: Both Order ID and Phone Number provided
+        if (orderId && phone) {
+          foundOrder = data.find((order) => (order.sessionId === orderId || order._id === orderId) && (order.phone === phone || order.shipping?.phone === phone));
+
+          if (!foundOrder) {
+            setError("No order found with the provided Order ID and Phone Number combination.");
+            setLoading(false);
+            return;
+          }
+        }
+        // Scenario 2: Only Order ID provided
+        else if (orderId && !phone) {
           foundOrder = data.find((order) => order.sessionId === orderId || order._id === orderId);
+
+          if (!foundOrder) {
+            setError("No order found with the provided Order ID.");
+            setLoading(false);
+            return;
+          }
+        }
+        // Scenario 3: Only Phone Number provided
+        else if (!orderId && phone) {
+          // Filter all orders matching the phone number
+          const phoneOrders = data.filter((order) => order.phone === phone || order.shipping?.phone === phone);
+
+          if (phoneOrders.length === 0) {
+            setError("No orders found for the provided Phone Number.");
+            setLoading(false);
+            return;
+          }
+
+          // Sort orders by creation date (newest first)
+          const sortedOrders = phoneOrders.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+
+          // Set the most recent order as main order
+          foundOrder = sortedOrders[0];
+
+          // If multiple orders exist, store all for display
+          if (sortedOrders.length > 1) {
+            setAllOrders(sortedOrders);
+            setError(`Found ${sortedOrders.length} orders for this phone number. Showing the most recent order below. You can click on any order to view its details.`);
+          }
         }
 
-        if (!foundOrder && phone) {
-          // Find order by phone number
-          foundOrder = data.find((order) => order.phone === phone || order.shipping?.phone === phone);
+        if (foundOrder) {
+          setOrder(foundOrder);
+          console.log("Found order:", foundOrder);
         }
-
-        // If no specific match, take the most recent order
-        if (!foundOrder) {
-          foundOrder = data[0];
-        }
-
-        setOrder(foundOrder);
       } else {
-        setError("Order not found. Please check your Order ID or Phone Number.");
+        if (orderId && phone) {
+          setError("No order found with the provided Order ID and Phone Number combination.");
+        } else if (orderId) {
+          setError("Order not found. Please check your Order ID.");
+        } else if (phone) {
+          setError("No orders found for the provided Phone Number.");
+        }
       }
     } catch (err) {
       console.error("Track order error:", err);
@@ -125,18 +166,91 @@ export default function TrackOrderPage() {
         </div>
 
         {/* Search Form */}
-        <form onSubmit={handleTrack} className="bg-white rounded-2xl p-8 shadow-sm mb-8">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-            <Input label="Order ID" placeholder="e.g., ORD123456" value={orderId} onChange={(e) => setOrderId(e.target.value)} labelPlacement="outside" />
-            <Input label="Phone Number" type="tel" placeholder="e.g., +1234567890" value={phone} onChange={(e) => setPhone(e.target.value)} labelPlacement="outside" />
+        {/* Search Form */}
+        <form onSubmit={handleTrack} className="bg-white rounded-xl md:rounded-2xl p-4 md:p-6 lg:p-8 shadow-sm mb-6 md:mb-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-20 mb-4 md:mb-6 relative">
+            <Input
+              label="Order ID"
+              placeholder="e.g., ORD123456"
+              value={orderId}
+              onChange={(e) => setOrderId(e.target.value)}
+              labelPlacement="outside"
+              size="md"
+              className="text-sm md:text-base"
+            />
+
+            {/* OR Divider */}
+            <div className="hidden md:flex absolute left-1/2 top-1/2 pt-4Payment Cancelled
+Your transaction was cancelled or failed. No payment has been made. transform -translate-x-1/2 -translate-y-1/2 z-10">
+              <div className="bg-white px-3 py-1 rounded-full border border-gray-300 text-sm font-medium text-gray-600 shadow-sm">OR</div>
+            </div>
+
+            {/* Mobile OR Divider */}
+            <div className="md:hidden flex items-center justify-center my-2">
+              <div className="flex-1 h-px bg-gray-300"></div>
+              <div className="px-4 text-sm font-medium text-gray-600">OR</div>
+              <div className="flex-1 h-px bg-gray-300"></div>
+            </div>
+
+            <Input
+              label="Phone Number"
+              type="tel"
+              placeholder="e.g., +1234567890"
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
+              labelPlacement="outside"
+              size="md"
+              className="text-sm md:text-base"
+            />
           </div>
 
           <Button type="submit" size="lg" isLoading={loading} className="w-full bg-gray-900 text-white font-medium" startContent={!loading && <Search className="w-4 h-4" />}>
             {loading ? "Tracking..." : "Track Order"}
           </Button>
 
-          {error && <p className="mt-4 text-sm text-red-600 text-center">{error}</p>}
+          {error && <p className={`mt-4 text-sm text-center ${error.includes("Found") && error.includes("orders") ? "text-blue-600" : "text-red-600"}`}>{error}</p>}
         </form>
+
+        {/* Multiple Orders List (when searching by phone) */}
+        {allOrders.length > 1 && (
+          <div className="bg-white rounded-xl md:rounded-2xl p-4 md:p-6 lg:p-8 shadow-sm mb-6 md:mb-8">
+            <h3 className="text-base md:text-lg font-semibold text-gray-900 mb-4 md:mb-6">All Orders for this Phone Number</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {allOrders.map((orderItem, index) => (
+                <div
+                  key={orderItem._id}
+                  className={`p-4 border rounded-lg cursor-pointer transition-all duration-200 hover:shadow-md ${
+                    order && order._id === orderItem._id ? "border-blue-500 bg-blue-50" : "border-gray-200 hover:border-gray-300"
+                  }`}
+                  onClick={() => setOrder(orderItem)}
+                >
+                  <div className="flex justify-between items-start mb-2">
+                    <div>
+                      <p className="font-medium text-sm md:text-base text-gray-900">
+                        Order #{orderItem.sessionId || orderItem._id?.slice(-8) || 'N/A'}
+                      </p>
+                      <p className="text-xs md:text-sm text-gray-600">{new Date(orderItem.createdAt).toLocaleDateString()}</p>
+                      {/* Show phone number if available */}
+                      {(orderItem.phone || orderItem.shipping?.phone) && (
+                        <p className="text-xs text-gray-500">
+                          Phone: {orderItem.phone || orderItem.shipping?.phone}
+                        </p>
+                      )}
+                    </div>
+                    <div className="text-right">
+                      <p className="font-bold text-sm md:text-base text-gray-900">
+                        {orderItem.paymentDetails?.currencySymbol || currencySymbol}
+                        {orderItem.paymentDetails?.total || orderItem.amount || '0'}
+                      </p>
+                      <p className="text-xs text-gray-500">{getOrderStatus(orderItem.createdAt).status.charAt(0).toUpperCase() + getOrderStatus(orderItem.createdAt).status.slice(1)}</p>
+                    </div>
+                  </div>
+                  {index === 0 && <span className="inline-block px-2 py-1 bg-green-100 text-green-800 text-xs rounded-full">Most Recent</span>}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Order Status */}
         {order && (
@@ -145,14 +259,29 @@ export default function TrackOrderPage() {
             <div className="mb-8 pb-6 border-b">
               <div className="flex justify-between items-start flex-wrap gap-4">
                 <div>
-                  <h2 className="text-xl font-bold text-gray-900 mb-2">Order #{order.sessionId || order._id}</h2>
+                  <h2 className="text-xl font-bold text-gray-900 mb-2">
+                    Order #{order.sessionId || order._id || 'N/A'}
+                  </h2>
                   <p className="text-sm text-gray-600">Placed on {new Date(order.createdAt).toLocaleDateString()}</p>
+                  {/* Transaction ID */}
+                  {(order.sessionId || order.paymentDetails?.paymentIntentId || order.paymentDetails?.razorpayOrderId || order.paymentDetails?.paypalOrderId || order.paymentDetails?.cashfreeOrderId) && (
+                    <p className="text-xs text-gray-500 mt-1">
+                      <span className="font-medium">Transaction ID:</span> {
+                        order.sessionId || 
+                        order.paymentDetails?.paymentIntentId || 
+                        order.paymentDetails?.razorpayOrderId || 
+                        order.paymentDetails?.paypalOrderId || 
+                        order.paymentDetails?.cashfreeOrderId ||
+                        order._id
+                      }
+                    </p>
+                  )}
                 </div>
                 <div className="text-right">
                   <p className="text-sm text-gray-600">Total Amount</p>
                   <p className="text-2xl font-bold text-gray-900">
                     {order.paymentDetails?.currencySymbol || currencySymbol}
-                    {order.paymentDetails?.total || order.amount}
+                    {order.paymentDetails?.total || order.amount || '0'}
                   </p>
                 </div>
               </div>
@@ -208,16 +337,25 @@ export default function TrackOrderPage() {
             </div>
 
             {/* Customer Info */}
-            {order.name && (
+            {(order.name || order.phone || order.email) && (
               <div className="bg-gray-50 rounded-lg p-6 mb-6">
                 <h3 className="font-semibold text-gray-900 mb-3">Customer Information</h3>
                 <div className="space-y-2 text-sm text-gray-600">
-                  <p>
-                    <span className="font-medium">Name:</span> {order.name}
-                  </p>
-                  <p>
-                    <span className="font-medium">Phone:</span> {order.phone}
-                  </p>
+                  {order.name && (
+                    <p>
+                      <span className="font-medium">Name:</span> {order.name}
+                    </p>
+                  )}
+                  {order.email && (
+                    <p>
+                      <span className="font-medium">Email:</span> {order.email}
+                    </p>
+                  )}
+                  {(order.phone || order.shipping?.phone) && (
+                    <p>
+                      <span className="font-medium">Phone:</span> {order.phone || order.shipping?.phone || 'Not provided'}
+                    </p>
+                  )}
                 </div>
               </div>
             )}

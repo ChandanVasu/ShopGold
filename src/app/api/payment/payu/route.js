@@ -52,17 +52,8 @@ export async function POST(req) {
     // Create transaction ID
     const txnId = `TXN_${Date.now()}`;
     
-    // Create order in database first
-    const order = await Order.create({
-      ...orderData,
-      paymentGateway: "payu",
-      paymentDetails: {
-        txnId: txnId,
-        amount: amount,
-        currency: currency || "INR",
-        status: "pending",
-      },
-    });
+    // Return PayU payment details without creating duplicate order
+    // The order will be updated by orderCreate component after payment success
 
     // Prepare PayU parameters
     const payuData = {
@@ -94,7 +85,8 @@ export async function POST(req) {
         ...payuData,
         hash: hash,
       },
-      dbOrderId: order._id,
+      // Store PayU details for later order update
+      payuTransactionId: txnId,
       txnId: txnId,
     });
 

@@ -27,7 +27,8 @@ export default function ProductTablePage() {
 
   const fetchProducts = async () => {
     try {
-      const res = await fetch("/api/product");
+      // Fetch all products including inactive ones for admin management
+      const res = await fetch("/api/product?status=all");
       const data = await res.json();
       setProducts(data);
     } catch (err) {

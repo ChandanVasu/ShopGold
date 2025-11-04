@@ -118,21 +118,9 @@ export async function POST(req) {
     const cashfreeResponse = await response.json();
 
     if (response.ok && cashfreeResponse.order_status === "ACTIVE") {
-      // Create order in database
-      const order = await Order.create({
-        ...orderData,
-        paymentGateway: "cashfree",
-        paymentDetails: {
-          orderId: orderId,
-          cfOrderId: cashfreeResponse.cf_order_id,
-          amount: amount,
-          currency: currency || "INR",
-          status: "pending",
-          orderToken: cashfreeResponse.order_token,
-          paymentSessionId: cashfreeResponse.payment_session_id,
-        },
-      });
-
+      // Return Cashfree payment details without creating duplicate order
+      // The order will be updated by orderCreate component after payment success
+      
       return Response.json({
         success: true,
         orderId: orderId,
@@ -141,7 +129,9 @@ export async function POST(req) {
         orderToken: cashfreeResponse.order_token,
         amount: amount,
         currency: currency || "INR",
-        dbOrderId: order._id,
+        // Store Cashfree details for later order update
+        cashfreeOrderId: orderId,
+        cashfreeTransactionId: cashfreeResponse.cf_order_id,
         // For checkout.js integration
         checkoutUrl: `${baseUrl}/checkout/hosted?order_token=${cashfreeResponse.order_token}`,
       });

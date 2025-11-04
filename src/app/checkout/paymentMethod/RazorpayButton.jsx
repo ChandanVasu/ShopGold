@@ -54,30 +54,20 @@ export default function RazorpayButton({ amount, currency, orderData, onSuccess,
         description: "Shop Gold Purchase",
         order_id: orderResult.orderId,
         handler: async (response) => {
-          try {
-            // Verify payment on backend
-            const verifyResponse = await fetch("/api/payment/razorpay", {
-              method: "PUT",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({
-                razorpay_order_id: response.razorpay_order_id,
-                razorpay_payment_id: response.razorpay_payment_id,
-                razorpay_signature: response.razorpay_signature,
-                dbOrderId: orderResult.dbOrderId,
-              }),
-            });
-
-            const verifyResult = await verifyResponse.json();
-
-            if (verifyResult.success) {
-              onSuccess && onSuccess(verifyResult.order);
-            } else {
-              throw new Error(verifyResult.error || "Payment verification failed");
+          console.log("Razorpay payment successful, calling onSuccess with payment details");
+          
+          // Call success handler with payment details directly
+          // The orderCreate component will handle order creation/update
+          onSuccess && onSuccess({
+            paymentDetails: {
+              razorpayOrderId: response.razorpay_order_id,
+              razorpayPaymentId: response.razorpay_payment_id,
+              razorpaySignature: response.razorpay_signature,
+              amount: orderResult.amount / 100, // Convert from paise to rupees
+              currency: orderResult.currency,
+              status: "completed",
             }
-          } catch (error) {
-            console.error("Payment verification error:", error);
-            onError && onError(error.message);
-          }
+          });
         },
         prefill: {
           name: orderData.name,

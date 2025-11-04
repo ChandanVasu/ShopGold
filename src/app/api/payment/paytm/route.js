@@ -55,17 +55,8 @@ export async function POST(req) {
     // Create order ID
     const orderId = `ORDER_${Date.now()}`;
     
-    // Create order in database first
-    const order = await Order.create({
-      ...orderData,
-      paymentGateway: "paytm",
-      paymentDetails: {
-        orderId: orderId,
-        amount: amount,
-        currency: currency || "INR",
-        status: "pending",
-      },
-    });
+    // Return Paytm payment details without creating duplicate order
+    // The order will be updated by orderCreate component after payment success
 
     // Paytm API URL
     const paytmUrl = paymentSettings.paytm.mode === "production"

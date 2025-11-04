@@ -62,25 +62,17 @@ export async function POST(req) {
 
     const razorpayOrder = await razorpay.orders.create(options);
 
-    // Create order in database
-    const order = await Order.create({
-      ...orderData,
-      paymentGateway: "razorpay",
-      paymentDetails: {
-        orderId: razorpayOrder.id,
-        amount: amount,
-        currency: currency || "INR",
-        status: "pending",
-      },
-    });
-
+    // Return Razorpay payment details without creating duplicate order
+    // The order will be updated by orderCreate component after payment success
+    
     return Response.json({
       success: true,
       orderId: razorpayOrder.id,
       amount: razorpayOrder.amount,
       currency: razorpayOrder.currency,
       keyId: paymentSettings.razorpay.keyId,
-      dbOrderId: order._id,
+      // Store Razorpay details for later order update
+      razorpayOrderId: razorpayOrder.id,
     });
 
   } catch (error) {

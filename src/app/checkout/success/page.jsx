@@ -207,14 +207,29 @@ function SuccessContent() {
             <div className="border-b pb-4 md:pb-6">
               <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 md:gap-4">
                 <div>
-                  <h2 className="text-lg md:text-xl font-bold text-gray-900 mb-1 md:mb-2">Order #{order.sessionId || order._id}</h2>
+                  <h2 className="text-lg md:text-xl font-bold text-gray-900 mb-1 md:mb-2">
+                    Order #{order.sessionId || order._id?.slice(-8) || 'N/A'}
+                  </h2>
                   <p className="text-sm md:text-base text-gray-600">Placed on {new Date(order.createdAt).toLocaleDateString()}</p>
+                  {/* Transaction ID */}
+                  {(order.sessionId || order.paymentDetails?.paymentIntentId || order.paymentDetails?.razorpayOrderId || order.paymentDetails?.paypalOrderId || order.paymentDetails?.cashfreeOrderId) && (
+                    <p className="text-xs text-gray-500 mt-1">
+                      <span className="font-medium">Transaction ID:</span> {
+                        order.sessionId || 
+                        order.paymentDetails?.paymentIntentId || 
+                        order.paymentDetails?.razorpayOrderId || 
+                        order.paymentDetails?.paypalOrderId || 
+                        order.paymentDetails?.cashfreeOrderId ||
+                        order._id
+                      }
+                    </p>
+                  )}
                 </div>
                 <div className="text-left md:text-right">
                   <p className="text-xs md:text-sm text-gray-600">Total Amount</p>
                   <p className="text-xl md:text-2xl font-bold text-gray-900">
                     {order.paymentDetails?.currencySymbol || currencySymbol}
-                    {order.paymentDetails?.total}
+                    {order.paymentDetails?.total || '0'}
                   </p>
                 </div>
               </div>
@@ -267,15 +282,21 @@ function SuccessContent() {
                   Customer Information
                 </h3>
                 <div className="space-y-1 md:space-y-2 text-xs md:text-sm">
-                  <p>
-                    <span className="font-medium">Name:</span> {order.name}
-                  </p>
-                  <p>
-                    <span className="font-medium">Email:</span> {order.email}
-                  </p>
-                  <p>
-                    <span className="font-medium">Phone:</span> {order.phone}
-                  </p>
+                  {order.name && (
+                    <p>
+                      <span className="font-medium">Name:</span> {order.name}
+                    </p>
+                  )}
+                  {order.email && (
+                    <p>
+                      <span className="font-medium">Email:</span> {order.email}
+                    </p>
+                  )}
+                  {(order.phone || order.shipping?.phone) && (
+                    <p>
+                      <span className="font-medium">Phone:</span> {order.phone || order.shipping?.phone || 'Not provided'}
+                    </p>
+                  )}
                 </div>
               </div>
 
@@ -317,7 +338,14 @@ function SuccessContent() {
                 </div>
                 <div>
                   <span className="font-medium text-gray-600">Transaction ID:</span>
-                  <p className="font-mono text-xs break-all">{order.sessionId}</p>
+                  <p className="font-mono text-xs break-all">
+                    {order.sessionId || 
+                     order.paymentDetails?.paymentIntentId || 
+                     order.paymentDetails?.razorpayOrderId || 
+                     order.paymentDetails?.paypalOrderId || 
+                     order.paymentDetails?.cashfreeOrderId ||
+                     order._id || 'N/A'}
+                  </p>
                 </div>
               </div>
             </div>

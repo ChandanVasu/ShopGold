@@ -28,6 +28,7 @@ import {
   BookOpen,
   Files,
   Hash,
+  User,
 } from "lucide-react";
 
 const SideBar = ({ onItemClick }) => {
@@ -59,6 +60,7 @@ const SideBar = ({ onItemClick }) => {
     { href: "/admin/settings", icon: <Settings size={16} />, label: "Store Settings" },
     { href: "/admin/payment-gateway", icon: <Wallet size={16} />, label: "Payment Gateway" },
     { href: "/admin/app-integrations", icon: <Code size={16} />, label: "App Integrations" },
+    { href: "/admin/profile", icon: <User size={16} />, label: "Admin Profile" },
   ];
 
   const handleLogout = async () => {

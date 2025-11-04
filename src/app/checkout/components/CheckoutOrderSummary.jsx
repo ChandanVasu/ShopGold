@@ -316,11 +316,12 @@ export default function CheckoutOrderSummary({ billingDetails, setErrors }) {
                 amount={costDetails.total}
                 currency="INR"
                 orderData={orderDataForPayment}
-                onSuccess={async (order) => {
+                onSuccess={async (paymentResult) => {
                   await handlePaymentSuccess(
                     {
-                      razorpayOrderId: order.paymentDetails?.orderId,
-                      razorpayPaymentId: order.paymentDetails?.paymentId,
+                      razorpayOrderId: paymentResult.paymentDetails?.razorpayOrderId,
+                      razorpayPaymentId: paymentResult.paymentDetails?.razorpayPaymentId,
+                      razorpaySignature: paymentResult.paymentDetails?.razorpaySignature,
                     },
                     "razorpay"
                   );
@@ -353,11 +354,11 @@ export default function CheckoutOrderSummary({ billingDetails, setErrors }) {
                 amount={costDetails.total}
                 currency="INR"
                 orderData={orderDataForPayment}
-                onSuccess={async (order) => {
+                onSuccess={async (paymentResult) => {
                   await handlePaymentSuccess(
                     {
-                      cashfreeOrderId: order.paymentDetails?.orderId,
-                      cashfreeTransactionId: order.paymentDetails?.cfTransactionId,
+                      cashfreeOrderId: paymentResult.paymentDetails?.orderId || paymentResult.paymentDetails?.cashfreeOrderId,
+                      cashfreeTransactionId: paymentResult.paymentDetails?.cfOrderId || paymentResult.paymentDetails?.cashfreeTransactionId,
                     },
                     "cashfree"
                   );

@@ -8,6 +8,7 @@ export default async function orderCreate({ products, paymentDetails, billingDet
     
     // Check if there's a pending order to update
     const pendingOrderId = localStorage.getItem("pendingOrderId");
+    console.log('Pending order ID from localStorage:', pendingOrderId);
     
     if (pendingOrderId) {
       // Update existing pending order with payment details
@@ -19,7 +20,12 @@ export default async function orderCreate({ products, paymentDetails, billingDet
           status: paymentDetails.status,
           paymentStatus: paymentDetails.status === "paid" ? "success" : "failed",
           paymentIntentId: paymentDetails.paymentIntentId || null,
-          ...paymentDetails.extra, // support gateway-specific fields
+          razorpayOrderId: paymentDetails.razorpayOrderId || null,
+          paypalOrderId: paymentDetails.paypalOrderId || null,
+          cashfreeOrderId: paymentDetails.cashfreeOrderId || null,
+          cashfreeTransactionId: paymentDetails.cashfreeTransactionId || null,
+          currencySymbol: paymentDetails.currencySymbol || null,
+          ...paymentDetails, // include all payment details
         },
         status: paymentDetails.status === "paid" ? "success" : "failed",
         utm_source: utmSource,
@@ -36,6 +42,7 @@ export default async function orderCreate({ products, paymentDetails, billingDet
 
       if (res.ok) {
         const updatedOrder = await res.json();
+        console.log('Pending order updated successfully:', updatedOrder._id);
         // Clear pending order ID
         localStorage.removeItem("pendingOrderId");
         return {
@@ -44,13 +51,20 @@ export default async function orderCreate({ products, paymentDetails, billingDet
           success: true
         };
       } else {
-        throw new Error("Failed to update pending order");
+        const errorText = await res.text();
+        console.error('Failed to update pending order:', res.status, errorText);
+        throw new Error(`Failed to update pending order: ${res.status} ${errorText}`);
       }
     } else {
       // Fallback: Create new order if no pending order exists
+      console.log('No pending order found, creating new order');
+      console.log('Billing details:', billingDetails);
+      console.log('Products:', products);
+      
       const payload = {
         name: billingDetails?.customer?.fullName,
-        email: billingDetails?.customer?.email,
+        email: billingDetails?.customer?.email || '',
+        phone: billingDetails?.customer?.phone || '',
         shipping: {
           address: billingDetails?.address,
           name: billingDetails?.customer?.fullName,
@@ -74,10 +88,16 @@ export default async function orderCreate({ products, paymentDetails, billingDet
           status: paymentDetails.status,
           paymentStatus: paymentDetails.status === "paid" ? "success" : "failed",
           paymentIntentId: paymentDetails.paymentIntentId || null,
-          ...paymentDetails.extra, // support gateway-specific fields
+          razorpayOrderId: paymentDetails.razorpayOrderId || null,
+          paypalOrderId: paymentDetails.paypalOrderId || null,
+          cashfreeOrderId: paymentDetails.cashfreeOrderId || null,
+          cashfreeTransactionId: paymentDetails.cashfreeTransactionId || null,
+          currencySymbol: paymentDetails.currencySymbol || null,
+          ...paymentDetails, // include all payment details
         },
         status: paymentDetails.status === "paid" ? "success" : "failed",
         utm_source: utmSource,
+        sessionId: Date.now().toString() + Math.random().toString(36).substr(2, 9), // Generate unique session ID
         ...extraData, // optional metadata (storeId, userId, etc.)
       };
 
@@ -89,9 +109,16 @@ export default async function orderCreate({ products, paymentDetails, billingDet
         body: JSON.stringify(payload),
       });
 
-      if (!res.ok) throw new Error("Failed to create order");
+      console.log('Order creation response status:', res.status);
+      
+      if (!res.ok) {
+        const errorText = await res.text();
+        console.error('Order creation failed:', res.status, errorText);
+        throw new Error(`Failed to create order: ${res.status} ${errorText}`);
+      }
 
       const data = await res.json();
+      console.log('New order created successfully:', data._id);
       return {
         orderId: data._id,
         sessionId: data.sessionId || data._id,

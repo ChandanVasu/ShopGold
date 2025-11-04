@@ -42,10 +42,33 @@ async function getStoreSettings() {
   }
 }
 
-// ✅ GET: Fetch all products with currency info
-export async function GET() {
+// ✅ GET: Fetch all products with currency info and optional status filter
+export async function GET(req) {
   await dbConnect();
-  const products = await Product.find({});
+  
+  // Get status filter from query parameters
+  const url = new URL(req.url);
+  const statusFilter = url.searchParams.get('status');
+  
+  // Build query filter
+  let query = {};
+  if (statusFilter) {
+    if (statusFilter === 'all') {
+      // Don't filter by status - return all products
+      query = {};
+    } else {
+      query.status = statusFilter;
+    }
+  } else {
+    // By default, only show Active products (exclude Inactive)
+    // Include products without status field for backward compatibility
+    query.$or = [
+      { status: "Active" },
+      { status: { $exists: false } }
+    ];
+  }
+  
+  const products = await Product.find(query);
   const { currencySymbol, storeCurrency } = await getStoreSettings();
   
   // Add currency info to each product

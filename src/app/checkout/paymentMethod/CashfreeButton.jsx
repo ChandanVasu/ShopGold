@@ -148,28 +148,22 @@ export default function CashfreeButton({ amount, currency, orderData, onSuccess,
 
         // Check if payment was successful
         if (result.redirect || result.paymentDetails) {
-          try {
-            // Verify payment on backend
-            const verifyResponse = await fetch("/api/payment/cashfree", {
-              method: "PUT",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({
-                orderId: orderResult.orderId,
-                dbOrderId: orderResult.dbOrderId,
-              }),
-            });
-
-            const verifyResult = await verifyResponse.json();
-
-            if (verifyResult.success) {
-              onSuccess && onSuccess(verifyResult.order);
-            } else {
-              throw new Error(verifyResult.error || "Payment verification failed");
+          console.log("Cashfree payment successful, calling onSuccess with payment details");
+          
+          // Call success handler with payment details directly
+          // The orderCreate component will handle order creation/update
+          onSuccess && onSuccess({
+            paymentDetails: {
+              orderId: orderResult.orderId,
+              cfOrderId: orderResult.cfOrderId,
+              cashfreeOrderId: orderResult.orderId,
+              cashfreeTransactionId: orderResult.cfOrderId,
+              amount: amount,
+              currency: currency || "INR",
+              status: "completed",
+              paymentSessionId: orderResult.paymentSessionId,
             }
-          } catch (error) {
-            console.error("Payment verification error:", error);
-            onError && onError(error.message);
-          }
+          });
         }
 
         setLoading(false);

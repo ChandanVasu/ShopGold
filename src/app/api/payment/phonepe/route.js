@@ -54,17 +54,8 @@ export async function POST(req) {
     // Create transaction ID
     const transactionId = `TXN_${Date.now()}`;
     
-    // Create order in database first
-    const order = await Order.create({
-      ...orderData,
-      paymentGateway: "phonepe",
-      paymentDetails: {
-        transactionId: transactionId,
-        amount: amount,
-        currency: currency || "INR",
-        status: "pending",
-      },
-    });
+    // Return PhonePe payment details without creating duplicate order
+    // The order will be updated by orderCreate component after payment success
 
     // PhonePe API URLs
     const baseUrl = paymentSettings.phonepe.mode === "production" 
