@@ -1,6 +1,5 @@
 import dbConnect from "@/lib/dbConnection";
 import mongoose from "mongoose";
-import jwt from "jsonwebtoken";
 
 // Admin User Schema
 const AdminUserSchema = new mongoose.Schema(
@@ -21,8 +20,6 @@ if (mongoose.models.AdminUser) {
 }
 
 const AdminUser = mongoose.model("AdminUser", AdminUserSchema);
-
-const JWT_SECRET = process.env.JWT_SECRET || "your-secret-key";
 
 export async function POST(req) {
   try {
@@ -49,16 +46,8 @@ export async function POST(req) {
 
     // Simple password comparison (no hashing)
     if (email === adminUser.email && password === adminUser.password) {
-      // Generate JWT token
-      const token = jwt.sign(
-        {
-          userId: adminUser._id,
-          email: adminUser.email,
-          role: adminUser.role,
-        },
-        JWT_SECRET,
-        { expiresIn: "7d" }
-      );
+      // Generate simple token (just a random string with user info)
+      const simpleToken = `admin_${adminUser._id}_${Date.now()}_${Math.random().toString(36).substring(2)}`;
 
       // Create response
       const response = Response.json({
@@ -76,9 +65,10 @@ export async function POST(req) {
       const isProduction = process.env.NODE_ENV === "production";
       response.headers.set(
         "Set-Cookie",
-        `auth_token=${token}; HttpOnly; Path=/; Max-Age=${7 * 24 * 60 * 60}; SameSite=Strict${isProduction ? "; Secure" : ""}`
+        `auth_token=${simpleToken}; HttpOnly; Path=/; Max-Age=${7 * 24 * 60 * 60}; SameSite=Strict${isProduction ? "; Secure" : ""}`
       );
 
+      console.log("Login successful, token set:", simpleToken.substring(0, 20) + "...");
       return response;
     } else {
       return Response.json({ error: "Invalid email or password" }, { status: 401 });
