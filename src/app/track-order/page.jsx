@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Input, Button } from "@heroui/react";
 import { Package, Search, CheckCircle, Truck, Clock, Home } from "lucide-react";
 import { useCurrency } from "@/hooks/useCurrency";
@@ -12,7 +12,38 @@ export default function TrackOrderPage() {
   const [allOrders, setAllOrders] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [orderSettings, setOrderSettings] = useState({
+    dispatchAfterHours: 24,
+    inTransitAfterHours: 48,
+    outForDeliveryAfterHours: 96,
+    deliveredAfterHours: 120,
+    autoUpdateStatus: true,
+  });
   const { symbol: currencySymbol, currency } = useCurrency();
+
+  // Fetch order settings on component mount
+  useEffect(() => {
+    fetchOrderSettings();
+  }, []);
+
+  const fetchOrderSettings = async () => {
+    try {
+      const res = await fetch("/api/order-settings");
+      if (res.ok) {
+        const data = await res.json();
+        setOrderSettings({
+          dispatchAfterHours: data.dispatchAfterHours || 24,
+          inTransitAfterHours: data.inTransitAfterHours || 48,
+          outForDeliveryAfterHours: data.outForDeliveryAfterHours || 96,
+          deliveredAfterHours: data.deliveredAfterHours || 120,
+          autoUpdateStatus: data.autoUpdateStatus !== false,
+        });
+      }
+    } catch (error) {
+      console.error("Failed to fetch order settings:", error);
+      // Use default settings if fetch fails
+    }
+  };
 
   const handleTrack = async (e) => {
     e.preventDefault();
@@ -106,33 +137,32 @@ export default function TrackOrderPage() {
   };
 
   const getOrderStatus = (orderDate) => {
-    if (!orderDate) return { status: "", message: "Order will be dispatch soon" };
+    if (!orderDate) return { status: "", message: "Order will be dispatch soon", statusIndex: 0 };
 
     const orderTime = new Date(orderDate).getTime();
     const currentTime = new Date().getTime();
     const hoursElapsed = (currentTime - orderTime) / (1000 * 60 * 60);
 
-    if (hoursElapsed < 24) {
+    // Use dynamic settings for status determination
+    if (hoursElapsed < orderSettings.dispatchAfterHours) {
       return {
         status: "",
         message: "Order will be dispatch soon",
         statusIndex: 0,
       };
-    } else if (hoursElapsed < 48) {
+    } else if (hoursElapsed < orderSettings.inTransitAfterHours) {
       return {
         status: "dispatched",
         message: "Your order has been dispatched",
         statusIndex: 1,
       };
-    } else if (hoursElapsed < 96) {
-      // 4 days (48 + 48)
+    } else if (hoursElapsed < orderSettings.outForDeliveryAfterHours) {
       return {
         status: "in-transit",
         message: "Your order is in transit",
         statusIndex: 2,
       };
-    } else if (hoursElapsed < 120) {
-      // 5 days (96 + 24)
+    } else if (hoursElapsed < orderSettings.deliveredAfterHours) {
       return {
         status: "out-for-delivery",
         message: "Your order is out for delivery",

@@ -41,6 +41,13 @@ export default function OrderTablePage() {
   const [editLoading, setEditLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
+  const [orderSettings, setOrderSettings] = useState({
+    dispatchAfterHours: 24,
+    inTransitAfterHours: 48,
+    outForDeliveryAfterHours: 96,
+    deliveredAfterHours: 120,
+    autoUpdateStatus: true,
+  });
   const { symbol: currencySymbol, currency } = useCurrency();
 
   const totalPages = Math.ceil(filteredOrders.length / rowsPerPage);
@@ -52,15 +59,40 @@ export default function OrderTablePage() {
     { key: "pending", label: "Pending" },
     { key: "failed", label: "Failed" },
     { key: "cancelled", label: "Cancelled" },
+    // Delivery statuses
+    { key: "processing", label: "Processing" },
+    { key: "dispatched", label: "Dispatched" },
+    { key: "in transit", label: "In Transit" },
+    { key: "out for delivery", label: "Out for Delivery" },
+    { key: "delivered", label: "Delivered" },
   ];
 
   useEffect(() => {
     fetchOrders();
+    fetchOrderSettings();
   }, []);
 
   useEffect(() => {
     filterOrders();
   }, [orders, searchTerm, statusFilter]);
+
+  const fetchOrderSettings = async () => {
+    try {
+      const res = await fetch("/api/order-settings");
+      if (res.ok) {
+        const data = await res.json();
+        setOrderSettings({
+          dispatchAfterHours: data.dispatchAfterHours || 24,
+          inTransitAfterHours: data.inTransitAfterHours || 48,
+          outForDeliveryAfterHours: data.outForDeliveryAfterHours || 96,
+          deliveredAfterHours: data.deliveredAfterHours || 120,
+          autoUpdateStatus: data.autoUpdateStatus !== false,
+        });
+      }
+    } catch (error) {
+      console.error("Failed to fetch order settings:", error);
+    }
+  };
 
   const filterOrders = () => {
     let filtered = orders;
@@ -79,8 +111,10 @@ export default function OrderTablePage() {
     // Filter by status
     if (statusFilter !== "all") {
       filtered = filtered.filter((order) => {
-        const status = getOrderStatus(order);
-        return status.toLowerCase() === statusFilter.toLowerCase();
+        const orderStatus = getOrderStatus(order);
+        const deliveryStatus = getDeliveryStatus(order.createdAt);
+        return orderStatus.toLowerCase() === statusFilter.toLowerCase() || 
+               deliveryStatus.toLowerCase() === statusFilter.toLowerCase();
       });
     }
 
@@ -89,6 +123,7 @@ export default function OrderTablePage() {
   };
 
   const getOrderStatus = (order) => {
+    // This function now returns payment status
     if (order.paymentDetails?.status) {
       switch (order.paymentDetails.status.toLowerCase()) {
         case "paid":
@@ -104,24 +139,75 @@ export default function OrderTablePage() {
         case "cancelled":
           return "Cancelled";
         default:
-          return "Pending";
+          return "Success";
       }
     }
-    return "Pending";
+    
+    // Default to successful if no payment status
+    return "Success";
+  };
+
+  const getDeliveryStatus = (orderDate) => {
+    // This function returns delivery status based on time
+    if (!orderDate || !orderSettings.autoUpdateStatus) return "Processing";
+
+    const orderTime = new Date(orderDate).getTime();
+    const currentTime = new Date().getTime();
+    const hoursElapsed = (currentTime - orderTime) / (1000 * 60 * 60);
+
+    // Use dynamic settings for delivery status determination
+    if (hoursElapsed < orderSettings.dispatchAfterHours) {
+      return "Processing";
+    } else if (hoursElapsed < orderSettings.inTransitAfterHours) {
+      return "Dispatched";
+    } else if (hoursElapsed < orderSettings.outForDeliveryAfterHours) {
+      return "In Transit";
+    } else if (hoursElapsed < orderSettings.deliveredAfterHours) {
+      return "Out for Delivery";
+    } else {
+      return "Delivered";
+    }
   };
 
   const getStatusColor = (status) => {
     switch (status.toLowerCase()) {
+      case "delivered":
+        return "success";
       case "success":
         return "success";
-      case "pending":
+      case "processing":
+        return "default";
+      case "dispatched":
+        return "primary";
+      case "in transit":
+        return "secondary";
+      case "out for delivery":
         return "warning";
-      case "failed":
+      case "payment pending":
+        return "warning";
+      case "payment failed":
         return "danger";
-      case "cancelled":
+      case "order cancelled":
         return "default";
       default:
+        return "default";
+    }
+  };
+
+  const getDeliveryStatusColor = (status) => {
+    switch (status.toLowerCase()) {
+      case "delivered":
+        return "success";
+      case "processing":
+        return "default";
+      case "dispatched":
+        return "primary";
+      case "in transit":
+        return "secondary";
+      case "out for delivery":
         return "warning";
+      default:
+        return "default";
     }
   };
 
@@ -268,6 +354,7 @@ export default function OrderTablePage() {
       "Shipping Address",
       "Payment Method",
       "Order Status",
+      "Delivery Status",
       "Total Amount",
       "Currency",
       "Order Date",
@@ -295,6 +382,7 @@ export default function OrderTablePage() {
           : "N/A",
         paymentMethod: order.paymentDetails?.paymentMethod || "Unknown",
         orderStatus: getOrderStatus(order),
+        deliveryStatus: getDeliveryStatus(order.createdAt),
         totalAmount: order.paymentDetails?.total || 0,
         currency: order.paymentDetails?.currencySymbol || currencySymbol,
         orderDate: formatDate(order.createdAt),
@@ -311,6 +399,7 @@ export default function OrderTablePage() {
             baseOrderData.shippingAddress,
             baseOrderData.paymentMethod,
             baseOrderData.orderStatus,
+            baseOrderData.deliveryStatus,
             baseOrderData.totalAmount,
             baseOrderData.currency,
             baseOrderData.orderDate,
@@ -329,6 +418,7 @@ export default function OrderTablePage() {
           baseOrderData.shippingAddress,
           baseOrderData.paymentMethod,
           baseOrderData.orderStatus,
+          baseOrderData.deliveryStatus,
           baseOrderData.totalAmount,
           baseOrderData.currency,
           baseOrderData.orderDate,
@@ -449,9 +539,14 @@ export default function OrderTablePage() {
                             {order.paymentDetails?.currencySymbol || currencySymbol}
                             {order.paymentDetails?.total}
                           </p>
-                          <Chip size="sm" color={getStatusColor(getOrderStatus(order))} variant="flat" className="mt-1">
-                            {getOrderStatus(order)}
-                          </Chip>
+                          <div className="flex flex-col gap-1 mt-1">
+                            <Chip size="sm" color={getStatusColor(getOrderStatus(order))} variant="flat">
+                              {getOrderStatus(order)}
+                            </Chip>
+                            <Chip size="sm" color={getDeliveryStatusColor(getDeliveryStatus(order.createdAt))} variant="flat">
+                              {getDeliveryStatus(order.createdAt)}
+                            </Chip>
+                          </div>
                         </div>
                       </div>
                       <div className="flex gap-2">
@@ -489,7 +584,8 @@ export default function OrderTablePage() {
                 <TableHeader>
                   <TableColumn>Customer</TableColumn>
                   <TableColumn>Amount</TableColumn>
-                  <TableColumn>Status</TableColumn>
+                  <TableColumn>Order Status</TableColumn>
+                  <TableColumn>Delivery Status</TableColumn>
                   <TableColumn className="hidden md:table-cell">Date</TableColumn>
                   <TableColumn className="text-center w-32">Actions</TableColumn>
                 </TableHeader>
@@ -513,6 +609,11 @@ export default function OrderTablePage() {
                       <TableCell>
                         <Chip size="sm" color={getStatusColor(getOrderStatus(order))} variant="flat">
                           {getOrderStatus(order)}
+                        </Chip>
+                      </TableCell>
+                      <TableCell>
+                        <Chip size="sm" color={getDeliveryStatusColor(getDeliveryStatus(order.createdAt))} variant="flat">
+                          {getDeliveryStatus(order.createdAt)}
                         </Chip>
                       </TableCell>
                       <TableCell className="hidden md:table-cell text-gray-600 text-sm">{formatDate(order.createdAt)}</TableCell>
