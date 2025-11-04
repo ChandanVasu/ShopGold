@@ -32,7 +32,7 @@ export async function POST(req) {
   try {
     await dbConnect();
 
-    const { amount, currency, orderData } = await req.json();
+    const { amount, orderData } = await req.json();
     
     if (!amount || !orderData) {
       return Response.json({ error: "Amount and order data are required" }, { status: 400 });
