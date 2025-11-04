@@ -106,7 +106,7 @@ export default function TrackOrderPage() {
   };
 
   const getOrderStatus = (orderDate) => {
-    if (!orderDate) return { status: "pending", message: "Order will be dispatch soon" };
+    if (!orderDate) return { status: "", message: "Order will be dispatch soon" };
 
     const orderTime = new Date(orderDate).getTime();
     const currentTime = new Date().getTime();
@@ -114,7 +114,7 @@ export default function TrackOrderPage() {
 
     if (hoursElapsed < 24) {
       return {
-        status: "pending",
+        status: "",
         message: "Order will be dispatch soon",
         statusIndex: 0,
       };
@@ -148,7 +148,7 @@ export default function TrackOrderPage() {
   };
 
   const statusSteps = [
-    { label: "Order Placed", icon: CheckCircle, status: "pending", message: "Order will be dispatch soon" },
+    { label: "Order Placed", icon: CheckCircle, status: "", message: "Order will be dispatch soon" },
     { label: "Dispatched", icon: Package, status: "dispatched", message: "Order has been dispatched from warehouse" },
     { label: "In Transit", icon: Truck, status: "in-transit", message: "Order is on the way to your location" },
     { label: "Out for Delivery", icon: Clock, status: "out-for-delivery", message: "Order is out for delivery" },
@@ -169,19 +169,13 @@ export default function TrackOrderPage() {
         {/* Search Form */}
         <form onSubmit={handleTrack} className="bg-white rounded-xl md:rounded-2xl p-4 md:p-6 lg:p-8 shadow-sm mb-6 md:mb-8">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-20 mb-4 md:mb-6 relative">
-            <Input
-              label="Order ID"
-              placeholder="e.g., ORD123456"
-              value={orderId}
-              onChange={(e) => setOrderId(e.target.value)}
-              labelPlacement="outside"
-              size="md"
-              className="text-sm md:text-base"
-            />
+            <Input label="Order ID" placeholder="e.g., ORD123456" value={orderId} onChange={(e) => setOrderId(e.target.value)} labelPlacement="outside" size="md" className="text-sm md:text-base" />
 
             {/* OR Divider */}
-            <div className="hidden md:flex absolute left-1/2 top-1/2 pt-4Payment Cancelled
-Your transaction was cancelled or failed. No payment has been made. transform -translate-x-1/2 -translate-y-1/2 z-10">
+            <div
+              className="hidden md:flex absolute left-1/2 top-1/2 pt-4Payment Cancelled
+Your transaction was cancelled or failed. No payment has been made. transform -translate-x-1/2 -translate-y-1/2 z-10"
+            >
               <div className="bg-white px-3 py-1 rounded-full border border-gray-300 text-sm font-medium text-gray-600 shadow-sm">OR</div>
             </div>
 
@@ -226,21 +220,15 @@ Your transaction was cancelled or failed. No payment has been made. transform -t
                 >
                   <div className="flex justify-between items-start mb-2">
                     <div>
-                      <p className="font-medium text-sm md:text-base text-gray-900">
-                        Order #{orderItem.sessionId || orderItem._id?.slice(-8) || 'N/A'}
-                      </p>
+                      <p className="font-medium text-sm md:text-base text-gray-900">Order #{orderItem.sessionId || orderItem._id?.slice(-8) || "N/A"}</p>
                       <p className="text-xs md:text-sm text-gray-600">{new Date(orderItem.createdAt).toLocaleDateString()}</p>
                       {/* Show phone number if available */}
-                      {(orderItem.phone || orderItem.shipping?.phone) && (
-                        <p className="text-xs text-gray-500">
-                          Phone: {orderItem.phone || orderItem.shipping?.phone}
-                        </p>
-                      )}
+                      {(orderItem.phone || orderItem.shipping?.phone) && <p className="text-xs text-gray-500">Phone: {orderItem.phone || orderItem.shipping?.phone}</p>}
                     </div>
                     <div className="text-right">
                       <p className="font-bold text-sm md:text-base text-gray-900">
                         {orderItem.paymentDetails?.currencySymbol || currencySymbol}
-                        {orderItem.paymentDetails?.total || orderItem.amount || '0'}
+                        {orderItem.paymentDetails?.total || orderItem.amount || "0"}
                       </p>
                       <p className="text-xs text-gray-500">{getOrderStatus(orderItem.createdAt).status.charAt(0).toUpperCase() + getOrderStatus(orderItem.createdAt).status.slice(1)}</p>
                     </div>
@@ -259,21 +247,22 @@ Your transaction was cancelled or failed. No payment has been made. transform -t
             <div className="mb-8 pb-6 border-b">
               <div className="flex justify-between items-start flex-wrap gap-4">
                 <div>
-                  <h2 className="text-xl font-bold text-gray-900 mb-2">
-                    Order #{order.sessionId || order._id || 'N/A'}
-                  </h2>
+                  <h2 className="text-xl font-bold text-gray-900 mb-2">Order #{order.sessionId || order._id || "N/A"}</h2>
                   <p className="text-sm text-gray-600">Placed on {new Date(order.createdAt).toLocaleDateString()}</p>
                   {/* Transaction ID */}
-                  {(order.sessionId || order.paymentDetails?.paymentIntentId || order.paymentDetails?.razorpayOrderId || order.paymentDetails?.paypalOrderId || order.paymentDetails?.cashfreeOrderId) && (
+                  {(order.sessionId ||
+                    order.paymentDetails?.paymentIntentId ||
+                    order.paymentDetails?.razorpayOrderId ||
+                    order.paymentDetails?.paypalOrderId ||
+                    order.paymentDetails?.cashfreeOrderId) && (
                     <p className="text-xs text-gray-500 mt-1">
-                      <span className="font-medium">Transaction ID:</span> {
-                        order.sessionId || 
-                        order.paymentDetails?.paymentIntentId || 
-                        order.paymentDetails?.razorpayOrderId || 
-                        order.paymentDetails?.paypalOrderId || 
+                      <span className="font-medium">Transaction ID:</span>{" "}
+                      {order.sessionId ||
+                        order.paymentDetails?.paymentIntentId ||
+                        order.paymentDetails?.razorpayOrderId ||
+                        order.paymentDetails?.paypalOrderId ||
                         order.paymentDetails?.cashfreeOrderId ||
-                        order._id
-                      }
+                        order._id}
                     </p>
                   )}
                 </div>
@@ -281,7 +270,7 @@ Your transaction was cancelled or failed. No payment has been made. transform -t
                   <p className="text-sm text-gray-600">Total Amount</p>
                   <p className="text-2xl font-bold text-gray-900">
                     {order.paymentDetails?.currencySymbol || currencySymbol}
-                    {order.paymentDetails?.total || order.amount || '0'}
+                    {order.paymentDetails?.total || order.amount || "0"}
                   </p>
                 </div>
               </div>
@@ -353,7 +342,7 @@ Your transaction was cancelled or failed. No payment has been made. transform -t
                   )}
                   {(order.phone || order.shipping?.phone) && (
                     <p>
-                      <span className="font-medium">Phone:</span> {order.phone || order.shipping?.phone || 'Not provided'}
+                      <span className="font-medium">Phone:</span> {order.phone || order.shipping?.phone || "Not provided"}
                     </p>
                   )}
                 </div>

@@ -21,7 +21,7 @@ import {
   SelectItem,
   Chip,
 } from "@heroui/react";
-import { Eye, ShoppingBag, Package, X, Search, Filter, Download } from "lucide-react";
+import { Eye, ShoppingBag, Package, X, Search, Filter, Download, Edit3 } from "lucide-react";
 import CustomButton from "@/components/block/CustomButton";
 import formatDate from "@/utils/formatDate";
 import Empty from "@/components/block/Empty";
@@ -35,6 +35,10 @@ export default function OrderTablePage() {
   const [loading, setLoading] = useState(true);
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [modalOpen, setModalOpen] = useState(false);
+  const [editModalOpen, setEditModalOpen] = useState(false);
+  const [editingOrder, setEditingOrder] = useState(null);
+  const [editForm, setEditForm] = useState({ createdAt: "" });
+  const [editLoading, setEditLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const { symbol: currencySymbol, currency } = useCurrency();
@@ -159,6 +163,95 @@ export default function OrderTablePage() {
   const handleView = (order) => {
     setSelectedOrder(order);
     setModalOpen(true);
+  };
+
+  const handleEdit = (order) => {
+    setEditingOrder(order);
+    // Format dates for datetime-local input
+    const createdAt = new Date(order.createdAt);
+    
+    // Convert to local datetime string format (YYYY-MM-DDTHH:mm)
+    const formatForInput = (date) => {
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const day = String(date.getDate()).padStart(2, '0');
+      const hours = String(date.getHours()).padStart(2, '0');
+      const minutes = String(date.getMinutes()).padStart(2, '0');
+      return `${year}-${month}-${day}T${hours}:${minutes}`;
+    };
+    
+    setEditForm({
+      createdAt: formatForInput(createdAt)
+    });
+    setEditModalOpen(true);
+  };
+
+  const handleEditSubmit = async () => {
+    if (!editingOrder || !editForm.createdAt) {
+      alert("Please fill in the created date");
+      return;
+    }
+
+    setEditLoading(true);
+    try {
+      console.log("Sending update request for order:", editingOrder._id);
+      console.log("New createdAt:", editForm.createdAt);
+      
+      const response = await fetch("/api/order/update-date", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          _id: editingOrder._id,
+          createdAt: editForm.createdAt
+        })
+      });
+
+      console.log("Response status:", response.status);
+      
+      if (response.ok) {
+        const updatedOrder = await response.json();
+        console.log("Updated order from API:", updatedOrder);
+        
+        // Update the order in the local state
+        setOrders(prevOrders => {
+          const newOrders = prevOrders.map(order => 
+            order._id === updatedOrder._id ? updatedOrder : order
+          );
+          console.log("Updated orders array");
+          return newOrders;
+        });
+        
+        // Also update filtered orders
+        setFilteredOrders(prevFiltered => {
+          const newFiltered = prevFiltered.map(order => 
+            order._id === updatedOrder._id ? updatedOrder : order
+          );
+          return newFiltered;
+        });
+        
+        setEditModalOpen(false);
+        setEditingOrder(null);
+        setEditForm({ createdAt: "" });
+        
+        alert("Order created date updated successfully!");
+        
+        // Force re-fetch to ensure data consistency
+        setTimeout(() => {
+          console.log("Re-fetching orders...");
+          fetchOrders();
+        }, 1000);
+        
+      } else {
+        const errorData = await response.json();
+        console.error("API Error:", errorData);
+        alert(errorData.error || "Failed to update order");
+      }
+    } catch (error) {
+      console.error("Error updating order:", error);
+      alert("Failed to update order: " + error.message);
+    } finally {
+      setEditLoading(false);
+    }
   };
 
   const exportToCSV = () => {
@@ -361,9 +454,12 @@ export default function OrderTablePage() {
                           </Chip>
                         </div>
                       </div>
-                      <div className="flex justify-end">
+                      <div className="flex gap-2">
                         <button onClick={() => handleView(order)} className="p-2 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition-colors">
                           <Eye className="w-4 h-4" />
+                        </button>
+                        <button onClick={() => handleEdit(order)} className="p-2 bg-green-50 text-green-600 rounded-lg hover:bg-green-100 transition-colors">
+                          <Edit3 className="w-4 h-4" />
                         </button>
                       </div>
                     </div>
@@ -395,7 +491,7 @@ export default function OrderTablePage() {
                   <TableColumn>Amount</TableColumn>
                   <TableColumn>Status</TableColumn>
                   <TableColumn className="hidden md:table-cell">Date</TableColumn>
-                  <TableColumn className="text-center w-24">Actions</TableColumn>
+                  <TableColumn className="text-center w-32">Actions</TableColumn>
                 </TableHeader>
                 <TableBody>
                   {paginatedOrders.map((order) => (
@@ -421,9 +517,12 @@ export default function OrderTablePage() {
                       </TableCell>
                       <TableCell className="hidden md:table-cell text-gray-600 text-sm">{formatDate(order.createdAt)}</TableCell>
                       <TableCell>
-                        <div className="flex justify-center">
+                        <div className="flex justify-center gap-2">
                           <button onClick={() => handleView(order)} className="p-2 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition-colors">
                             <Eye className="w-4 h-4" />
+                          </button>
+                          <button onClick={() => handleEdit(order)} className="p-2 bg-green-50 text-green-600 rounded-lg hover:bg-green-100 transition-colors">
+                            <Edit3 className="w-4 h-4" />
                           </button>
                         </div>
                       </TableCell>
@@ -444,7 +543,7 @@ export default function OrderTablePage() {
       </div>
 
       {/* Modal */}
-      <Modal isOpen={modalOpen} onOpenChange={setModalOpen} size="lg" placement="center">
+      <Modal isOpen={modalOpen} onOpenChange={setModalOpen} size="lg" placement="center" className="max-h-[800px]" backdrop="blur" scrollBehavior="inside">
         <ModalContent className="!p-0 bg-white rounded-xl shadow-xl">
           <ModalHeader className="">
             <div className="flex items-center justify-between w-full">
@@ -568,6 +667,78 @@ export default function OrderTablePage() {
             <CustomButton intent="secondary" size="sm" onPress={() => setModalOpen(false)}>
               Close
             </CustomButton>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
+
+      {/* Edit Created Date Modal */}
+      <Modal isOpen={editModalOpen} onOpenChange={setEditModalOpen} size="md" placement="center" backdrop="blur">
+        <ModalContent className="!p-0 bg-white rounded-xl shadow-xl">
+          <ModalHeader className="px-6 py-4 border-b border-gray-200">
+            <div className="flex items-center gap-2">
+              <Edit3 className="w-5 h-5 text-green-600" />
+              <h2 className="text-lg font-semibold">Edit Order Created Date</h2>
+            </div>
+          </ModalHeader>
+
+          <ModalBody className="px-6 py-5 space-y-4">
+            {editingOrder && (
+              <>
+                <div className="bg-blue-50 p-3 rounded-lg">
+                  <p className="text-sm text-blue-800 font-medium">
+                    Order: {editingOrder.name} - {editingOrder.sessionId || editingOrder._id}
+                  </p>
+                </div>
+
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Created At
+                    </label>
+                    <input
+                      type="datetime-local"
+                      value={editForm.createdAt}
+                      onChange={(e) => setEditForm(prev => ({ ...prev, createdAt: e.target.value }))}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      required
+                    />
+                  </div>
+                </div>
+
+                <div className="bg-amber-50 p-3 rounded-lg border border-amber-200">
+                  <p className="text-xs text-amber-800">
+                    <strong>Note:</strong> Changing the created date may affect order sorting and analytics. 
+                    The updated date will be automatically set to the current time.
+                  </p>
+                </div>
+              </>
+            )}
+          </ModalBody>
+
+          <ModalFooter className="px-6 py-4 border-t border-gray-200">
+            <div className="flex gap-3">
+              <CustomButton 
+                intent="secondary" 
+                size="sm" 
+                onPress={() => {
+                  setEditModalOpen(false);
+                  setEditingOrder(null);
+                  setEditForm({ createdAt: "" });
+                }}
+                isDisabled={editLoading}
+              >
+                Cancel
+              </CustomButton>
+              <CustomButton 
+                intent="primary" 
+                size="sm" 
+                onPress={handleEditSubmit}
+                isLoading={editLoading}
+                isDisabled={!editForm.createdAt}
+              >
+                {editLoading ? "Updating..." : "Update Created Date"}
+              </CustomButton>
+            </div>
           </ModalFooter>
         </ModalContent>
       </Modal>

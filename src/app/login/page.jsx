@@ -31,10 +31,15 @@ export default function LoginPage() {
       });
 
       const data = await response.json();
+      console.log('Login response:', { status: response.status, data });
 
       if (response.ok) {
+        console.log('Login successful, redirecting to /admin');
         toast.success('Login successful!');
-        router.push('/admin');
+        // Use window.location for more reliable redirect
+        setTimeout(() => {
+          window.location.href = '/admin';
+        }, 1000);
       } else {
         toast.error(data.error || 'Login failed');
       }

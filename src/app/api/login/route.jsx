@@ -72,10 +72,11 @@ export async function POST(req) {
         },
       });
 
-      // Set HTTP-only cookie
+      // Set HTTP-only cookie with production-safe settings
+      const isProduction = process.env.NODE_ENV === "production";
       response.headers.set(
         "Set-Cookie",
-        `auth-token=${token}; HttpOnly; Path=/; Max-Age=${7 * 24 * 60 * 60}; SameSite=Strict`
+        `auth_token=${token}; HttpOnly; Path=/; Max-Age=${7 * 24 * 60 * 60}; SameSite=Strict${isProduction ? "; Secure" : ""}`
       );
 
       return response;

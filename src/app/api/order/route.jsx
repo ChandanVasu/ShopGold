@@ -88,12 +88,58 @@ export async function PUT(req) {
   try {
     await dbConnect();
     const body = await req.json();
-    const { _id, ...updateData } = body;
+    const { _id, createdAt, updatedAt, ...updateData } = body;
     if (!_id) return Response.json({ error: "_id is required" }, { status: 400 });
 
-    const updated = await Order.findByIdAndUpdate(_id, updateData, { new: true });
+    console.log("PUT request body:", body); // Debug log
+
+    // Handle timestamp updates
+    if (createdAt || updatedAt) {
+      const timestampUpdates = {};
+      
+      // Validate and set createdAt if provided
+      if (createdAt) {
+        const createdDate = new Date(createdAt);
+        if (isNaN(createdDate.getTime())) {
+          return Response.json({ error: "Invalid createdAt date format" }, { status: 400 });
+        }
+        timestampUpdates.createdAt = createdDate;
+        console.log("Setting createdAt to:", createdDate); // Debug log
+      }
+      
+      // Validate and set updatedAt if provided
+      if (updatedAt) {
+        const updatedDate = new Date(updatedAt);
+        if (isNaN(updatedDate.getTime())) {
+          return Response.json({ error: "Invalid updatedAt date format" }, { status: 400 });
+        }
+        timestampUpdates.updatedAt = updatedDate;
+      } else {
+        // If only createdAt is being updated, set updatedAt to now
+        if (createdAt) {
+          timestampUpdates.updatedAt = new Date();
+        }
+      }
+      
+      // Merge timestamp updates with other updates
+      Object.assign(updateData, timestampUpdates);
+    }
+
+    console.log("Final updateData:", updateData); // Debug log
+
+    // Use findByIdAndUpdate with timestamps disabled to override them
+    const updated = await Order.findByIdAndUpdate(
+      _id, 
+      updateData, 
+      { 
+        new: true,
+        timestamps: false // Disable automatic timestamp updates
+      }
+    );
+    
     if (!updated) return Response.json({ error: "Order not found" }, { status: 404 });
 
+    console.log("Updated order:", updated); // Debug log
     return Response.json(updated);
   } catch (error) {
     console.error("Order PUT Error:", error);
