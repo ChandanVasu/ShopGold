@@ -67,13 +67,33 @@ export default function CheckoutOrderSummary({ billingDetails, setErrors }) {
       discountOnMRP += (itemMRP - itemPrice) * item.quantity;
     });
 
-    // ✅ Buy 2 Get 1 Free logic - Calculate for each product separately
+    // ✅ Buy 2 Get 1 Free logic - Discount lowest priced items (global calculation)
     let buy2Get1Discount = 0;
-    products.forEach(item => {
-      const freeItems = Math.floor(item.quantity / 3); // For every 3 items, 1 is free
-      const itemPrice = item.salePrice || item.regularPrice || 0;
-      buy2Get1Discount += freeItems * itemPrice; // Discount = free items × price per item
-    });
+    const totalQuantity = products.reduce((total, item) => total + item.quantity, 0);
+    const freeItemsCount = Math.floor(totalQuantity / 3) || 0; // Total free items across all products
+
+    if (freeItemsCount > 0) {
+      // Create array of all individual items with their prices (expanded by quantity)
+      const allItems = [];
+      products.forEach(item => {
+        const itemPrice = Number(item.salePrice || item.regularPrice) || 0;
+        for (let i = 0; i < item.quantity; i++) {
+          allItems.push({
+            productId: item._id,
+            title: item.title,
+            price: itemPrice
+          });
+        }
+      });
+
+      // Sort by price (ascending) to get cheapest items first
+      allItems.sort((a, b) => (a.price || 0) - (b.price || 0));
+
+      // Apply discount to the cheapest items
+      for (let i = 0; i < freeItemsCount && i < allItems.length; i++) {
+        buy2Get1Discount += Number(allItems[i].price) || 0;
+      }
+    }
 
     const subtotal = products.reduce((acc, p) => acc + Number(p.salePrice || p.regularPrice) * p.quantity, 0);
     const totalAmount = subtotal - buy2Get1Discount;
