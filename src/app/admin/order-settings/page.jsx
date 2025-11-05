@@ -7,10 +7,10 @@ import CustomButton from "@/components/block/CustomButton";
 
 export default function OrderSettingsPage() {
   const [settings, setSettings] = useState({
-    dispatchAfterHours: 24,
-    inTransitAfterHours: 48,
-    outForDeliveryAfterHours: 96,
-    deliveredAfterHours: 120,
+    dispatchAfterHours: 12,
+    inTransitAfterHours: 24,
+    outForDeliveryAfterHours: 36,
+    deliveredAfterHours: 48,
     autoUpdateStatus: true,
   });
   const [loading, setLoading] = useState(true);
@@ -27,10 +27,10 @@ export default function OrderSettingsPage() {
       if (res.ok) {
         const data = await res.json();
         setSettings({
-          dispatchAfterHours: data.dispatchAfterHours || 24,
-          inTransitAfterHours: data.inTransitAfterHours || 48,
-          outForDeliveryAfterHours: data.outForDeliveryAfterHours || 96,
-          deliveredAfterHours: data.deliveredAfterHours || 120,
+          dispatchAfterHours: data.dispatchAfterHours || 12,
+          inTransitAfterHours: data.inTransitAfterHours || 24,
+          outForDeliveryAfterHours: data.outForDeliveryAfterHours || 36,
+          deliveredAfterHours: data.deliveredAfterHours || 48,
           autoUpdateStatus: data.autoUpdateStatus !== false,
         });
       }

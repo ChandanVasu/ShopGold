@@ -13,10 +13,10 @@ export default function TrackOrderPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [orderSettings, setOrderSettings] = useState({
-    dispatchAfterHours: 24,
-    inTransitAfterHours: 48,
-    outForDeliveryAfterHours: 96,
-    deliveredAfterHours: 120,
+    dispatchAfterHours: 12,
+    inTransitAfterHours: 24,
+    outForDeliveryAfterHours: 36,
+    deliveredAfterHours: 48,
     autoUpdateStatus: true,
   });
   const { symbol: currencySymbol, currency } = useCurrency();
@@ -32,10 +32,10 @@ export default function TrackOrderPage() {
       if (res.ok) {
         const data = await res.json();
         setOrderSettings({
-          dispatchAfterHours: data.dispatchAfterHours || 24,
-          inTransitAfterHours: data.inTransitAfterHours || 48,
-          outForDeliveryAfterHours: data.outForDeliveryAfterHours || 96,
-          deliveredAfterHours: data.deliveredAfterHours || 120,
+          dispatchAfterHours: data.dispatchAfterHours || 12,
+          inTransitAfterHours: data.inTransitAfterHours || 24,
+          outForDeliveryAfterHours: data.outForDeliveryAfterHours || 36,
+          deliveredAfterHours: data.deliveredAfterHours || 48,
           autoUpdateStatus: data.autoUpdateStatus !== false,
         });
       }
@@ -202,10 +202,7 @@ export default function TrackOrderPage() {
             <Input label="Order ID" placeholder="e.g., ORD123456" value={orderId} onChange={(e) => setOrderId(e.target.value)} labelPlacement="outside" size="md" className="text-sm md:text-base" />
 
             {/* OR Divider */}
-            <div
-              className="hidden md:flex absolute left-1/2 top-1/2 pt-4Payment Cancelled
-Your transaction was cancelled or failed. No payment has been made. transform -translate-x-1/2 -translate-y-1/2 z-10"
-            >
+            <div className="hidden md:flex absolute left-1/2 top-1/2 pt-4 transform -translate-x-1/2 -translate-y-1/2 z-10">
               <div className="bg-white px-3 py-1 rounded-full border border-gray-300 text-sm font-medium text-gray-600 shadow-sm">OR</div>
             </div>
 

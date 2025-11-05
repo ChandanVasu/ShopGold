@@ -5,10 +5,10 @@ import mongoose from "mongoose";
 const OrderSettingsSchema = new mongoose.Schema(
   {
     // Timing settings in hours
-    dispatchAfterHours: { type: Number, default: 24 }, // Dispatch after 24 hours
-    inTransitAfterHours: { type: Number, default: 48 }, // In transit after 48 hours
-    outForDeliveryAfterHours: { type: Number, default: 96 }, // Out for delivery after 96 hours (4 days)
-    deliveredAfterHours: { type: Number, default: 120 }, // Delivered after 120 hours (5 days)
+    dispatchAfterHours: { type: Number, default: 12 }, // Dispatch after 12 hours
+    inTransitAfterHours: { type: Number, default: 24 }, // In transit after 24 hours  
+    outForDeliveryAfterHours: { type: Number, default: 36 }, // Out for delivery after 36 hours
+    deliveredAfterHours: { type: Number, default: 48 }, // Delivered after 48 hours
     
     // Additional settings
     autoUpdateStatus: { type: Boolean, default: true },

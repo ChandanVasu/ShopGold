@@ -21,7 +21,7 @@ import {
   SelectItem,
   Chip,
 } from "@heroui/react";
-import { Eye, ShoppingBag, Package, X, Search, Filter, Download, Edit3 } from "lucide-react";
+import { Eye, ShoppingBag, Package, X, Search, Filter, Download, Settings } from "lucide-react";
 import CustomButton from "@/components/block/CustomButton";
 import formatDate from "@/utils/formatDate";
 import Empty from "@/components/block/Empty";
@@ -35,17 +35,15 @@ export default function OrderTablePage() {
   const [loading, setLoading] = useState(true);
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [modalOpen, setModalOpen] = useState(false);
-  const [editModalOpen, setEditModalOpen] = useState(false);
-  const [editingOrder, setEditingOrder] = useState(null);
-  const [editForm, setEditForm] = useState({ createdAt: "" });
-  const [editLoading, setEditLoading] = useState(false);
+  const [settingsModalOpen, setSettingsModalOpen] = useState(false);
+  const [settingsLoading, setSettingsLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [orderSettings, setOrderSettings] = useState({
-    dispatchAfterHours: 24,
-    inTransitAfterHours: 48,
-    outForDeliveryAfterHours: 96,
-    deliveredAfterHours: 120,
+    dispatchAfterHours: 12,
+    inTransitAfterHours: 24,
+    outForDeliveryAfterHours: 36,
+    deliveredAfterHours: 48,
     autoUpdateStatus: true,
   });
   const { symbol: currencySymbol, currency } = useCurrency();
@@ -82,10 +80,10 @@ export default function OrderTablePage() {
       if (res.ok) {
         const data = await res.json();
         setOrderSettings({
-          dispatchAfterHours: data.dispatchAfterHours || 24,
-          inTransitAfterHours: data.inTransitAfterHours || 48,
-          outForDeliveryAfterHours: data.outForDeliveryAfterHours || 96,
-          deliveredAfterHours: data.deliveredAfterHours || 120,
+          dispatchAfterHours: data.dispatchAfterHours || 12,
+          inTransitAfterHours: data.inTransitAfterHours || 24,
+          outForDeliveryAfterHours: data.outForDeliveryAfterHours || 36,
+          deliveredAfterHours: data.deliveredAfterHours || 48,
           autoUpdateStatus: data.autoUpdateStatus !== false,
         });
       }
@@ -251,94 +249,38 @@ export default function OrderTablePage() {
     setModalOpen(true);
   };
 
-  const handleEdit = (order) => {
-    setEditingOrder(order);
-    // Format dates for datetime-local input
-    const createdAt = new Date(order.createdAt);
-    
-    // Convert to local datetime string format (YYYY-MM-DDTHH:mm)
-    const formatForInput = (date) => {
-      const year = date.getFullYear();
-      const month = String(date.getMonth() + 1).padStart(2, '0');
-      const day = String(date.getDate()).padStart(2, '0');
-      const hours = String(date.getHours()).padStart(2, '0');
-      const minutes = String(date.getMinutes()).padStart(2, '0');
-      return `${year}-${month}-${day}T${hours}:${minutes}`;
-    };
-    
-    setEditForm({
-      createdAt: formatForInput(createdAt)
-    });
-    setEditModalOpen(true);
-  };
-
-  const handleEditSubmit = async () => {
-    if (!editingOrder || !editForm.createdAt) {
-      alert("Please fill in the created date");
-      return;
-    }
-
-    setEditLoading(true);
+  const handleSettingsUpdate = async (newSettings) => {
+    setSettingsLoading(true);
     try {
-      console.log("Sending update request for order:", editingOrder._id);
-      console.log("New createdAt:", editForm.createdAt);
-      
-      const response = await fetch("/api/order/update-date", {
+      const res = await fetch("/api/order-settings", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          _id: editingOrder._id,
-          createdAt: editForm.createdAt
-        })
+        body: JSON.stringify(newSettings),
       });
 
-      console.log("Response status:", response.status);
-      
-      if (response.ok) {
-        const updatedOrder = await response.json();
-        console.log("Updated order from API:", updatedOrder);
-        
-        // Update the order in the local state
-        setOrders(prevOrders => {
-          const newOrders = prevOrders.map(order => 
-            order._id === updatedOrder._id ? updatedOrder : order
-          );
-          console.log("Updated orders array");
-          return newOrders;
+      if (res.ok) {
+        const data = await res.json();
+        setOrderSettings({
+          dispatchAfterHours: data.dispatchAfterHours || 12,
+          inTransitAfterHours: data.inTransitAfterHours || 24,
+          outForDeliveryAfterHours: data.outForDeliveryAfterHours || 36,
+          deliveredAfterHours: data.deliveredAfterHours || 48,
+          autoUpdateStatus: data.autoUpdateStatus !== false,
         });
-        
-        // Also update filtered orders
-        setFilteredOrders(prevFiltered => {
-          const newFiltered = prevFiltered.map(order => 
-            order._id === updatedOrder._id ? updatedOrder : order
-          );
-          return newFiltered;
-        });
-        
-        setEditModalOpen(false);
-        setEditingOrder(null);
-        setEditForm({ createdAt: "" });
-        
-        alert("Order created date updated successfully!");
-        
-        // Force re-fetch to ensure data consistency
-        setTimeout(() => {
-          console.log("Re-fetching orders...");
-          fetchOrders();
-        }, 1000);
-        
+        setSettingsModalOpen(false);
+        alert("Order settings updated successfully!");
       } else {
-        const errorData = await response.json();
-        console.error("API Error:", errorData);
-        alert(errorData.error || "Failed to update order");
+        alert("Failed to update settings");
       }
     } catch (error) {
-      console.error("Error updating order:", error);
-      alert("Failed to update order: " + error.message);
+      console.error("Error updating settings:", error);
+      alert("Failed to update settings");
     } finally {
-      setEditLoading(false);
+      setSettingsLoading(false);
     }
   };
+
+    // Export functions
 
   const exportToCSV = () => {
     if (filteredOrders.length === 0) {
@@ -464,6 +406,15 @@ export default function OrderTablePage() {
           </p>
         </div>
         <div className="flex items-center gap-3">
+          <CustomButton 
+            intent="secondary" 
+            size="sm" 
+            onPress={() => setSettingsModalOpen(true)}
+            className="flex items-center gap-2"
+          >
+            <Settings className="w-4 h-4" />
+            Order Settings
+          </CustomButton>
           <CustomButton intent="secondary" size="sm" onPress={exportToCSV} isDisabled={filteredOrders.length === 0} className="flex items-center gap-2">
             <Download className="w-4 h-4" />
             Export CSV
@@ -553,9 +504,6 @@ export default function OrderTablePage() {
                         <button onClick={() => handleView(order)} className="p-2 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition-colors">
                           <Eye className="w-4 h-4" />
                         </button>
-                        <button onClick={() => handleEdit(order)} className="p-2 bg-green-50 text-green-600 rounded-lg hover:bg-green-100 transition-colors">
-                          <Edit3 className="w-4 h-4" />
-                        </button>
                       </div>
                     </div>
                   ))}
@@ -621,9 +569,6 @@ export default function OrderTablePage() {
                         <div className="flex justify-center gap-2">
                           <button onClick={() => handleView(order)} className="p-2 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition-colors">
                             <Eye className="w-4 h-4" />
-                          </button>
-                          <button onClick={() => handleEdit(order)} className="p-2 bg-green-50 text-green-600 rounded-lg hover:bg-green-100 transition-colors">
-                            <Edit3 className="w-4 h-4" />
                           </button>
                         </div>
                       </TableCell>
@@ -772,77 +717,168 @@ export default function OrderTablePage() {
         </ModalContent>
       </Modal>
 
-      {/* Edit Created Date Modal */}
-      <Modal isOpen={editModalOpen} onOpenChange={setEditModalOpen} size="md" placement="center" backdrop="blur">
+      {/* Order Settings Modal */}
+      <Modal isOpen={settingsModalOpen} onOpenChange={setSettingsModalOpen} size="lg" placement="center" backdrop="blur">
         <ModalContent className="!p-0 bg-white rounded-xl shadow-xl">
           <ModalHeader className="px-6 py-4 border-b border-gray-200">
             <div className="flex items-center gap-2">
-              <Edit3 className="w-5 h-5 text-green-600" />
-              <h2 className="text-lg font-semibold">Edit Order Created Date</h2>
+              <Settings className="w-5 h-5 text-blue-600" />
+              <h2 className="text-lg font-semibold">Order Status Settings</h2>
             </div>
           </ModalHeader>
 
           <ModalBody className="px-6 py-5 space-y-4">
-            {editingOrder && (
-              <>
-                <div className="bg-blue-50 p-3 rounded-lg">
-                  <p className="text-sm text-blue-800 font-medium">
-                    Order: {editingOrder.name} - {editingOrder.sessionId || editingOrder._id}
-                  </p>
-                </div>
-
-                <div className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Created At
-                    </label>
-                    <input
-                      type="datetime-local"
-                      value={editForm.createdAt}
-                      onChange={(e) => setEditForm(prev => ({ ...prev, createdAt: e.target.value }))}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                      required
-                    />
-                  </div>
-                </div>
-
-                <div className="bg-amber-50 p-3 rounded-lg border border-amber-200">
-                  <p className="text-xs text-amber-800">
-                    <strong>Note:</strong> Changing the created date may affect order sorting and analytics. 
-                    The updated date will be automatically set to the current time.
-                  </p>
-                </div>
-              </>
-            )}
+            <p className="text-sm text-gray-600 mb-4">
+              Configure when order status changes automatically based on time elapsed since order placement
+            </p>
+            
+            <OrderSettingsForm 
+              settings={orderSettings} 
+              onSave={handleSettingsUpdate}
+              loading={settingsLoading}
+              onCancel={() => setSettingsModalOpen(false)}
+            />
           </ModalBody>
-
-          <ModalFooter className="px-6 py-4 border-t border-gray-200">
-            <div className="flex gap-3">
-              <CustomButton 
-                intent="secondary" 
-                size="sm" 
-                onPress={() => {
-                  setEditModalOpen(false);
-                  setEditingOrder(null);
-                  setEditForm({ createdAt: "" });
-                }}
-                isDisabled={editLoading}
-              >
-                Cancel
-              </CustomButton>
-              <CustomButton 
-                intent="primary" 
-                size="sm" 
-                onPress={handleEditSubmit}
-                isLoading={editLoading}
-                isDisabled={!editForm.createdAt}
-              >
-                {editLoading ? "Updating..." : "Update Created Date"}
-              </CustomButton>
-            </div>
-          </ModalFooter>
         </ModalContent>
       </Modal>
+    </div>
+  );
+}
+
+// Order Settings Form Component
+function OrderSettingsForm({ settings, onSave, loading, onCancel }) {
+  const [formData, setFormData] = useState(settings);
+
+  const updateSetting = (key, value) => {
+    setFormData(prev => ({ ...prev, [key]: value }));
+  };
+
+  const handleSubmit = () => {
+    // Validation
+    if (formData.inTransitAfterHours <= formData.dispatchAfterHours) {
+      alert("In Transit time must be after Dispatch time");
+      return;
+    }
+    if (formData.outForDeliveryAfterHours <= formData.inTransitAfterHours) {
+      alert("Out for Delivery time must be after In Transit time");
+      return;
+    }
+    if (formData.deliveredAfterHours <= formData.outForDeliveryAfterHours) {
+      alert("Delivered time must be after Out for Delivery time");
+      return;
+    }
+
+    onSave(formData);
+  };
+
+  const formatTime = (hours) => {
+    const days = Math.floor(hours / 24);
+    const remainingHours = hours % 24;
+    if (days > 0 && remainingHours > 0) {
+      return `${days} day${days > 1 ? 's' : ''} ${remainingHours} hour${remainingHours > 1 ? 's' : ''}`;
+    } else if (days > 0) {
+      return `${days} day${days > 1 ? 's' : ''}`;
+    } else {
+      return `${remainingHours} hour${remainingHours > 1 ? 's' : ''}`;
+    }
+  };
+
+  return (
+    <div className="space-y-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Dispatch After (hours)
+          </label>
+          <Input
+            type="number"
+            min="1"
+            value={formData.dispatchAfterHours.toString()}
+            onChange={(e) => updateSetting('dispatchAfterHours', parseInt(e.target.value) || 1)}
+            placeholder="12"
+          />
+          <p className="text-xs text-gray-500 mt-1">
+            = {formatTime(formData.dispatchAfterHours)} after order placement
+          </p>
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            In Transit After (hours)
+          </label>
+          <Input
+            type="number"
+            min={formData.dispatchAfterHours + 1}
+            value={formData.inTransitAfterHours.toString()}
+            onChange={(e) => updateSetting('inTransitAfterHours', parseInt(e.target.value) || formData.dispatchAfterHours + 1)}
+            placeholder="24"
+          />
+          <p className="text-xs text-gray-500 mt-1">
+            = {formatTime(formData.inTransitAfterHours)} after order placement
+          </p>
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Out for Delivery After (hours)
+          </label>
+          <Input
+            type="number"
+            min={formData.inTransitAfterHours + 1}
+            value={formData.outForDeliveryAfterHours.toString()}
+            onChange={(e) => updateSetting('outForDeliveryAfterHours', parseInt(e.target.value) || formData.inTransitAfterHours + 1)}
+            placeholder="36"
+          />
+          <p className="text-xs text-gray-500 mt-1">
+            = {formatTime(formData.outForDeliveryAfterHours)} after order placement
+          </p>
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Delivered After (hours)
+          </label>
+          <Input
+            type="number"
+            min={formData.outForDeliveryAfterHours + 1}
+            value={formData.deliveredAfterHours.toString()}
+            onChange={(e) => updateSetting('deliveredAfterHours', parseInt(e.target.value) || formData.outForDeliveryAfterHours + 1)}
+            placeholder="48"
+          />
+          <p className="text-xs text-gray-500 mt-1">
+            = {formatTime(formData.deliveredAfterHours)} after order placement
+          </p>
+        </div>
+      </div>
+
+      <div className="bg-blue-50 p-4 rounded-lg">
+        <h4 className="font-medium text-blue-900 mb-2">Status Timeline Preview</h4>
+        <div className="space-y-2 text-sm text-blue-800">
+          <div>• Order Placed → Dispatched: {formatTime(formData.dispatchAfterHours)}</div>
+          <div>• Dispatched → In Transit: {formatTime(formData.inTransitAfterHours - formData.dispatchAfterHours)}</div>
+          <div>• In Transit → Out for Delivery: {formatTime(formData.outForDeliveryAfterHours - formData.inTransitAfterHours)}</div>
+          <div>• Out for Delivery → Delivered: {formatTime(formData.deliveredAfterHours - formData.outForDeliveryAfterHours)}</div>
+        </div>
+      </div>
+
+      <div className="flex gap-3 pt-4">
+        <CustomButton 
+          intent="secondary" 
+          size="sm" 
+          onPress={onCancel}
+          isDisabled={loading}
+        >
+          Cancel
+        </CustomButton>
+        <CustomButton 
+          intent="primary" 
+          size="sm" 
+          onPress={handleSubmit}
+          isLoading={loading}
+        >
+          {loading ? "Saving..." : "Save Settings"}
+        </CustomButton>
+      </div>
     </div>
   );
 }
